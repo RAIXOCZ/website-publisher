@@ -311,6 +311,8 @@ input:focus { border-color: var(--teal-2); box-shadow: 0 0 0 4px var(--ring); }
 .dropzone .title { margin: 0 0 4px; font: 650 22px/1.2 var(--display); letter-spacing: -0.02em; color: var(--ink); }
 .dropzone .hint { margin: 0; font-size: 14px; color: var(--muted); }
 .dropzone .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 22px; }
+.dropzone .consent { margin: 16px 0 0; max-width: 440px; font-size: 12.5px; color: var(--faint); cursor: default; }
+.dropzone .consent a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
 
 .progress p { margin: 0 0 10px; }
 .meter { height: 10px; border-radius: 6px; background: var(--well); border: 1px solid var(--glass-line); overflow: hidden; }
@@ -491,6 +493,7 @@ td .site-url { font: 12px var(--mono); color: var(--muted); }
   color: var(--faint);
 }
 .site-footer p { margin: 0; }
+.footer-links { color: var(--faint); }
 .site-footer a { color: var(--muted); font-weight: 600; text-decoration: none; transition: color 0.15s; }
 .site-footer a:hover { color: var(--teal); }
 

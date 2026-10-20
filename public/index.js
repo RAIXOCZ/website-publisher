@@ -59,7 +59,10 @@ $('#pick-zip').addEventListener('click', async (e) => {
   e.stopPropagation();
   start(await pickFiles({ zip: true }));
 });
-els.dropzone.addEventListener('click', async () => start(await pickFiles()));
+els.dropzone.addEventListener('click', async (e) => {
+  if (e.target.closest('a')) return; // links in the consent line
+  start(await pickFiles());
+});
 els.dropzone.addEventListener('keydown', async (e) => {
   if (e.target === els.dropzone && (e.key === 'Enter' || e.key === ' ')) {
     e.preventDefault();

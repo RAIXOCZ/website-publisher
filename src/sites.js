@@ -11,7 +11,7 @@ const config = require('./config');
 
 const NAME_RE = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 const RESERVED = new Set([
-  'admin', 'api', 'app', 'docs', 'www', 'static', 'assets', 'login', 'logout',
+  'admin', 'api', 'app', 'docs', 'podminky', 'soukromi', 'terms', 'privacy', 'www', 'static', 'assets', 'login', 'logout',
   'mail', 'ftp', 'dashboard', 'favicon.ico', 'robots.txt',
 ]);
 // Files that operating systems sprinkle into folders and nobody wants published.

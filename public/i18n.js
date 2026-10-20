@@ -8,6 +8,11 @@ const LANGS = ['cs', 'en'];
 
 const I18N = {
   cs: {
+    'title.terms': 'Podmínky použití – Freepages',
+    'title.privacy': 'Zásady ochrany osobních údajů – Freepages',
+    'footer.terms': 'Podmínky',
+    'footer.privacy': 'Soukromí',
+    consent: 'Nahráním souhlasíte s <a href="/podminky">podmínkami použití</a>. Jak zacházíme s údaji, popisují <a href="/soukromi">zásady ochrany osobních údajů</a>.',
     'hero.title1': 'Web online',
     'hero.title2': 'jedním přetažením.',
     'how.title': 'Složka s index.html stačí.',
@@ -114,6 +119,11 @@ const I18N = {
   },
 
   en: {
+    'title.terms': 'Terms of use – Freepages',
+    'title.privacy': 'Privacy policy – Freepages',
+    'footer.terms': 'Terms',
+    'footer.privacy': 'Privacy',
+    consent: 'By uploading, you agree to the <a href="/podminky">terms of use</a>. How we handle data is described in the <a href="/soukromi">privacy policy</a>.',
     'hero.title1': 'Your site online',
     'hero.title2': 'in one drop.',
     'how.title': 'A folder with index.html is all you need.',

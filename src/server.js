@@ -85,6 +85,8 @@ app.use(
 app.get('/', securityHeaders, appPage('index.html'));
 app.get(['/admin', '/admin/'], securityHeaders, appPage('admin.html'));
 app.get(['/docs', '/docs/'], securityHeaders, appPage('docs.html'));
+app.get(['/podminky', '/terms'], securityHeaders, appPage('terms.html'));
+app.get(['/soukromi', '/privacy'], securityHeaders, appPage('privacy.html'));
 app.get('/robots.txt', (req, res) => res.type('text').send('User-agent: *\nDisallow: /admin\n'));
 app.get('/favicon.ico', (req, res) => res.sendFile(path.join(publicDir, 'favicon.svg'), { headers: { 'Content-Type': 'image/svg+xml' } }));
 
