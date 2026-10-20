@@ -8,10 +8,8 @@ const LANGS = ['cs', 'en'];
 
 const I18N = {
   cs: {
-    'hero.tag': 'Zdarma · bez registrace · HTTPS',
     'hero.title1': 'Web online',
     'hero.title2': 'jedním přetažením.',
-    'hero.text': 'Přetáhněte složku s webem a za pár sekund běží na vlastní adrese. Každý web dostane heslo, takže ho nikdo jiný nepřepíše.',
     'name.inline': 'název je nepovinný',
     'how.title': 'Složka s index.html stačí.',
     'how.text': 'HTML, CSS, JavaScript, obrázky i podsložky se zveřejní tak, jak jsou. Adresy bez .html a vlastní stránka 404 fungují samy.',
@@ -63,7 +61,6 @@ const I18N = {
 
     'my.title': 'Moje weby',
     'my.add': 'Přidat existující web',
-    'my.intro': 'Hesla jsou uložená jen v tomto prohlížeči. Na jiném zařízení web přidáte jeho názvem a heslem.',
     'my.namePlaceholder': 'Název webu',
     'my.pwPlaceholder': 'Heslo k webu',
     'my.addSubmit': 'Přidat',
@@ -118,10 +115,8 @@ const I18N = {
   },
 
   en: {
-    'hero.tag': 'Free · no sign-up · HTTPS',
     'hero.title1': 'Your site online',
     'hero.title2': 'in one drop.',
-    'hero.text': 'Drop your website folder and within seconds it runs on its own address. Every site gets a password, so nobody else can overwrite it.',
     'name.inline': 'the name is optional',
     'how.title': 'A folder with index.html is all you need.',
     'how.text': 'HTML, CSS, JavaScript, images and subfolders are published as they are. Clean URLs without .html and a custom 404 page just work.',
@@ -173,7 +168,6 @@ const I18N = {
 
     'my.title': 'My sites',
     'my.add': 'Add existing site',
-    'my.intro': 'Passwords are stored only in this browser. On another device, add a site with its name and password.',
     'my.namePlaceholder': 'Site name',
     'my.pwPlaceholder': 'Site password',
     'my.addSubmit': 'Add',
