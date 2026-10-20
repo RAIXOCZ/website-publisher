@@ -275,11 +275,13 @@ input:focus { border-color: var(--teal-2); box-shadow: 0 0 0 4px var(--ring); }
   font: 600 17px/1 var(--mono);
   color: var(--violet);
   background: var(--violet-soft);
-  border: 1px dashed transparent;
+  border: 1.5px dashed color-mix(in srgb, var(--violet) 55%, transparent);
   border-radius: 8px;
+  cursor: text;
 }
 .address input::placeholder { color: var(--violet); opacity: 0.45; }
-.address input:focus { box-shadow: none; border-color: var(--violet); background: var(--violet-soft); }
+.address input:hover { border-color: var(--violet); }
+.address input:focus { border-style: solid; border-color: var(--violet); background: var(--violet-soft); box-shadow: 0 0 0 3px var(--violet-soft); }
 
 .panel { padding: 22px; border-radius: var(--r-lg); display: flex; flex-direction: column; gap: 16px; }
 
