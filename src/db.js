@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT NOT NULL,
   first_name TEXT NOT NULL DEFAULT '',
   last_name TEXT NOT NULL DEFAULT '',
+  is_admin INTEGER NOT NULL DEFAULT 0,  -- the ADMIN_EMAIL account
   created_at TEXT NOT NULL,
   created_ip TEXT,
   deleted_at TEXT,
@@ -106,6 +107,9 @@ function open() {
   db = new DatabaseSync(config.DB_FILE);
   db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
   db.exec(SCHEMA);
+  // Columns added after the first release.
+  const userColumns = db.prepare('PRAGMA table_info(users)').all().map((c) => c.name);
+  if (!userColumns.includes('is_admin')) db.exec('ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0');
   return db;
 }
 

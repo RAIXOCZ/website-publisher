@@ -5,10 +5,12 @@ let config;
 
 async function init() {
   config = await api('/config');
-  $('#login').hidden = config.authed;
-  $('#panel').hidden = !config.authed;
-  $('#nav').hidden = !config.authed;
-  if (config.authed) await load();
+  $('#login').hidden = Boolean(config.user);
+  $('#forbidden').hidden = !config.user || config.admin;
+  $('#panel').hidden = !config.admin;
+  $('#nav').hidden = !config.admin;
+  if (config.user && !config.admin) $('#forbidden-text').textContent = t('admin.forbiddenText', { email: config.user.email });
+  if (config.admin) await load();
 }
 
 async function load() {
@@ -19,7 +21,7 @@ async function load() {
     data.whitelist = whitelist.ips;
     data.yourIp = whitelist.yourIp;
   } catch (err) {
-    if (err.status === 401) return init();
+    if (err.status === 401 || err.status === 403) return init();
     throw err;
   }
   render();
@@ -147,8 +149,12 @@ function renderUsers() {
       $('td:nth-child(2) code', tr).textContent = user.createdIp || '';
       cell(tr, 2).textContent = user.deletedSites ? `${user.sites} (+${user.deletedSites} ${t('admin.deletedShort')})` : String(user.sites);
       const actions = [button(t('admin.history'), 'audit'), button(t('admin.sites'), 'sites')];
-      if (!user.deletedAt) actions.push(button(t('row.delete'), 'delete', 'btn-danger'));
-      actions.push(button(t('admin.purge'), 'purge', 'btn-danger'));
+      if (user.isAdmin) {
+        $('b', tr).insertAdjacentHTML('afterend', ` <span class="chip">${t('admin.adminChip')}</span>`);
+      } else {
+        if (!user.deletedAt) actions.push(button(t('row.delete'), 'delete', 'btn-danger'));
+        actions.push(button(t('admin.purge'), 'purge', 'btn-danger'));
+      }
       cell(tr, 3).innerHTML = actions.join('');
       return tr;
     }),
@@ -270,7 +276,8 @@ $('#show-deleted-sites').addEventListener('change', renderSites);
 $('#show-deleted-users').addEventListener('change', renderUsers);
 
 $('#logout').addEventListener('click', logout);
-setupLogin($('#login form'), init);
+$('#switch-account').addEventListener('click', logout);
+setupEmailLogin($('#login-form'));
 
 init().catch((err) => {
   document.querySelector('main').textContent = t('err.load', { message: err.message });

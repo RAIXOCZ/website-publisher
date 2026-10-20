@@ -12,12 +12,6 @@ function int(value, fallback) {
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
-if (!ADMIN_PASSWORD) {
-  console.error('ADMIN_PASSWORD is not set. Put it in your .env file.');
-  process.exit(1);
-}
-
 const PUBLIC_URL = (process.env.PUBLIC_URL || 'http://localhost:3000').replace(/\/+$/, '');
 const publicUrl = new URL(PUBLIC_URL);
 
@@ -28,7 +22,6 @@ const SITE_DOMAIN = (process.env.SITE_DOMAIN || '').trim().toLowerCase().replace
 const DATA_DIR = path.resolve(process.env.DATA_DIR || '/data');
 
 module.exports = {
-  ADMIN_PASSWORD,
   PORT: int(process.env.PORT, 3000),
   DATA_DIR,
   SITES_DIR: path.join(DATA_DIR, 'sites'),
@@ -45,19 +38,18 @@ module.exports = {
   SITE_DOMAIN,
   // Publishing is open to everyone; this caps uploads per IP address.
   PUBLISH_PER_HOUR: int(process.env.PUBLISH_PER_HOUR, 60),
-  // Wrong admin/site passwords allowed per IP per 15 minutes.
+  // Wrong site passwords allowed per IP per 15 minutes.
   MAX_FAILED_ATTEMPTS: int(process.env.MAX_FAILED_ATTEMPTS, 10),
   PATH_SANDBOX: bool(process.env.PATH_SANDBOX, true),
   // Cloudflare rejects request bodies over 100 MB on Free/Pro plans.
   MAX_UPLOAD_MB: int(process.env.MAX_UPLOAD_MB, 100),
   MAX_FILES: int(process.env.MAX_FILES, 20000),
-  SESSION_DAYS: int(process.env.SESSION_DAYS, 30),
-  SESSION_SECRET: process.env.SESSION_SECRET || '',
   // Sent as a Report-Abuse header with every response, including published sites.
-  ABUSE_EMAIL: 'martin@balcar.me',
+  ABUSE_EMAIL: 'martin@freepages.dev',
 
-  // Sites that existed before accounts are assigned to this account.
-  ADMIN_EMAIL: (process.env.ADMIN_EMAIL || 'martin@balcar.me').trim().toLowerCase(),
+  // The administrator's account (signs in by e-mail link like everyone else).
+  // Sites that existed before accounts are assigned to it.
+  ADMIN_EMAIL: (process.env.ADMIN_EMAIL || 'martin@freepages.dev').trim().toLowerCase(),
   ADMIN_FIRST_NAME: process.env.ADMIN_FIRST_NAME || 'Martin',
   ADMIN_LAST_NAME: process.env.ADMIN_LAST_NAME || 'Balcar',
 

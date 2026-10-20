@@ -23,6 +23,9 @@ async function load() {
   $('#profile').firstName.value = user.firstName;
   $('#profile').lastName.value = user.lastName;
   $('#delete-text').textContent = t('account.deleteText', { days: config.retentionDays, contact: config.contact });
+  $('#admin-link').hidden = !config.admin;
+  $('#delete-account').hidden = user.isAdmin;
+  $('#delete-admin').hidden = !user.isAdmin;
   $('#curl-example').textContent = curlExample();
   renderSites(sites);
   renderTokens(tokens);

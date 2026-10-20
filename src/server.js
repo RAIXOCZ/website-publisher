@@ -129,7 +129,7 @@ async function sendMail(req, { to, kind, params, userId = null }) {
 // Whether this request may change `site`: its owner, the admin, or (for
 // password sites) whoever knows the password.
 function canManage(req, site, password) {
-  if (auth.isAuthed(req)) return true;
+  if (accounts.isAdmin(req)) return true;
   const user = accounts.currentUser(req);
   if (user && site.user_id === user.id) return true;
   return sites.checkSitePassword(site, password);
@@ -143,7 +143,7 @@ function requireUser(req, res, next) {
 api.get('/config', (req, res) => {
   const user = accounts.currentUser(req);
   res.json({
-    authed: auth.isAuthed(req),
+    admin: accounts.isAdmin(req),
     user: accounts.publicUser(user),
     whitelisted: accounts.isWhitelisted(ipOf(req)),
     maxUploadMb: config.MAX_UPLOAD_MB,
@@ -152,23 +152,6 @@ api.get('/config', (req, res) => {
     retentionDays: config.RETENTION_DAYS,
     contact: config.ABUSE_EMAIL,
   });
-});
-
-/* ---------- admin login (password from .env) ---------- */
-
-api.post('/login', json, (req, res) => {
-  if (auth.tooManyAttempts(req)) return fail(req, res, 429, 'tooManyAttempts');
-  if (!auth.checkPassword(req.body?.password)) {
-    auth.recordFailure(req);
-    return fail(req, res, 401, 'wrongPassword');
-  }
-  auth.setSession(res);
-  res.json({ ok: true });
-});
-
-api.post('/logout', (req, res) => {
-  auth.clearSession(res);
-  res.json({ ok: true });
 });
 
 /* ---------- user sign-in by e-mail link ---------- */
@@ -267,6 +250,7 @@ api.post('/me/tokens/:id/revoke', requireUser, (req, res) => {
 // Deleting an account needs a click in an e-mail.
 api.post('/me/delete', requireUser, async (req, res) => {
   const user = accounts.currentUser(req);
+  if (user.is_admin) return fail(req, res, 400, 'adminAccount');
   if (!emailAllowed(`ip:${ipOf(req)}`, `to:${user.email}`)) return fail(req, res, 429, 'tooManyEmails');
   const token = accounts.createEmailToken({ purpose: 'delete-account', email: user.email, userId: user.id, ip: ipOf(req), minutes: config.LINK_MINUTES });
   accounts.audit('account.delete_requested', { userId: user.id, ip: ipOf(req) });
@@ -306,7 +290,7 @@ api.get('/check-name', (req, res) => {
 api.post('/sites', async (req, res) => {
   const ip = ipOf(req);
   const user = accounts.currentUser(req);
-  const isAdmin = auth.isAuthed(req);
+  const isAdmin = accounts.isAdmin(req);
   if (!user && !isAdmin) {
     if (auth.tooManyAttempts(req)) return fail(req, res, 429, 'tooManyAttempts');
     if (!auth.publishAllowed(req)) return fail(req, res, 429, 'tooManyUploads');
@@ -397,7 +381,7 @@ api.post('/sites/:name/delete', json, async (req, res) => {
     return fail(req, res, 403, site.password_hash ? 'wrongSitePassword' : 'notYourSite');
   }
   const user = accounts.currentUser(req);
-  const byAdmin = auth.isAuthed(req) && !(user && site.user_id === user.id) && !sites.checkSitePassword(site, req.body?.password);
+  const byAdmin = accounts.isAdmin(req) && !(user && site.user_id === user.id) && !sites.checkSitePassword(site, req.body?.password);
   await sites.softDelete(site, { by: byAdmin ? 'admin' : 'owner', ip: ipOf(req) });
   console.log(`deleted ${site.name}`);
   res.json({ ok: true, retentionDays: config.RETENTION_DAYS });
@@ -408,7 +392,7 @@ api.post('/sites/:name/rename', json, async (req, res) => {
   if (!site) return fail(req, res, 404, 'siteNotFound');
   const user = accounts.currentUser(req);
   const isOwner = user && site.user_id === user.id;
-  if (!isOwner && !auth.isAuthed(req)) return fail(req, res, 403, 'notYourSite');
+  if (!isOwner && !accounts.isAdmin(req)) return fail(req, res, 403, 'notYourSite');
   res.json(await sites.rename(site, req.body?.name, { ip: ipOf(req), by: isOwner ? 'owner' : 'admin' }));
 });
 
@@ -430,7 +414,10 @@ api.post('/my-sites', json, (req, res) => {
 /* ---------- admin ---------- */
 
 const admin = express.Router();
-admin.use(auth.requireAuth, json);
+admin.use((req, res, next) => {
+  if (accounts.isAdmin(req)) return next();
+  fail(req, res, accounts.currentUser(req) ? 403 : 401, 'adminRequired');
+}, json);
 const adminSite = (req, res) => {
   const site = sites.siteById(Number(req.params.id));
   if (!site) fail(req, res, 404, 'siteNotFound');
@@ -479,12 +466,14 @@ admin.get('/users/:id/audit', (req, res) => {
 admin.post('/users/:id/delete', async (req, res) => {
   const user = adminUser(req, res);
   if (!user) return;
+  if (user.is_admin) return fail(req, res, 400, 'adminAccount');
   await accounts.deleteUser(user.id, { by: 'admin', ip: ipOf(req) });
   res.json({ ok: true });
 });
 admin.post('/users/:id/purge', async (req, res) => {
   const user = adminUser(req, res);
   if (!user) return;
+  if (user.is_admin) return fail(req, res, 400, 'adminAccount');
   await accounts.purgeUser(user.id);
   console.log(`purged account ${user.id} on request`);
   res.json({ ok: true });

@@ -96,8 +96,6 @@ const I18N = {
     'prompt.copy': 'Zkopírujte:',
 
     'admin.loginTitle': 'Přihlášení do správy',
-    'admin.passwordPlaceholder': 'Heslo',
-    'admin.login': 'Přihlásit',
     'admin.h1': 'Weby',
     'admin.lead': 'Všechny zveřejněné weby. Jako správce můžete kterýkoli web nahradit, přejmenovat, smazat nebo mu vygenerovat nové heslo.',
     'admin.filter': 'Hledat weby…',
@@ -168,6 +166,13 @@ const I18N = {
     'identity.first': 'Jméno',
     'identity.last': 'Příjmení',
     'identity.remember': 'Zapamatovat si mé údaje v tomto prohlížeči',
+    'admin.loginText': 'Správa je dostupná jen pro účet správce. Přihlaste se e-mailem správce, pošleme vám odkaz.',
+    'admin.forbiddenTitle': 'Jen pro správce',
+    'admin.forbiddenText': 'Jste přihlášeni jako {email}. Tento účet nemá přístup ke správě.',
+    'admin.switchAccount': 'Odhlásit a přihlásit jinak',
+    'admin.adminChip': 'správce',
+    'account.admin': 'Správa',
+    'account.deleteAdmin': 'Účet správce nelze smazat. Správce se mění proměnnou ADMIN_EMAIL.',
     'overwrite.titleOne': 'Přepsat soubor?',
     'overwrite.title': 'Přepsat soubory?',
     'overwrite.textOne': 'Soubor {name} už ve webu je. Nový ho nahradí.',
@@ -208,7 +213,7 @@ const I18N = {
     'account.sitesEmpty': 'Zatím nemáte žádné weby. <a href="/">Zveřejnit první →</a>',
     'account.profile': 'Osobní údaje',
     'account.save': 'Uložit',
-    'account.emailNote': 'E-mail nelze změnit. Pokud ho potřebujete změnit, napište na martin@balcar.me.',
+    'account.emailNote': 'E-mail nelze změnit. Pokud ho potřebujete změnit, napište na martin@freepages.dev.',
     'account.cli': 'Příkazová řádka (API tokeny)',
     'account.cliText': 'S tokenem můžete zveřejňovat a aktualizovat weby přes curl, například ze skriptu nebo CI. Token je jako heslo – nikomu ho nedávejte.',
     'account.tokenName': 'Název tokenu, např. notebook',
@@ -268,7 +273,7 @@ const I18N = {
     'confirm.publishText': 'Kliknutím potvrdíte svůj e-mail a web {name} bude online. Pokud ještě nemáte účet, vytvoří se a přijímáte podmínky použití.',
     'confirm.publishButton': 'Potvrdit a zveřejnit',
     'confirm.deleteTitle': 'Smazat účet',
-    'confirm.deleteText': 'Po smazání přestanou být vaše weby veřejné a nebudete se moci přihlásit. Data uchováváme ještě 90 dní kvůli řešení zneužití, okamžité smazání na martin@balcar.me.',
+    'confirm.deleteText': 'Po smazání přestanou být vaše weby veřejné a nebudete se moci přihlásit. Data uchováváme ještě 90 dní kvůli řešení zneužití, okamžité smazání na martin@freepages.dev.',
     'confirm.deleteButton': 'Smazat účet',
 
     'admin.h1': 'Správa',
@@ -403,8 +408,6 @@ const I18N = {
     'prompt.copy': 'Copy:',
 
     'admin.loginTitle': 'Admin login',
-    'admin.passwordPlaceholder': 'Password',
-    'admin.login': 'Log in',
     'admin.h1': 'Sites',
     'admin.lead': 'All published sites. As the admin you can replace, rename or delete any site, or generate a new password for it.',
     'admin.filter': 'Filter sites…',
@@ -475,6 +478,13 @@ const I18N = {
     'identity.first': 'First name',
     'identity.last': 'Last name',
     'identity.remember': 'Remember my details in this browser',
+    'admin.loginText': 'The admin area is only for the administrator account. Sign in with the administrator e-mail and we will send you a link.',
+    'admin.forbiddenTitle': 'Administrator only',
+    'admin.forbiddenText': 'You are signed in as {email}. This account has no access to the admin area.',
+    'admin.switchAccount': 'Sign out and use another account',
+    'admin.adminChip': 'admin',
+    'account.admin': 'Admin',
+    'account.deleteAdmin': 'The administrator account cannot be deleted. The administrator is set with the ADMIN_EMAIL variable.',
     'overwrite.titleOne': 'Overwrite file?',
     'overwrite.title': 'Overwrite files?',
     'overwrite.textOne': '{name} is already in the site. The new file will replace it.',
@@ -515,7 +525,7 @@ const I18N = {
     'account.sitesEmpty': 'You have no sites yet. <a href="/">Publish your first →</a>',
     'account.profile': 'Personal details',
     'account.save': 'Save',
-    'account.emailNote': 'The e-mail address cannot be changed here. If you need to change it, write to martin@balcar.me.',
+    'account.emailNote': 'The e-mail address cannot be changed here. If you need to change it, write to martin@freepages.dev.',
     'account.cli': 'Command line (API tokens)',
     'account.cliText': 'With a token you can publish and update sites using curl, e.g. from a script or CI. Treat it like a password.',
     'account.tokenName': 'Token name, e.g. laptop',
@@ -575,7 +585,7 @@ const I18N = {
     'confirm.publishText': 'Click to confirm your e-mail and {name} goes live. If you have no account yet, one is created and you accept the terms of use.',
     'confirm.publishButton': 'Confirm and publish',
     'confirm.deleteTitle': 'Delete account',
-    'confirm.deleteText': 'After deletion your sites are no longer public and you cannot sign in. Data is kept for 90 more days to deal with abuse; for immediate deletion write to martin@balcar.me.',
+    'confirm.deleteText': 'After deletion your sites are no longer public and you cannot sign in. Data is kept for 90 more days to deal with abuse; for immediate deletion write to martin@freepages.dev.',
     'confirm.deleteButton': 'Delete account',
 
     'admin.h1': 'Admin',
@@ -690,5 +700,5 @@ for (const el of document.querySelectorAll('[data-brand]')) {
 }
 
 for (const link of document.querySelectorAll('.abuse-link')) {
-  link.href = `mailto:martin@balcar.me?subject=${encodeURIComponent(t('footer.abuseSubject', { host: location.host }))}`;
+  link.href = `mailto:martin@freepages.dev?subject=${encodeURIComponent(t('footer.abuseSubject', { host: location.host }))}`;
 }

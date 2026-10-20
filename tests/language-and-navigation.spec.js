@@ -86,8 +86,8 @@ for (const path of ['/', '/docs', '/admin']) {
     await expect(footer.locator('a', { hasText: 'Martin Balcar' })).toHaveAttribute('href', 'https://martin-balcar.cz');
     await expect(footer).toContainText('Nahlásit zneužití');
     const abuse = footer.locator('a.abuse-link');
-    await expect(abuse).toHaveText('martin@balcar.me');
-    await expect(abuse).toHaveAttribute('href', /^mailto:martin@balcar\.me\?subject=Nahl%C3%A1%C5%A1en%C3%AD%20zneu%C5%BEit%C3%AD/);
+    await expect(abuse).toHaveText('martin@freepages.dev');
+    await expect(abuse).toHaveAttribute('href', /^mailto:martin@freepages\.dev\?subject=Nahl%C3%A1%C5%A1en%C3%AD%20zneu%C5%BEit%C3%AD/);
   });
 }
 

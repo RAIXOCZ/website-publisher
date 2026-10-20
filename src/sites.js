@@ -548,10 +548,7 @@ async function migrateLegacy() {
   const dirs = (await fsp.readdir(config.SITES_DIR, { withFileTypes: true })).filter((e) => e.isDirectory() && NAME_RE.test(e.name));
   const missing = dirs.filter((e) => !exists(e.name));
   if (!missing.length) return;
-  let admin = accounts.activeUserByEmail(config.ADMIN_EMAIL);
-  if (!admin) {
-    admin = accounts.createUser({ email: config.ADMIN_EMAIL, firstName: config.ADMIN_FIRST_NAME, lastName: config.ADMIN_LAST_NAME, ip: null });
-  }
+  const admin = accounts.ensureAdmin();
   for (const entry of missing) {
     let meta = {};
     try {
@@ -575,6 +572,7 @@ async function init() {
   for (const dir of [config.SITES_DIR, config.TRASH_DIR, config.PENDING_DIR, config.PREVIEWS_DIR]) await fsp.mkdir(dir, { recursive: true });
   await fsp.rm(config.TMP_DIR, { recursive: true, force: true });
   await fsp.mkdir(config.TMP_DIR, { recursive: true });
+  accounts.ensureAdmin();
   await migrateLegacy();
 }
 

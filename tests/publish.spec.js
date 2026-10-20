@@ -244,7 +244,7 @@ test.describe('signed in', () => {
     await expect(page.locator('.toast')).toHaveText(`Web ${name} byl smazán`);
     expect(dialogs[0].message).toContain(name);
     expect(dialogs[0].message).toContain('90 dní');
-    expect(dialogs[0].message).toContain('martin@balcar.me');
+    expect(dialogs[0].message).toContain('martin@freepages.dev');
     expect((await request.get(`/${name}/`)).status()).toBe(404);
   });
 });

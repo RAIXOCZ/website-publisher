@@ -100,31 +100,9 @@ async function copy(text, message = t('toast.linkCopied')) {
   }
 }
 
-// Wires up a login form; calls onSuccess after a correct password.
-function setupLogin(form, onSuccess) {
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const button = $('button', form);
-    const error = $('.alert', form);
-    button.disabled = true;
-    error.hidden = true;
-    try {
-      await api('/login', { method: 'POST', json: { password: form.password.value } });
-      form.password.value = '';
-      onSuccess();
-    } catch (err) {
-      error.textContent = err.message;
-      error.hidden = false;
-      form.password.select();
-    } finally {
-      button.disabled = false;
-    }
-  });
-}
-
 async function logout(e) {
   e?.preventDefault();
-  await api('/logout', { method: 'POST' });
+  await api('/auth/logout', { method: 'POST' });
   location.reload();
 }
 

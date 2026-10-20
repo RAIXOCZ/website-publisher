@@ -7,7 +7,7 @@ Drop a folder, get a website. A small self-hosted static site publisher with a C
 - **Editing**: an existing site opens in the same file tree; replace single files, a folder or everything, add and remove, preview, save (atomic swap).
 - **Account page** (`/ucet`): sites, name, API tokens for curl/CI, activity history (with IPs, without e-mails), account deletion confirmed by e-mail.
 - **CLI**: `curl -H "Authorization: Bearer fp_…" -F name=my-site -F overwrite=1 -F f=@site.zip https://freepages.dev/api/sites`.
-- **Admin panel** (`/admin`, not linked anywhere, behind `ADMIN_PASSWORD`): all sites with owners, users, activity history with IPs and e-mails, rename/edit/delete/purge sites and accounts, IP whitelist.
+- **Admin panel** (`/admin`, not linked anywhere, only for the `ADMIN_EMAIL` account, which signs in by e-mail link like everyone else): all sites with owners, users, activity history with IPs and e-mails, rename/edit/delete/purge sites and accounts, IP whitelist.
 - **Retention**: deleted sites and accounts stop being public immediately and are purged automatically after 90 days (`RETENTION_DAYS`); the admin can purge at once. Activity history is capped at 12 months (`AUDIT_DAYS`).
 - **IP whitelist**: from whitelisted IPs (`IP_WHITELIST` or the admin panel) publishing works without an account, with per-site passwords remembered in the browser (the original mode).
 - **Guide** (`/docs`), **terms** (`/podminky`) and **privacy policy** (`/soukromi`).
@@ -22,11 +22,11 @@ There are two compose files:
 - `docker-compose.local.yml` is for plain Docker. It publishes port `HOST_PORT` (default 3000):
 
 ```bash
-cp .env.example .env        # set ADMIN_PASSWORD (and PUBLIC_URL / SITE_DOMAIN)
+cp .env.example .env        # set RESEND_API_KEY (and ADMIN_EMAIL, PUBLIC_URL / SITE_DOMAIN)
 docker compose -f docker-compose.local.yml up -d --build
 ```
 
-Open http://localhost:3000 and drop a folder. The admin panel is at http://localhost:3000/admin.
+Open http://localhost:3000 and drop a folder. The admin panel is at http://localhost:3000/admin; sign in there with `ADMIN_EMAIL` (in development the link is printed to the console).
 
 Data lives in the `publisher-data` volume:
 
@@ -36,7 +36,6 @@ Data lives in the `publisher-data` volume:
 /data/trash/            deleted sites, kept until purged
 /data/pending/          uploads waiting for e-mail confirmation (24 h)
 /data/previews/         5-minute previews
-/data/.session-secret
 ```
 
 Back up that volume and you have backed up everything. The privacy policy promises that backups are kept for at most 30 days, so rotate them accordingly.
@@ -47,10 +46,9 @@ Sites that existed before accounts were introduced are moved to the `ADMIN_EMAIL
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `ADMIN_PASSWORD` | required | Password for `/admin`. Changing it logs the admin out. |
 | `RESEND_API_KEY` | empty | API key of [Resend](https://resend.com) (free tier: 3,000 e-mails a month). Without it no e-mails are sent, so nobody outside the IP whitelist can publish or sign in. |
 | `MAIL_FROM` | `Freepages <noreply@SITE_DOMAIN>` | Sender; must be on a domain verified in Resend. |
-| `ADMIN_EMAIL` | `martin@balcar.me` | Account that receives the sites published before accounts existed. |
+| `ADMIN_EMAIL` | `martin@freepages.dev` | The administrator account (name from `ADMIN_FIRST_NAME`/`ADMIN_LAST_NAME`, default Martin Balcar). Created on start; it signs in to `/admin` by e-mail link and owns the sites published before accounts existed. Changing it moves the admin role (and, if the new address has no account yet, the old admin account) to the new address. API tokens never get admin rights. |
 | `IP_WHITELIST` | empty | Comma-separated IPs that may publish without an account (password sites). More can be added in `/admin`. |
 | `RETENTION_DAYS` | `90` | How long deleted sites and accounts are kept before they are purged. |
 | `AUDIT_DAYS` | `365` | Activity history entries are deleted after this. |
@@ -102,7 +100,7 @@ Point the tunnel's public hostnames at `http://publisher:3000`.
 ## Deploying on Dokploy
 
 1. Create a **Compose** service from this repo. Keep the default **Compose Path** (`./docker-compose.yml`). No host port is published, so it can't clash with other apps.
-2. In **Environment** set `ADMIN_PASSWORD`, `PUBLIC_URL=https://freepages.dev`, `SITE_DOMAIN=freepages.dev`.
+2. In **Environment** set `RESEND_API_KEY`, `PUBLIC_URL=https://freepages.dev`, `SITE_DOMAIN=freepages.dev` (and `ADMIN_EMAIL` if it is not `martin@freepages.dev`). Without a working Resend key nobody can sign in, the admin included.
 3. Deploy. Routing is done by the Traefik labels in the compose file, not the Domains tab, because they include the wildcard rule:
    ```
    Host(`freepages.dev`) || HostRegexp(`^[a-z0-9-]+\.freepages\.dev$`)
@@ -115,17 +113,17 @@ Point the tunnel's public hostnames at `http://publisher:3000`.
 - Uploaded sites can contain arbitrary JavaScript. With subdomains each site has its own origin, so it is isolated from the admin panel. In path mode, sites share the admin's origin, so they are served with a CSP `sandbox` (opaque origin). Their scripts can't use your session, but they also can't use `localStorage` or cookies. Prefer subdomain mode if your sites need those.
 - Publishing needs a confirmed e-mail address, and every account, upload, edit, sign-in and e-mail is logged with its IP address (visible in `/admin`). Uploads and e-mails are capped per IP per hour.
 - E-mail links, sessions and API tokens are random 192-bit values stored only as SHA-256 hashes. E-mail links are used up by a button click on `/email/<token>`, not by opening the link, so mail scanners can't consume them.
-- Site passwords (whitelist mode) are generated by the server (about 60 random bits) and stored only as salted hashes. Wrong site or admin passwords count towards the same per-IP lockout.
-- State-changing API calls require a custom header plus a matching `Origin` (requests with an `Authorization: Bearer` token are exempt: they carry no cookies). The admin cookie is `HttpOnly; SameSite=Strict`, the user cookie `HttpOnly; SameSite=Lax`.
+- Site passwords (whitelist mode) are generated by the server (about 60 random bits) and stored only as salted hashes. Wrong site passwords are rate-limited per IP.
+- State-changing API calls require a custom header plus a matching `Origin` (requests with an `Authorization: Bearer` token are exempt: they carry no cookies). The session cookie is `HttpOnly; SameSite=Lax`; admin rights come only with that cookie, never with an API token.
 - Wrong passwords are rate-limited to `MAX_FAILED_ATTEMPTS` (default 10) per IP per 15 minutes.
-- Every response, including published sites, carries a `Report-Abuse: martin@balcar.me` header, and every page links to abuse reports in the footer.
+- Every response, including published sites, carries a `Report-Abuse: martin@freepages.dev` header, and every page links to abuse reports in the footer.
 - Upload paths are sanitized (`..` is rejected), zip extraction counts uncompressed bytes against the limit, and a publish swaps directories atomically.
 
 ## Development
 
 ```bash
 npm install
-npm run dev     # ADMIN_PASSWORD=dev, data in ./data, http://localhost:3000
+npm run dev     # data in ./data, http://localhost:3000
                 # e-mails are printed to the console instead of being sent
 ```
 

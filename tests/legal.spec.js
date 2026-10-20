@@ -13,7 +13,7 @@ for (const p of PAGES) {
     await expect(page.locator('[data-lang=cs] h1')).toHaveText(p.csTitle);
     await expect(page.locator('[data-lang=en]')).toBeHidden();
     await expect(page.locator('[data-lang=cs]')).toContainText('IČO 21753580');
-    await expect(page.locator('[data-lang=cs]')).toContainText('martin@balcar.me');
+    await expect(page.locator('[data-lang=cs]')).toContainText('martin@freepages.dev');
 
     await page.locator('[data-set-lang=en]').click();
     await expect(page.locator('[data-lang=en] h1')).toHaveText(p.enTitle);

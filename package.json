@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "start": "node --disable-warning=ExperimentalWarning src/server.js",
-    "dev": "ADMIN_PASSWORD=dev DATA_DIR=./data MAIL_DEV_OUTBOX=1 node --disable-warning=ExperimentalWarning --watch src/server.js",
+    "dev": "DATA_DIR=./data MAIL_DEV_OUTBOX=1 node --disable-warning=ExperimentalWarning --watch src/server.js",
     "test": "playwright test"
   },
   "engines": {

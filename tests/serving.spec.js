@@ -22,7 +22,7 @@ test.describe('path-style sites (localhost:4317/<name>/)', () => {
   test('every response carries the Report-Abuse header', async ({ request }) => {
     for (const url of ['/', '/docs', '/admin', '/api/config', `/${name}/`, '/no-such-site/']) {
       const res = await request.get(url);
-      expect(res.headers()['report-abuse'], url).toBe('martin@balcar.me');
+      expect(res.headers()['report-abuse'], url).toBe('martin@freepages.dev');
     }
   });
 
@@ -41,7 +41,7 @@ test.describe('path-style sites (localhost:4317/<name>/)', () => {
   test('unknown sites return 404', async ({ request }) => {
     const res = await request.get('/no-such-site-xyz/');
     expect(res.status()).toBe(404);
-    expect(res.headers()['report-abuse']).toBe('martin@balcar.me');
+    expect(res.headers()['report-abuse']).toBe('martin@freepages.dev');
   });
 });
 
@@ -104,7 +104,7 @@ test.describe('subdomain sites (<name>.pub.test)', () => {
     const res = await get('/', `${name}.pub.test`);
     expect(res.status).toBe(200);
     expect(res.body).toContain('Subdomain site');
-    expect(res.headers['report-abuse']).toBe('martin@balcar.me');
+    expect(res.headers['report-abuse']).toBe('martin@freepages.dev');
     expect(res.headers['content-security-policy']).toBeUndefined();
   });
 
@@ -134,11 +134,11 @@ test.describe('subdomain sites (<name>.pub.test)', () => {
     expect(post.status).toBe(405);
   });
 
-  test('admin API rejects requests coming from a site origin', async () => {
-    const res = await get('/api/login', 'pub.test', {
+  test('the API rejects requests coming from a site origin', async () => {
+    const res = await get('/api/auth/login', 'pub.test', {
       method: 'POST',
       headers: { 'X-Requested-With': 'fetch', Origin: `http://${name}.pub.test`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: 'test-admin' }),
+      body: JSON.stringify({ email: 'martin@freepages.dev' }),
     });
     expect(res.status).toBe(403);
   });

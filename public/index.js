@@ -28,7 +28,7 @@ const els = {
 const signedIn = () => Boolean(state.config.user);
 // Publishing without an account is possible only from whitelisted IPs (site passwords).
 const passwordMode = () => !signedIn() && state.config.whitelisted;
-const needsIdentity = () => !signedIn() && !state.config.whitelisted && !state.config.authed;
+const needsIdentity = () => !signedIn() && !state.config.whitelisted;
 
 async function init() {
   state.config = await api('/config');

@@ -69,7 +69,32 @@ function createUser({ email, firstName, lastName, ip }) {
 }
 
 function publicUser(user) {
-  return user && { id: user.id, email: user.email, firstName: user.first_name, lastName: user.last_name, createdAt: user.created_at };
+  return user && { id: user.id, email: user.email, firstName: user.first_name, lastName: user.last_name, createdAt: user.created_at, isAdmin: Boolean(user.is_admin) };
+}
+
+// The account with ADMIN_EMAIL is the administrator. It is created on start;
+// if ADMIN_EMAIL changed and no account uses the new address yet, the
+// previous admin account (or the one created for migrated sites under the
+// old default address) moves to it, keeping its sites.
+const PREVIOUS_DEFAULT_ADMIN = 'martin@balcar.me';
+function ensureAdmin() {
+  let admin =
+    activeUserByEmail(config.ADMIN_EMAIL) ||
+    one('SELECT * FROM users WHERE is_admin = 1 AND deleted_at IS NULL') ||
+    one('SELECT * FROM users WHERE email = ? AND created_ip IS NULL AND deleted_at IS NULL', PREVIOUS_DEFAULT_ADMIN);
+  if (!admin) admin = createUser({ email: config.ADMIN_EMAIL, firstName: config.ADMIN_FIRST_NAME, lastName: config.ADMIN_LAST_NAME, ip: null });
+  transaction(() => {
+    run('UPDATE users SET is_admin = 0 WHERE is_admin = 1 AND id != ?', admin.id);
+    run('UPDATE users SET is_admin = 1, email = ? WHERE id = ?', config.ADMIN_EMAIL, admin.id);
+  });
+  if (admin.email !== config.ADMIN_EMAIL) console.log(`admin account moved from ${admin.email} to ${config.ADMIN_EMAIL}`);
+  return userById(admin.id);
+}
+
+// Admin rights come only with a browser session, never with an API token.
+function isAdmin(req) {
+  const user = currentUser(req);
+  return Boolean(user && user.is_admin && req._via === 'session');
 }
 
 function updateNames(user, { firstName, lastName }, ip) {
@@ -115,12 +140,14 @@ function currentUser(req) {
     if (row) {
       run('UPDATE api_tokens SET last_used_at = ? WHERE id = ?', now(), row.id);
       user = one('SELECT * FROM users WHERE id = ? AND deleted_at IS NULL', row.user_id);
+      req._via = 'token';
     }
   } else {
     const token = parseCookies(req.headers.cookie)[SESSION_COOKIE];
     if (token) {
       const row = one('SELECT * FROM sessions WHERE hash = ? AND expires_at > ?', sha256(token), now());
       if (row) user = one('SELECT * FROM users WHERE id = ? AND deleted_at IS NULL', row.user_id);
+      req._via = 'session';
     }
   }
   req._user = user;
@@ -212,7 +239,7 @@ function removeWhitelist(ip) {
 // erased after RETENTION_DAYS (or right away with purgeUser).
 async function deleteUser(userId, { by, ip }) {
   const user = userById(userId);
-  if (!user || user.deleted_at) return false;
+  if (!user || user.deleted_at || user.is_admin) return false;
   const sites = require('./sites');
   for (const site of all('SELECT * FROM sites WHERE user_id = ? AND deleted_at IS NULL', userId)) {
     await sites.softDelete(site, { by, ip });
@@ -229,7 +256,7 @@ async function deleteUser(userId, { by, ip }) {
 // Erases an account and everything linked to it for good.
 async function purgeUser(userId) {
   const user = userById(userId);
-  if (!user) return false;
+  if (!user || user.is_admin) return false;
   const sites = require('./sites');
   for (const site of all('SELECT * FROM sites WHERE user_id = ?', userId)) await sites.purgeSite(site);
   transaction(() => {
@@ -257,7 +284,7 @@ async function purgeUser(userId) {
 function listUsers() {
   return all(`
     SELECT u.id, u.email, u.first_name AS firstName, u.last_name AS lastName, u.created_at AS createdAt,
-           u.created_ip AS createdIp, u.deleted_at AS deletedAt, u.deleted_by AS deletedBy, u.purge_after AS purgeAfter,
+           u.created_ip AS createdIp, u.is_admin AS isAdmin, u.deleted_at AS deletedAt, u.deleted_by AS deletedBy, u.purge_after AS purgeAfter,
            (SELECT COUNT(*) FROM sites s WHERE s.user_id = u.id AND s.deleted_at IS NULL) AS sites,
            (SELECT COUNT(*) FROM sites s WHERE s.user_id = u.id AND s.deleted_at IS NOT NULL) AS deletedSites
     FROM users u ORDER BY u.id DESC`);
@@ -303,6 +330,8 @@ module.exports = {
   userById,
   createUser,
   publicUser,
+  ensureAdmin,
+  isAdmin,
   updateNames,
   startSession,
   endSession,

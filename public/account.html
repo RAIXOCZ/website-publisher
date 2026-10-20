@@ -44,7 +44,10 @@
             <h1 id="account-name"></h1>
             <p class="lead" id="account-email"></p>
           </div>
-          <button class="btn" id="logout" data-i18n="nav.logout">Odhlásit</button>
+          <div class="row">
+            <a class="btn" href="/admin" id="admin-link" hidden data-i18n="account.admin">Správa</a>
+            <button class="btn" id="logout" data-i18n="nav.logout">Odhlásit</button>
+          </div>
         </div>
 
         <section class="card glass">
@@ -97,6 +100,7 @@
           <h2 data-i18n="account.delete">Smazání účtu</h2>
           <p id="delete-text"></p>
           <div class="row"><button class="btn btn-danger" id="delete-account" data-i18n="account.deleteButton">Smazat účet</button></div>
+          <p class="muted small" id="delete-admin" hidden data-i18n="account.deleteAdmin">Účet správce nelze smazat. Správce se mění proměnnou ADMIN_EMAIL.</p>
           <div class="notice" id="delete-sent" hidden></div>
         </section>
       </div>
@@ -107,7 +111,7 @@
     <div class="wrap">
       <div class="footer-row">
         <p><span data-i18n="footer.by">Vytvořil</span> <a href="https://martin-balcar.cz" target="_blank" rel="noopener">Martin Balcar</a></p>
-        <p class="footer-links"><a href="/podminky" data-i18n="footer.terms">Podmínky</a> · <a href="/soukromi" data-i18n="footer.privacy">Soukromí</a> · <span data-i18n="footer.abuse">Nahlásit zneužití</span>: <a class="abuse-link" href="mailto:martin@balcar.me">martin@balcar.me</a></p>
+        <p class="footer-links"><a href="/podminky" data-i18n="footer.terms">Podmínky</a> · <a href="/soukromi" data-i18n="footer.privacy">Soukromí</a> · <span data-i18n="footer.abuse">Nahlásit zneužití</span>: <a class="abuse-link" href="mailto:martin@freepages.dev">martin@freepages.dev</a></p>
       </div>
     </div>
   </footer>

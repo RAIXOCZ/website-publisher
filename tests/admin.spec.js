@@ -1,11 +1,10 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { FIXTURES, ADMIN_PASSWORD, HEADERS, unique, pick, createAccount, publishViaApi, answerDialogs } = require('./helpers');
+const { FIXTURES, ADMIN_EMAIL, HEADERS, unique, pick, signIn, signInAsAdmin, createAccount, publishViaApi, answerDialogs, lastMail } = require('./helpers');
 
 async function login(page) {
+  await signInAsAdmin(page);
   await page.goto('/admin');
-  await page.locator('#login input[name=password]').fill(ADMIN_PASSWORD);
-  await page.locator('#login button[type=submit]').click();
   await expect(page.locator('#panel')).toBeVisible();
 }
 
@@ -20,23 +19,64 @@ async function ownedSite(playwright) {
 const siteRow = (page, name) => page.locator('#site-rows tr').filter({ has: page.locator('.site-name span', { hasText: new RegExp(`^${name}$`) }) });
 const userRow = (page, email) => page.locator('#user-rows tr').filter({ hasText: email });
 
-test('admin needs the admin password', async ({ page, request }) => {
+test('the admin area is only for the admin account, signed in by e-mail link', async ({ page, browser, request }) => {
   await page.goto('/admin');
   await expect(page.locator('#login')).toBeVisible();
+  await expect(page.locator('#login input[type=password]')).toHaveCount(0);
   await expect(page.locator('#panel')).toBeHidden();
   for (const url of ['/api/admin/sites', '/api/admin/users', '/api/admin/whitelist']) expect((await request.get(url)).status()).toBe(401);
 
-  await page.locator('#login input[name=password]').fill('not-the-password');
-  await page.locator('#login button[type=submit]').click();
-  await expect(page.locator('#login .alert')).toHaveText('Nesprávné heslo.');
+  // An ordinary account is turned away.
+  const other = await (await browser.newContext({ locale: 'cs-CZ' })).newPage();
+  const { email } = await signIn(other);
+  await other.goto('/admin');
+  await expect(other.locator('#forbidden')).toBeVisible();
+  await expect(other.locator('#forbidden-text')).toContainText(email);
+  expect((await other.request.get('/api/admin/users')).status()).toBe(403);
+  await other.context().close();
 
-  await page.locator('#login input[name=password]').fill(ADMIN_PASSWORD);
-  await page.locator('#login button[type=submit]').click();
+  // The admin signs in with an e-mail link from the admin page.
+  await page.locator('#login-form input[name=email]').fill(ADMIN_EMAIL);
+  await page.locator('#login-form button').click();
+  await expect(page.locator('#login .sent')).toContainText(ADMIN_EMAIL);
+  const mail = await lastMail(request, ADMIN_EMAIL, 'login');
+  await page.goto(new URL(mail.params.link).pathname);
+  await page.locator('#confirm-button').click();
+  await expect(page).toHaveURL('/ucet');
+  await expect(page.locator('#account-name')).toHaveText('Martin Balcar');
+  await expect(page.locator('#admin-link')).toBeVisible();
+  await expect(page.locator('#delete-account')).toBeHidden();
+  await expect(page.locator('#delete-admin')).toBeVisible();
+  await page.locator('#admin-link').click();
   await expect(page.locator('#panel')).toBeVisible();
   await expect(page.locator('#nav')).toBeVisible();
 });
 
-test('"Odhlásit" logs out', async ({ page }) => {
+test('admin rights never come with an API token, and the admin account cannot be deleted', async ({ page, playwright }) => {
+  await login(page);
+  const { token } = await (await page.request.post('/api/me/tokens', { headers: HEADERS, data: { name: 'admin-cli' } })).json();
+  const curl = await playwright.request.newContext({ baseURL: 'http://localhost:4317' });
+  const res = await curl.get('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } });
+  expect(res.status()).toBe(403);
+  await curl.dispose();
+
+  const { users } = await (await page.request.get('/api/admin/users')).json();
+  const admin = users.find((u) => u.email === ADMIN_EMAIL);
+  expect(admin.isAdmin).toBe(1);
+  expect(admin.firstName).toBe('Martin');
+  expect(admin.lastName).toBe('Balcar');
+  for (const action of ['delete', 'purge']) {
+    expect((await page.request.post(`/api/admin/users/${admin.id}/${action}`, { headers: HEADERS })).status()).toBe(400);
+  }
+  expect((await page.request.post('/api/me/delete', { headers: HEADERS })).status()).toBe(400);
+
+  await page.locator('[role=tab][data-tab=users]').click();
+  const row = page.locator('#user-rows tr').filter({ hasText: ADMIN_EMAIL });
+  await expect(row).toContainText('správce');
+  await expect(row.locator('[data-action=delete], [data-action=purge]')).toHaveCount(0);
+});
+
+test('"Odhlásit" signs out', async ({ page }) => {
   await login(page);
   await page.locator('#logout').click();
   await expect(page.locator('#login')).toBeVisible();
@@ -167,9 +207,8 @@ test('password sites can get a new password from the admin', async ({ page, play
   const created = await publishViaApi(wl, name, '<h1>pw</h1>', {}, { token: null });
   expect(created.body.password).toBeTruthy();
 
+  await signInAsAdmin(page, 'http://localhost:4319');
   await page.goto('http://localhost:4319/admin');
-  await page.locator('#login input[name=password]').fill(ADMIN_PASSWORD);
-  await page.locator('#login button[type=submit]').click();
   const row = siteRow(page, name);
   await expect(row).toContainText('bez účtu (heslo)');
   const dialogs = answerDialogs(page, [true, true]);

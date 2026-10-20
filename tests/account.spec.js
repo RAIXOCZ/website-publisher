@@ -137,7 +137,7 @@ test('deleting the account needs the e-mail link; data is kept but the e-mail ca
   const { email, site } = await signIn(page);
   await page.goto('/ucet');
   await expect(page.locator('#delete-text')).toContainText('90 dní');
-  await expect(page.locator('#delete-text')).toContainText('martin@balcar.me');
+  await expect(page.locator('#delete-text')).toContainText('martin@freepages.dev');
   answerDialogs(page, [true]);
   await page.locator('#delete-account').click();
   await expect(page.locator('#delete-sent')).toContainText(email);

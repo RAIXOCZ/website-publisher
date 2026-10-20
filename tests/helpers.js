@@ -10,7 +10,7 @@ const FIXTURES = {
   zip: path.join(__dirname, 'fixtures', 'zipped-site.zip'),
 };
 
-const ADMIN_PASSWORD = 'test-admin';
+const ADMIN_EMAIL = 'martin@freepages.dev';
 const PASSWORD_RE = /^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$/;
 const HEADERS = { 'X-Requested-With': 'fetch' };
 
@@ -74,6 +74,32 @@ async function createAccount(request, { email = uniqueEmail(), site = unique('fi
 
 const signIn = (page, options) => createAccount(page.request, options);
 
+/**
+ * Signs `request` in to an existing account with an e-mail link. Several
+ * tests may sign in as the admin at once, so a link someone else used up
+ * just means asking for a new one.
+ */
+async function signInByEmail(request, email, origin = '') {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const before = (await (await request.get(`${origin}/api/dev/outbox`)).json()).messages.length;
+    await request.post(`${origin}/api/auth/login`, { headers: HEADERS, data: { email } });
+    let token;
+    await expect
+      .poll(async () => {
+        const { messages } = await (await request.get(`${origin}/api/dev/outbox`)).json();
+        const mail = messages.slice(before).find((m) => m.to === email && m.kind === 'login');
+        token = mail?.params.link.split('/').pop();
+        return Boolean(token);
+      })
+      .toBe(true);
+    const res = await request.post(`${origin}/api/auth/consume`, { headers: HEADERS, data: { token } });
+    if (res.ok()) return;
+  }
+  throw new Error(`could not sign in as ${email}`);
+}
+
+const signInAsAdmin = (page, origin) => signInByEmail(page.request, ADMIN_EMAIL, origin);
+
 // An API token of a fresh account on the server at `baseURL` (cached per worker).
 const tokens = new Map();
 async function apiToken(baseURL = 'http://localhost:4317', extraHTTPHeaders = {}) {
@@ -123,7 +149,7 @@ async function clipboard(page) {
 
 module.exports = {
   FIXTURES,
-  ADMIN_PASSWORD,
+  ADMIN_EMAIL,
   PASSWORD_RE,
   HEADERS,
   unique,
@@ -135,6 +161,8 @@ module.exports = {
   mailToken,
   createAccount,
   signIn,
+  signInByEmail,
+  signInAsAdmin,
   apiToken,
   publishViaApi,
   answerDialogs,

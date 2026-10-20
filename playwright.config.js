@@ -6,7 +6,6 @@ const { defineConfig, devices } = require('@playwright/test');
 // one where this machine is on the IP whitelist (password sites, :4319).
 // E-mails are not sent; tests read them from /api/dev/outbox.
 const common = {
-  ADMIN_PASSWORD: 'test-admin',
   PUBLISH_PER_HOUR: '100000',
   MAX_FAILED_ATTEMPTS: '100000',
   EMAILS_PER_HOUR: '100000',

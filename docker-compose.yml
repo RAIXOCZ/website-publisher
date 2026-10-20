@@ -1,5 +1,5 @@
 # Docker Compose file for Dokploy (Compose service, default Compose Path).
-# Set ADMIN_PASSWORD and RESEND_API_KEY (and optionally PUBLIC_URL, SITE_DOMAIN,
+# Set RESEND_API_KEY (and optionally ADMIN_EMAIL, PUBLIC_URL, SITE_DOMAIN,
 # MAIL_FROM, IP_WHITELIST) in Dokploy's "Environment" tab. No ports are published on the host: Traefik reaches the
 # container over dokploy-network. For running without Dokploy see
 # docker-compose.local.yml.
@@ -16,14 +16,13 @@ services:
     build: .
     restart: unless-stopped
     environment:
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD}
       PUBLIC_URL: ${PUBLIC_URL:-https://freepages.dev}
       SITE_DOMAIN: ${SITE_DOMAIN:-freepages.dev}
       PUBLISH_PER_HOUR: ${PUBLISH_PER_HOUR:-60}
       MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-100}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       MAIL_FROM: ${MAIL_FROM:-}
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-martin@balcar.me}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-martin@freepages.dev}
       IP_WHITELIST: ${IP_WHITELIST:-}
     volumes:
       - publisher-data:/data

@@ -41,6 +41,8 @@ const MESSAGES = {
     notYourSite: 'Tento web nemůžete upravovat.',
     accountSite: 'Tento web patří k účtu, heslo nelze nastavit.',
     ipInvalid: 'Neplatná IP adresa.',
+    adminRequired: 'Tato část je jen pro správce.',
+    adminAccount: 'Účet správce nelze smazat.',
     previewExpired: 'Tento náhled vypršel. Náhledy platí jen několik minut.',
     siteExists: 'Web „{name}“ už existuje.',
     // Pages shown to visitors of published sites
@@ -87,6 +89,8 @@ const MESSAGES = {
     notYourSite: 'You cannot edit this site.',
     accountSite: 'This site belongs to an account; it has no password.',
     ipInvalid: 'Invalid IP address.',
+    adminRequired: 'This is for the administrator only.',
+    adminAccount: 'The administrator account cannot be deleted.',
     previewExpired: 'This preview has expired. Previews only last a few minutes.',
     siteExists: 'Site "{name}" already exists.',
     pageNotFoundTitle: 'Not found',
