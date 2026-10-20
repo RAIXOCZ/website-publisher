@@ -36,12 +36,29 @@ test('the admin area is only for the admin account, signed in by e-mail link', a
   await other.context().close();
 
   // The admin signs in with an e-mail link from the admin page.
-  await page.locator('#login-form input[name=email]').fill(ADMIN_EMAIL);
-  await page.locator('#login-form button').click();
-  await expect(page.locator('#login .sent')).toContainText(ADMIN_EMAIL);
-  const mail = await lastMail(request, ADMIN_EMAIL, 'login');
-  await page.goto(new URL(mail.params.link).pathname);
-  await page.locator('#confirm-button').click();
+  // Other tests sign in as the admin at the same time and may use up this
+  // link first; then ask for another one.
+  for (let attempt = 0; attempt < 10 && !page.url().endsWith('/ucet'); attempt++) {
+    if (attempt) await page.goto('/admin');
+    const before = (await (await request.get('/api/dev/outbox')).json()).messages.length;
+    await page.locator('#login-form input[name=email]').fill(ADMIN_EMAIL);
+    await page.locator('#login-form button').click();
+    await expect(page.locator('#login .sent')).toContainText(ADMIN_EMAIL);
+    let mail;
+    await expect
+      .poll(async () => {
+        const { messages } = await (await request.get('/api/dev/outbox')).json();
+        mail = messages.slice(before).find((m) => m.to === ADMIN_EMAIL && m.kind === 'login');
+        return Boolean(mail);
+      })
+      .toBe(true);
+    await page.goto(new URL(mail.params.link).pathname);
+    const button = page.locator('#confirm-button');
+    await expect(page.locator('#confirm-title')).not.toHaveText('Načítám…');
+    if (!(await button.isVisible())) continue;
+    await button.click();
+    await page.waitForURL(/\/ucet$/, { timeout: 3000 }).catch(() => {});
+  }
   await expect(page).toHaveURL('/ucet');
   await expect(page.locator('#account-name')).toHaveText('Martin Balcar');
   await expect(page.locator('#admin-link')).toBeVisible();

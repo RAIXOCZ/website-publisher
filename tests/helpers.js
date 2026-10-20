@@ -10,7 +10,7 @@ const FIXTURES = {
   zip: path.join(__dirname, 'fixtures', 'zipped-site.zip'),
 };
 
-const ADMIN_EMAIL = 'martin@freepages.dev';
+const ADMIN_EMAIL = 'martin@balcar.me';
 const PASSWORD_RE = /^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$/;
 const HEADERS = { 'X-Requested-With': 'fetch' };
 

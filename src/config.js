@@ -49,7 +49,7 @@ module.exports = {
 
   // The administrator's account (signs in by e-mail link like everyone else).
   // Sites that existed before accounts are assigned to it.
-  ADMIN_EMAIL: (process.env.ADMIN_EMAIL || 'martin@freepages.dev').trim().toLowerCase(),
+  ADMIN_EMAIL: (process.env.ADMIN_EMAIL || 'martin@balcar.me').trim().toLowerCase(),
   ADMIN_FIRST_NAME: process.env.ADMIN_FIRST_NAME || 'Martin',
   ADMIN_LAST_NAME: process.env.ADMIN_LAST_NAME || 'Balcar',
 

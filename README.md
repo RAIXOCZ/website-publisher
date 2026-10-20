@@ -48,7 +48,7 @@ Sites that existed before accounts were introduced are moved to the `ADMIN_EMAIL
 | --- | --- | --- |
 | `RESEND_API_KEY` | empty | API key of [Resend](https://resend.com) (free tier: 3,000 e-mails a month). Without it no e-mails are sent, so nobody outside the IP whitelist can publish or sign in. |
 | `MAIL_FROM` | `Freepages <noreply@SITE_DOMAIN>` | Sender; must be on a domain verified in Resend. |
-| `ADMIN_EMAIL` | `martin@freepages.dev` | The administrator account (name from `ADMIN_FIRST_NAME`/`ADMIN_LAST_NAME`, default Martin Balcar). Created on start; it signs in to `/admin` by e-mail link and owns the sites published before accounts existed. Changing it moves the admin role (and, if the new address has no account yet, the old admin account) to the new address. API tokens never get admin rights. |
+| `ADMIN_EMAIL` | `martin@balcar.me` | The administrator account (name from `ADMIN_FIRST_NAME`/`ADMIN_LAST_NAME`, default Martin Balcar). Created on start; it signs in to `/admin` by e-mail link and owns the sites published before accounts existed. Changing it moves the admin role (and, if the new address has no account yet, the old admin account) to the new address. API tokens never get admin rights. |
 | `IP_WHITELIST` | empty | Comma-separated IPs that may publish without an account (password sites). More can be added in `/admin`. |
 | `RETENTION_DAYS` | `90` | How long deleted sites and accounts are kept before they are purged. |
 | `AUDIT_DAYS` | `365` | Activity history entries are deleted after this. |
@@ -100,7 +100,7 @@ Point the tunnel's public hostnames at `http://publisher:3000`.
 ## Deploying on Dokploy
 
 1. Create a **Compose** service from this repo. Keep the default **Compose Path** (`./docker-compose.yml`). No host port is published, so it can't clash with other apps.
-2. In **Environment** set `RESEND_API_KEY`, `PUBLIC_URL=https://freepages.dev`, `SITE_DOMAIN=freepages.dev` (and `ADMIN_EMAIL` if it is not `martin@freepages.dev`). Without a working Resend key nobody can sign in, the admin included.
+2. In **Environment** set `RESEND_API_KEY`, `PUBLIC_URL=https://freepages.dev`, `SITE_DOMAIN=freepages.dev` (and `ADMIN_EMAIL` if it is not `martin@balcar.me`). Without a working Resend key nobody can sign in, the admin included.
 3. Deploy. Routing is done by the Traefik labels in the compose file, not the Domains tab, because they include the wildcard rule:
    ```
    Host(`freepages.dev`) || HostRegexp(`^[a-z0-9-]+\.freepages\.dev$`)
