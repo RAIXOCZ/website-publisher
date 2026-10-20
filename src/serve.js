@@ -5,7 +5,7 @@ const path = require('path');
 const config = require('./config');
 const sites = require('./sites');
 
-// Sites served from the admin's own origin (pub.raixo.org/<name>/) run in a
+// Sites served from the admin's own origin (PUBLIC_URL/<name>/) run in a
 // sandbox with an opaque origin, so their scripts cannot talk to the admin
 // API with your session. Subdomain sites are isolated by origin instead.
 const SANDBOX =

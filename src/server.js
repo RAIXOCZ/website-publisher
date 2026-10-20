@@ -110,7 +110,7 @@ api.post('/sites/:name/rename', auth.requireAuth, express.json({ limit: '10kb' }
 api.use((req, res) => res.status(404).json({ error: 'Nenalezeno' }));
 app.use('/api', api);
 
-// 3. pub.raixo.org/<name>/... → site (or redirect to its subdomain).
+// 3. <PUBLIC_URL>/<name>/... → site (or redirect to its subdomain).
 app.use((req, res, next) => {
   const match = /^\/([^/]+)(\/.*)?$/.exec(req.path);
   if (!match) return next();
