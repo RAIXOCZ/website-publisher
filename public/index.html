@@ -208,6 +208,19 @@
     </div>
   </footer>
 
+  <dialog class="dialog glass overwrite-dialog" id="overwrite-dialog" aria-labelledby="overwrite-title">
+    <form method="dialog">
+      <h2 id="overwrite-title"></h2>
+      <p id="overwrite-text"></p>
+      <ul class="overwrite-list" id="overwrite-list"></ul>
+      <div class="dialog-actions">
+        <button class="btn" value="cancel" data-i18n="cancel">Zrušit</button>
+        <button class="btn" value="skip" id="overwrite-skip" data-i18n="overwrite.skip">Ponechat stávající</button>
+        <button class="btn btn-primary" value="overwrite" id="overwrite-yes" data-i18n="overwrite.yes">Přepsat</button>
+      </div>
+    </form>
+  </dialog>
+
   <template id="my-row">
     <article class="site-card glass">
       <div>

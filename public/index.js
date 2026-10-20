@@ -139,12 +139,12 @@ async function addDataTransfer(dataTransfer, dest = '') {
     if (entry.isDirectory) {
       const files = [];
       await walk(entry, '', files);
-      addFolder(files, dest, entry.name);
+      await addFolder(files, dest, entry.name);
     } else {
       loose.push(await new Promise((resolve, reject) => entry.file(resolve, reject)));
     }
   }
-  if (loose.length) addFiles(loose, dest);
+  if (loose.length) await addFiles(loose, dest);
 }
 
 function readAllEntries(reader) {
@@ -190,10 +190,41 @@ function changed() {
   renderStaged();
 }
 
-// Adds files; a file at an existing path replaces the old one.
-function putFiles(list) {
+// Asks before files at `paths` are overwritten. Resolves with 'overwrite',
+// 'skip' (keep the existing files; only offered when `canSkip`) or 'cancel'.
+function confirmOverwrite(paths, { moving = false, canSkip = false } = {}) {
+  const dialog = $('#overwrite-dialog');
+  const one = paths.length === 1;
+  $('#overwrite-title').textContent = t(one ? 'overwrite.titleOne' : 'overwrite.title');
+  $('#overwrite-text').textContent = one
+    ? t(moving ? 'overwrite.moveOne' : 'overwrite.textOne', { name: paths[0] })
+    : t(moving ? 'overwrite.move' : 'overwrite.text', { count: filesLabel(paths.length) });
+  const shown = one ? [] : paths.slice(0, 8);
+  $('#overwrite-list').replaceChildren(
+    ...shown.map((path) => Object.assign(document.createElement('li'), { textContent: path })),
+    ...(paths.length > shown.length && !one ? [Object.assign(document.createElement('li'), { className: 'more', textContent: t('overwrite.more', { n: paths.length - shown.length }) })] : []),
+  );
+  $('#overwrite-list').hidden = one;
+  $('#overwrite-skip').hidden = !canSkip;
+  dialog.returnValue = '';
+  dialog.showModal();
+  $('#overwrite-yes').focus();
+  return new Promise((resolve) => {
+    dialog.addEventListener('close', () => resolve(dialog.returnValue || 'cancel'), { once: true });
+  });
+}
+
+// Adds files; asks first when some would overwrite files already in the tree.
+async function putFiles(list) {
   list = cleanFiles(list);
   if (!list.length) return;
+  const existing = new Set(state.files.map((f) => f.path));
+  const clashes = list.filter((f) => existing.has(f.path)).map((f) => f.path);
+  if (clashes.length) {
+    const choice = await confirmOverwrite(clashes, { canSkip: clashes.length < list.length });
+    if (choice === 'cancel') return;
+    if (choice === 'skip') list = list.filter((f) => !existing.has(f.path));
+  }
   const incoming = new Set(list.map((f) => f.path));
   state.files = state.files.filter((f) => !incoming.has(f.path)).concat(list);
   for (const f of list) for (let d = parentOf(f.path); d; d = parentOf(d)) state.emptyDirs.delete(d);
@@ -206,18 +237,18 @@ function prefillName(fallback) {
 
 // A picked folder arrives as "folder/…". Into an empty tree its contents
 // become the site root; otherwise it is added as a subfolder of `dest`.
-function addFolder(files, dest = '', label = files[0]?.path.split('/')[0]) {
+async function addFolder(files, dest = '', label = files[0]?.path.split('/')[0]) {
   if (!files.length) return;
   const asRoot = state.files.length === 0 && state.emptyDirs.size === 0 && !dest;
   if (asRoot) prefillName(label);
   const strip = (path) => (path.startsWith(`${label}/`) ? path.slice(label.length + 1) : path);
-  putFiles(files.map(({ path, file }) => ({ path: joinPath(dest, asRoot ? strip(path) : path), file })));
+  await putFiles(files.map(({ path, file }) => ({ path: joinPath(dest, asRoot ? strip(path) : path), file })));
 }
 
-function addFiles(files, dest = '') {
+async function addFiles(files, dest = '') {
   if (!files.length) return;
   if (state.files.length === 0) prefillName(files.length === 1 && /\.zip$/i.test(files[0].name) ? files[0].name : '');
-  putFiles(files.map((file) => ({ path: joinPath(dest, file.name), file })));
+  await putFiles(files.map((file) => ({ path: joinPath(dest, file.name), file })));
 }
 
 // Replaces everything inside folder `dir` ('' = the whole site) with a picked folder's contents.
@@ -347,16 +378,18 @@ function renderStaged() {
 
 // Moves a file or a whole folder into folder `dest` ('' = root).
 function moveEntry(path, kind, dest) {
-  renameEntry(path, kind, joinPath(dest, baseName(path)));
+  return renameEntry(path, kind, joinPath(dest, baseName(path)));
 }
 
 // Gives a file or folder a new path (rename or move).
-function renameEntry(path, kind, target) {
+async function renameEntry(path, kind, target) {
   if (target === path) return renderStaged();
   if (kind === 'dir' && isInside(target, path)) return renderStaged();
   const inside = (p) => (kind === 'dir' ? p.startsWith(`${path}/`) : p === path);
   const moved = state.files.filter((f) => inside(f.path)).map((f) => ({ ...f, path: target + f.path.slice(path.length) }));
   const movedPaths = new Set(moved.map((f) => f.path));
+  const clashes = state.files.filter((f) => !inside(f.path) && movedPaths.has(f.path)).map((f) => f.path);
+  if (clashes.length && (await confirmOverwrite(clashes, { moving: true })) !== 'overwrite') return renderStaged();
   state.files = state.files.filter((f) => !inside(f.path) && !movedPaths.has(f.path)).concat(moved);
   if (kind === 'dir') {
     for (const dir of [...state.emptyDirs]) {

@@ -486,12 +486,90 @@ test.describe('file tree before publishing', () => {
     await expect(row(page, 'about.html')).toBeVisible();
   });
 
-  test('a file with the same path replaces the old one', async ({ page }) => {
-    await page.goto('/');
-    await pick(page, page.locator('#pick-folder'), FIXTURES.site);
-    await pick(page, page.locator('[data-tool=files]'), `${FIXTURES.siteV2}/index.html`);
-    await expect(row(page, 'index.html')).toHaveCount(1);
-    await expect(page.locator('#staged-summary')).toContainText('5 souborů');
+  test.describe('overwriting asks first', () => {
+    const dialog = (page) => page.locator('#overwrite-dialog');
+
+    test('adding a file that exists: "Zrušit" keeps the old one, "Přepsat" replaces it', async ({ page }) => {
+      await page.goto('/');
+      await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+      await pick(page, page.locator('[data-tool=files]'), `${FIXTURES.siteV2}/index.html`);
+      await expect(dialog(page)).toBeVisible();
+      await expect(dialog(page).locator('h2')).toHaveText('Přepsat soubor?');
+      await expect(dialog(page).locator('#overwrite-text')).toHaveText('Soubor index.html už ve webu je. Nový ho nahradí.');
+      await expect(page.locator('#overwrite-skip')).toBeHidden();
+      await expect(page.locator('#overwrite-yes')).toBeFocused();
+      await dialog(page).getByRole('button', { name: 'Zrušit' }).click();
+      await expect(dialog(page)).toBeHidden();
+      await expect(row(page, 'index.html')).toContainText('101 B');
+
+      await pick(page, page.locator('[data-tool=files]'), `${FIXTURES.siteV2}/index.html`);
+      await page.keyboard.press('Escape');
+      await expect(dialog(page)).toBeHidden();
+      await expect(row(page, 'index.html')).toContainText('101 B');
+
+      await pick(page, page.locator('[data-tool=files]'), `${FIXTURES.siteV2}/index.html`);
+      await page.locator('#overwrite-yes').click();
+      await expect(row(page, 'index.html')).toContainText('58 B');
+      await expect(row(page, 'index.html')).toHaveCount(1);
+      await expect(page.locator('#staged-summary')).toContainText('5 souborů');
+    });
+
+    test('several clashes are listed, and "Ponechat stávající" adds only the new files', async ({ page }) => {
+      await page.goto('/');
+      await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+      await pick(page, page.locator('[data-tool=files]'), [`${FIXTURES.siteV2}/index.html`, `${FIXTURES.site}/about.html`, FIXTURES.zip]);
+      await expect(dialog(page).locator('h2')).toHaveText('Přepsat soubory?');
+      await expect(dialog(page).locator('#overwrite-text')).toContainText('2 soubory');
+      await expect(page.locator('#overwrite-list li')).toHaveText(['index.html', 'about.html']);
+      await page.locator('#overwrite-skip').click();
+      await expect(row(page, 'zipped-site.zip')).toBeVisible();
+      await expect(row(page, 'index.html')).toContainText('101 B');
+      await expect(page.locator('#staged-summary')).toContainText('6 souborů');
+    });
+
+    test('dropping a folder onto a folder that has the same files asks too', async ({ page }) => {
+      await page.goto('/');
+      await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+      await pick(page, page.locator('[data-tool=folder]'), FIXTURES.siteV2);
+      await expect(dialog(page)).toBeHidden(); // sample-site-v2/ is new
+      await pick(page, page.locator('[data-tool=folder]'), FIXTURES.siteV2);
+      await expect(dialog(page)).toBeVisible();
+      await expect(dialog(page).locator('#overwrite-text')).toContainText('sample-site-v2/index.html');
+      await page.locator('#overwrite-yes').click();
+      await expect(dialog(page)).toBeHidden();
+    });
+
+    test('moving or renaming onto an existing file asks; cancelling keeps both', async ({ page }) => {
+      await page.goto('/');
+      await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+      const [chooser] = await Promise.all([page.waitForEvent('filechooser'), menu(page, 'css', 'add-files')]);
+      await chooser.setFiles(`${FIXTURES.site}/about.html`);
+      await expect(row(page, 'css/about.html')).toBeVisible();
+
+      await row(page, 'about.html').dragTo(row(page, 'css'));
+      await expect(dialog(page).locator('#overwrite-text')).toHaveText('Na cílovém místě už je soubor css/about.html. Přesunutý ho nahradí.');
+      await dialog(page).getByRole('button', { name: 'Zrušit' }).click();
+      await expect(row(page, 'about.html')).toBeVisible();
+      await expect(row(page, 'css/about.html')).toBeVisible();
+
+      await menu(page, 'about.html', 'rename');
+      await page.locator('.tree-input').fill('404.html');
+      await page.locator('.tree-input').press('Enter');
+      await expect(dialog(page)).toBeVisible();
+      await page.locator('#overwrite-yes').click();
+      await expect(row(page, 'about.html')).toHaveCount(0);
+      await expect(row(page, '404.html')).toContainText('55 B');
+      await expect(page.locator('#staged-summary')).toContainText('5 souborů');
+
+      // Moving a folder into one with clashing files lists them.
+      await menu(page, 'files', 'mkdir');
+      await page.locator('.tree-input').fill('css');
+      await page.locator('.tree-input').press('Enter');
+      await expect(row(page, 'files/css')).toBeVisible();
+      await row(page, 'css').dragTo(row(page, 'files'));
+      await expect(dialog(page)).toBeHidden(); // files/css is empty, nothing to overwrite
+      await expect(row(page, 'files/css/style.css')).toBeVisible();
+    });
   });
 
   test('files and folders can be moved by dragging onto a folder', async ({ page, request }) => {

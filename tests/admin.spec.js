@@ -87,6 +87,7 @@ test('rename, edit and delete any site; deleted sites stay listed until purged',
   await expect(page.locator('#edit-banner')).toContainText(renamed);
   await page.waitForFunction(() => window.scrollY === 0);
   await pick(page, page.locator('[data-tool=files]'), `${FIXTURES.siteV2}/index.html`);
+  await page.locator('#overwrite-yes').click(); // the site already has an index.html
   await page.locator('#publish').click();
   await expect(page.locator('#result-title')).toHaveText(`Web ${renamed} byl aktualizován`);
   expect(await (await request.get(`/${renamed}/`)).text()).toContain('Version 2');
