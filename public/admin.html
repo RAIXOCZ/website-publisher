@@ -14,7 +14,6 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
     </span>Publikování <span class="muted hide-sm">správa</span></a>
     <nav class="nav" id="nav" hidden>
-      <a class="btn btn-ghost hide-sm" href="/docs">Návod</a>
       <a class="btn btn-primary" href="/">+ Zveřejnit</a>
       <button class="btn btn-ghost" id="logout">Odhlásit</button>
     </nav>
@@ -32,7 +31,7 @@
 
     <div id="panel" hidden>
       <h1>Weby</h1>
-      <p class="lead">Vše, co je na tomto serveru zveřejněno.</p>
+      <p class="lead">Všechny zveřejněné weby. Jako správce můžete kterýkoli web nahradit, přejmenovat, smazat nebo mu vygenerovat nové heslo.</p>
 
       <section class="card">
         <div class="toolbar">
@@ -63,7 +62,7 @@
   <template id="row">
     <tr>
       <td>
-        <div class="site-name"></div>
+        <div class="site-name"><span></span> <span class="badge" data-nopw hidden>bez hesla</span></div>
         <a class="site-url" target="_blank" rel="noopener"></a>
       </td>
       <td class="num hide-sm" data-files></td>
@@ -71,7 +70,9 @@
       <td class="num" data-updated></td>
       <td class="actions">
         <button class="btn btn-sm" data-action="copy">Kopírovat odkaz</button>
+        <button class="btn btn-sm" data-action="replace">Nahradit</button>
         <button class="btn btn-sm" data-action="rename">Přejmenovat</button>
+        <button class="btn btn-sm" data-action="password">Nové heslo</button>
         <button class="btn btn-sm btn-danger" data-action="delete">Smazat</button>
       </td>
     </tr>

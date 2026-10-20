@@ -84,10 +84,10 @@ function toast(message) {
   toastTimer = setTimeout(() => (el.hidden = true), 2200);
 }
 
-async function copy(text) {
+async function copy(text, message = 'Odkaz zkopírován') {
   try {
     await navigator.clipboard.writeText(text);
-    toast('Odkaz zkopírován');
+    toast(message);
   } catch {
     prompt('Zkopírujte odkaz:', text);
   }
@@ -118,4 +118,98 @@ function setupLogin(form, onSuccess) {
 async function logout() {
   await api('/logout', { method: 'POST' });
   location.reload();
+}
+
+/* ---------- sites owned by this browser (name + password in localStorage) ---------- */
+
+const OWNED_KEY = 'freepages.sites';
+
+function loadOwned() {
+  try {
+    const list = JSON.parse(localStorage.getItem(OWNED_KEY));
+    return Array.isArray(list) ? list.filter((s) => s && s.name && s.password) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveOwned(list) {
+  try {
+    localStorage.setItem(OWNED_KEY, JSON.stringify(list));
+  } catch {
+    /* storage unavailable (private mode) */
+  }
+}
+
+function rememberSite(name, password) {
+  const list = loadOwned().filter((s) => s.name !== name);
+  list.unshift({ name, password, addedAt: new Date().toISOString() });
+  saveOwned(list);
+}
+
+function forgetSite(name) {
+  saveOwned(loadOwned().filter((s) => s.name !== name));
+}
+
+function ownedPassword(name) {
+  return loadOwned().find((s) => s.name === name)?.password || null;
+}
+
+/* ---------- picking and uploading folders ---------- */
+
+// Opens the browser's folder (or .zip) picker; resolves with [{ path, file }].
+function pickFiles({ zip = false } = {}) {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    if (zip) input.accept = '.zip,application/zip';
+    else input.webkitdirectory = true;
+    input.addEventListener('change', () => {
+      resolve([...input.files].map((file) => ({ path: file.webkitRelativePath || file.name, file })));
+    });
+    input.click();
+  });
+}
+
+function cleanFiles(files) {
+  return files.filter((f) => !/(^|\/)(\.DS_Store|Thumbs\.db|desktop\.ini)$/i.test(f.path));
+}
+
+/**
+ * Uploads files as a site. Resolves with { status, data } whatever the
+ * outcome, so callers can react to 403/409 themselves.
+ */
+function uploadSite({ files, name, overwrite = false, password = '', onProgress }) {
+  const form = new FormData();
+  form.append('name', name);
+  form.append('overwrite', overwrite ? '1' : '0');
+  form.append('password', password || '');
+  for (const { path, file } of files) {
+    form.append('p', path);
+    form.append('f', file, file.name);
+  }
+  return new Promise((resolve) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/sites');
+    xhr.setRequestHeader('X-Requested-With', 'fetch');
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total);
+    });
+    xhr.addEventListener('load', () => {
+      let data = {};
+      try {
+        data = JSON.parse(xhr.responseText);
+      } catch {
+        /* not JSON */
+      }
+      if (!data.error && (xhr.status < 200 || xhr.status >= 300)) {
+        data.error = xhr.status === 413 ? 'Nahrávaná data jsou pro server příliš velká.' : `Nahrávání selhalo (HTTP ${xhr.status}).`;
+      }
+      resolve({ status: xhr.status, data });
+    });
+    xhr.addEventListener('error', () =>
+      resolve({ status: 0, data: { error: 'Nahrávání selhalo – zkontrolujte připojení a zkuste to znovu.' } }),
+    );
+    xhr.send(form);
+  });
 }

@@ -34,7 +34,8 @@ function render() {
     ...sites.map((site) => {
       const row = $('#row').content.firstElementChild.cloneNode(true);
       row.dataset.name = site.name;
-      $('.site-name', row).textContent = site.name;
+      $('.site-name span', row).textContent = site.name;
+      $('[data-nopw]', row).hidden = site.hasPassword;
       $('.site-url', row).textContent = site.url;
       $('.site-url', row).href = site.url;
       $('[data-files]', row).textContent = site.files ?? '–';
@@ -63,9 +64,29 @@ $('#rows').addEventListener('click', async (e) => {
       const result = await api(`/sites/${encodeURIComponent(name)}/rename`, { method: 'POST', json: { name: next } });
       toast(`Přejmenováno na ${result.name}`);
       await load();
+    } else if (button.dataset.action === 'replace') {
+      const files = cleanFiles(await pickFiles());
+      if (!files.length) return;
+      button.disabled = true;
+      const { status, data } = await uploadSite({
+        files,
+        name,
+        overwrite: true,
+        onProgress: (p) => (button.textContent = `${Math.round(p * 100)} %`),
+      });
+      button.disabled = false;
+      button.textContent = 'Nahradit';
+      if (status < 200 || status >= 300) throw new Error(data.error);
+      toast(`Web ${name} byl nahrazen`);
+      await load();
+    } else if (button.dataset.action === 'password') {
+      if (!confirm(`Vygenerovat pro „${name}“ nové heslo? Staré heslo přestane platit.`)) return;
+      const result = await api(`/sites/${encodeURIComponent(name)}/reset-password`, { method: 'POST' });
+      prompt(`Nové heslo pro „${name}“ (předejte ho majiteli webu):`, result.password);
+      await load();
     } else if (button.dataset.action === 'delete') {
       if (!confirm(`Smazat „${name}“? Web ${site.url} bude trvale odstraněn.`)) return;
-      await api(`/sites/${encodeURIComponent(name)}`, { method: 'DELETE' });
+      await api(`/sites/${encodeURIComponent(name)}/delete`, { method: 'POST' });
       toast(`Smazáno: ${name}`);
       await load();
     }

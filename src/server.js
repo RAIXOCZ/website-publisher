@@ -55,14 +55,16 @@ api.use(securityHeaders, auth.sameOrigin);
 api.get('/config', (req, res) => {
   res.json({
     authed: auth.isAuthed(req),
-    publicUpload: config.PUBLIC_UPLOAD,
     maxUploadMb: config.MAX_UPLOAD_MB,
     urlTemplate: sites.siteUrl('{name}'),
   });
 });
 
-api.post('/login', express.json({ limit: '10kb' }), (req, res) => {
-  if (auth.tooManyAttempts(req)) return res.status(429).json({ error: 'Příliš mnoho pokusů. Zkuste to znovu za 15 minut.' });
+const json = express.json({ limit: '100kb' });
+const TOO_MANY = { error: 'Příliš mnoho pokusů. Zkuste to znovu za 15 minut.' };
+
+api.post('/login', json, (req, res) => {
+  if (auth.tooManyAttempts(req)) return res.status(429).json(TOO_MANY);
   if (!auth.checkPassword(req.body?.password)) {
     auth.recordFailure(req);
     return res.status(401).json({ error: 'Nesprávné heslo.' });
@@ -82,29 +84,70 @@ api.get('/check-name', async (req, res) => {
   res.json({ name, error, exists: !error && (await sites.exists(name)), url: name ? sites.siteUrl(name) : null });
 });
 
-api.get('/sites', auth.requireAuth, async (req, res) => {
-  res.json({ sites: await sites.list() });
-});
-
+// Anyone may publish a new site; replacing one needs its password (or the admin).
 api.post('/sites', async (req, res) => {
-  const authed = auth.isAuthed(req);
-  if (!authed && !config.PUBLIC_UPLOAD) return res.status(401).json({ error: 'Nejprve se přihlaste.' });
-  // Only the admin can replace an existing site.
-  const result = await sites.handleUpload(req, { canOverwrite: authed });
-  console.log(`published ${result.name} (${result.files} files, ${result.bytes} bytes)${result.replaced ? ' [replaced]' : ''}`);
+  const isAdmin = auth.isAuthed(req);
+  if (!isAdmin) {
+    if (auth.tooManyAttempts(req)) return res.status(429).json(TOO_MANY);
+    if (!auth.publishAllowed(req)) {
+      return res.status(429).json({ error: 'Příliš mnoho nahrávání z vaší adresy. Zkuste to znovu později.' });
+    }
+  }
+  const result = await sites.handleUpload(req, { isAdmin, onWrongPassword: () => auth.recordFailure(req) });
+  console.log(`published ${result.name} (${result.files} files, ${result.bytes} bytes)${result.replaced ? ' [replaced]' : ''}${isAdmin ? ' [admin]' : ''}`);
   res.json(result);
 });
 
-api.delete('/sites/:name', auth.requireAuth, async (req, res) => {
+// The browser's own list of sites: checks which saved passwords are still valid.
+api.post('/my-sites', json, async (req, res) => {
+  if (auth.tooManyAttempts(req)) return res.status(429).json(TOO_MANY);
+  const entries = Array.isArray(req.body?.sites) ? req.body.sites.slice(0, 500) : [];
+  const out = [];
+  for (const entry of entries) {
+    const name = String(entry?.name || '');
+    const site = await sites.info(name);
+    if (!site) {
+      out.push({ name, status: 'missing' });
+    } else if (await sites.checkSitePassword(name, entry.password)) {
+      out.push({ ...site, status: 'ok' });
+    } else {
+      auth.recordFailure(req);
+      out.push({ name, status: 'wrong-password' });
+    }
+  }
+  res.json({ sites: out });
+});
+
+// Owner (with the site's password) or admin.
+async function authorizeSite(req, res, next) {
+  if (auth.isAuthed(req)) return next();
+  if (auth.tooManyAttempts(req)) return res.status(429).json(TOO_MANY);
+  if (await sites.checkSitePassword(req.params.name, req.body?.password)) return next();
+  auth.recordFailure(req);
+  res.status(403).json({ error: 'Nesprávné heslo k webu.' });
+}
+
+api.post('/sites/:name/delete', json, authorizeSite, async (req, res) => {
   await sites.remove(req.params.name);
   console.log(`deleted ${req.params.name}`);
   res.json({ ok: true });
 });
 
-api.post('/sites/:name/rename', auth.requireAuth, express.json({ limit: '10kb' }), async (req, res) => {
+// Admin only.
+api.get('/sites', auth.requireAuth, async (req, res) => {
+  res.json({ sites: await sites.list() });
+});
+
+api.post('/sites/:name/rename', auth.requireAuth, json, async (req, res) => {
   const result = await sites.rename(req.params.name, req.body?.name);
   console.log(`renamed ${req.params.name} -> ${result.name}`);
   res.json(result);
+});
+
+api.post('/sites/:name/reset-password', auth.requireAuth, async (req, res) => {
+  const password = await sites.resetPassword(req.params.name);
+  console.log(`password reset for ${req.params.name}`);
+  res.json({ name: req.params.name, password });
 });
 
 api.use((req, res) => res.status(404).json({ error: 'Nenalezeno' }));
@@ -142,6 +185,5 @@ sites.init().then(() => {
     console.log(`  app:   ${config.PUBLIC_URL}`);
     console.log(`  sites: ${sites.siteUrl('<name>')}`);
     console.log(`  data:  ${config.DATA_DIR}`);
-    console.log(`  public uploads: ${config.PUBLIC_UPLOAD ? 'on' : 'off (admin only)'}`);
   });
 });

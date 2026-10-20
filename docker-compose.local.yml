@@ -12,7 +12,7 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
       PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3000}
       SITE_DOMAIN: ${SITE_DOMAIN:-}
-      PUBLIC_UPLOAD: ${PUBLIC_UPLOAD:-false}
+      PUBLISH_PER_HOUR: ${PUBLISH_PER_HOUR:-60}
       MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-100}
     volumes:
       - publisher-data:/data

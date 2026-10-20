@@ -39,7 +39,8 @@ module.exports = {
   SCHEME: publicUrl.protocol.replace(':', ''),
   SECURE_COOKIE: publicUrl.protocol === 'https:',
   SITE_DOMAIN,
-  PUBLIC_UPLOAD: bool(process.env.PUBLIC_UPLOAD, false),
+  // Publishing is open to everyone; this caps uploads per IP address.
+  PUBLISH_PER_HOUR: int(process.env.PUBLISH_PER_HOUR, 60),
   PATH_SANDBOX: bool(process.env.PATH_SANDBOX, true),
   // Cloudflare rejects request bodies over 100 MB on Free/Pro plans.
   MAX_UPLOAD_MB: int(process.env.MAX_UPLOAD_MB, 100),

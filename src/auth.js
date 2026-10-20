@@ -99,6 +99,19 @@ function recordFailure(req) {
   }
 }
 
+// Caps how many uploads one IP address can make per hour.
+const publishes = new Map();
+
+function publishAllowed(req) {
+  const ip = clientIp(req);
+  const now = Date.now();
+  const recent = (publishes.get(ip) || []).filter((t) => t > now - 3600 * 1000);
+  if (recent.length >= config.PUBLISH_PER_HOUR) return false;
+  recent.push(now);
+  publishes.set(ip, recent);
+  return true;
+}
+
 function checkPassword(password) {
   return safeEqual(password || '', config.ADMIN_PASSWORD);
 }
@@ -136,6 +149,7 @@ module.exports = {
   checkPassword,
   tooManyAttempts,
   recordFailure,
+  publishAllowed,
   sameOrigin,
   requireAuth,
 };

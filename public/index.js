@@ -2,20 +2,17 @@
 
 const state = {
   config: null,
-  pending: null, // files waiting for a name fix or overwrite confirmation: { files, name? }
+  pending: null, // files waiting for a name fix or a password: { files, name? }
 };
 
 const els = {
-  login: $('#login'),
-  uploader: $('#uploader'),
   name: $('#name'),
   preview: $('#url-preview'),
   dropzone: $('#dropzone'),
-  folderInput: $('#folder-input'),
-  zipInput: $('#zip-input'),
   error: $('#error'),
   errorText: $('#error-text'),
-  conflict: $('#conflict-actions'),
+  conflict: $('#conflict'),
+  conflictPassword: $('#conflict-password'),
   progress: $('#progress'),
   bar: $('#progress-bar'),
   result: $('#result'),
@@ -23,21 +20,9 @@ const els = {
 
 async function init() {
   state.config = await api('/config');
-  const { authed, publicUpload } = state.config;
-  $('#nav-admin').hidden = !authed;
-  $('#nav-logout').hidden = !authed;
-  if (!authed && !publicUpload) {
-    els.login.hidden = false;
-    els.uploader.hidden = true;
-    return;
-  }
-  els.login.hidden = true;
-  els.uploader.hidden = false;
   updatePreview();
+  renderMySites();
 }
-
-setupLogin($('#login form'), init);
-$('#nav-logout').addEventListener('click', logout);
 
 /* ---------- name & URL preview ---------- */
 
@@ -70,31 +55,20 @@ els.name.addEventListener('blur', () => {
 
 /* ---------- picking files ---------- */
 
-$('#pick-folder').addEventListener('click', (e) => {
+$('#pick-folder').addEventListener('click', async (e) => {
   e.stopPropagation();
-  els.folderInput.click();
+  start(await pickFiles());
 });
-$('#pick-zip').addEventListener('click', (e) => {
+$('#pick-zip').addEventListener('click', async (e) => {
   e.stopPropagation();
-  els.zipInput.click();
+  start(await pickFiles({ zip: true }));
 });
-els.dropzone.addEventListener('click', () => els.folderInput.click());
-els.dropzone.addEventListener('keydown', (e) => {
+els.dropzone.addEventListener('click', async () => start(await pickFiles()));
+els.dropzone.addEventListener('keydown', async (e) => {
   if (e.target === els.dropzone && (e.key === 'Enter' || e.key === ' ')) {
     e.preventDefault();
-    els.folderInput.click();
+    start(await pickFiles());
   }
-});
-
-els.folderInput.addEventListener('change', () => {
-  const files = [...els.folderInput.files].map((file) => ({ path: file.webkitRelativePath || file.name, file }));
-  els.folderInput.value = '';
-  start(files);
-});
-els.zipInput.addEventListener('change', () => {
-  const files = [...els.zipInput.files].map((file) => ({ path: file.name, file }));
-  els.zipInput.value = '';
-  start(files);
 });
 
 // Drag & drop, including whole folders (via the File System Entry API).
@@ -162,10 +136,11 @@ function suggestName(files) {
   return tops.size === 1 ? slugify([...tops][0]) : '';
 }
 
-function showError(message, { conflict = false } = {}) {
+function showError(message, { askPassword = false } = {}) {
   els.errorText.textContent = message;
-  els.conflict.hidden = !conflict;
+  els.conflict.hidden = !askPassword;
   els.error.hidden = false;
+  if (askPassword) els.conflictPassword.focus();
 }
 
 function setStage(stage) {
@@ -177,15 +152,15 @@ function setStage(stage) {
 
 async function start(files) {
   els.error.hidden = true;
-  files = files.filter((f) => !/(^|\/)(\.DS_Store|Thumbs\.db|desktop\.ini)$/i.test(f.path));
-  if (!files.length) return showError('Složka je prázdná.');
+  files = cleanFiles(files);
+  if (!files.length) return;
 
   const name = slugify(els.name.value) || suggestName(files);
   if (!els.name.value && name) els.name.value = name;
   updatePreview();
+  state.pending = { files, name };
   if (!name) {
     els.name.focus();
-    state.pending = { files };
     return showError('Zadejte název webu a stiskněte Enter.');
   }
 
@@ -196,44 +171,39 @@ async function start(files) {
     return showError(err.message);
   }
   if (check.error) {
-    state.pending = { files };
     els.name.focus();
     return showError(check.error);
   }
   if (check.exists) {
-    state.pending = { files, name };
-    if (state.config.authed) {
-      return showError(`Web „${name}“ už existuje. Chcete ho nahradit tímto nahráním?`, { conflict: true });
-    }
-    els.name.focus();
-    return showError(`Název „${name}“ je už obsazený. Zadejte jiný a stiskněte Enter.`);
+    const saved = ownedPassword(name);
+    els.conflictPassword.value = saved || '';
+    return showError(
+      saved
+        ? `Web „${name}“ už existuje a je mezi vašimi weby. Chcete ho nahradit tímto nahráním?`
+        : `Web „${name}“ už existuje. Pokud je váš, zadejte jeho heslo. Jinak zvolte jiný název a stiskněte Enter.`,
+      { askPassword: true },
+    );
   }
-  upload(files, name, false);
+  upload(files, name);
 }
 
-$('#replace').addEventListener('click', () => {
+els.conflict.addEventListener('submit', (e) => {
+  e.preventDefault();
   const { files, name } = state.pending || {};
+  const password = els.conflictPassword.value.trim();
+  if (!files || !password) return els.conflictPassword.focus();
   els.error.hidden = true;
-  if (files) upload(files, name, true);
+  upload(files, name, password);
 });
 $('#cancel').addEventListener('click', () => {
   state.pending = null;
   els.error.hidden = true;
 });
 
-function upload(files, name, overwrite) {
-  state.pending = null;
+async function upload(files, name, password = null) {
   const totalBytes = files.reduce((sum, f) => sum + f.file.size, 0);
   if (totalBytes > state.config.maxUploadMb * 1024 * 1024) {
     return showError(`Nahrávaná data mají ${formatBytes(totalBytes)}, limit je ${state.config.maxUploadMb} MB.`);
-  }
-
-  const form = new FormData();
-  form.append('name', name);
-  form.append('overwrite', overwrite ? '1' : '0');
-  for (const { path, file } of files) {
-    form.append('p', path);
-    form.append('f', file, file.name);
   }
 
   setStage('upload');
@@ -242,37 +212,32 @@ function upload(files, name, overwrite) {
   els.bar.style.width = '0%';
   $('#progress-pct').textContent = '0%';
 
-  const xhr = new XMLHttpRequest();
-  xhr.open('POST', '/api/sites');
-  xhr.setRequestHeader('X-Requested-With', 'fetch');
-  xhr.upload.addEventListener('progress', (e) => {
-    if (!e.lengthComputable) return;
-    const pct = Math.round((e.loaded / e.total) * 100);
-    els.bar.style.width = `${pct}%`;
-    $('#progress-pct').textContent = pct === 100 ? 'Zveřejňuji…' : `${pct}%`;
+  const { status, data } = await uploadSite({
+    files,
+    name,
+    overwrite: Boolean(password),
+    password,
+    onProgress: (p) => {
+      const pct = Math.round(p * 100);
+      els.bar.style.width = `${pct}%`;
+      $('#progress-pct').textContent = pct === 100 ? 'Zveřejňuji…' : `${pct}%`;
+    },
   });
-  xhr.addEventListener('load', () => {
-    let data = {};
-    try {
-      data = JSON.parse(xhr.responseText);
-    } catch {
-      /* not JSON */
-    }
-    if (xhr.status >= 200 && xhr.status < 300) return done(data);
-    setStage('pick');
-    if (xhr.status === 401) return init();
-    if (xhr.status === 413 && !data.error) data.error = 'Nahrávaná data jsou pro server nebo proxy příliš velká.';
-    if (data.exists && data.canOverwrite) {
-      state.pending = { files, name };
-      return showError(data.error + ' Chcete ho nahradit?', { conflict: true });
-    }
-    showError(data.error || `Nahrávání selhalo (HTTP ${xhr.status}).`);
-  });
-  xhr.addEventListener('error', () => {
-    setStage('pick');
-    showError('Nahrávání selhalo – zkontrolujte připojení a zkuste to znovu.');
-  });
-  xhr.send(form);
+
+  if (status >= 200 && status < 300) {
+    state.pending = null;
+    if (data.password) rememberSite(data.name, data.password);
+    else if (password) rememberSite(data.name, password);
+    done(data);
+    renderMySites();
+    return;
+  }
+  setStage('pick');
+  if (data.exists) {
+    state.pending = { files, name };
+    return showError(data.wrongPassword ? `${data.error} Zkuste to znovu, nebo zvolte jiný název.` : data.error, { askPassword: true });
+  }
+  showError(data.error);
 }
 
 function done(site) {
@@ -281,16 +246,131 @@ function done(site) {
   $('#result-link').textContent = site.url;
   $('#result-link').href = site.url;
   $('#open').href = site.url;
+  $('#result-password').hidden = !site.password;
+  $('#result-password-value').textContent = site.password || '';
   $('#result-note').textContent =
     `${filesLabel(site.files)}, ${formatBytes(site.bytes)}.` +
     (site.hasIndex ? '' : ' V hlavní složce chybí index.html, návštěvníci uvidí seznam souborů.');
 }
 
 $('#copy').addEventListener('click', () => copy($('#result-link').href));
+$('#copy-password').addEventListener('click', () => copy($('#result-password-value').textContent, 'Heslo zkopírováno'));
 $('#again').addEventListener('click', () => {
   els.name.value = '';
   updatePreview();
   setStage('pick');
+});
+
+/* ---------- my sites ---------- */
+
+async function renderMySites() {
+  const owned = loadOwned();
+  const list = $('#my-list');
+  $('#my-empty').hidden = owned.length > 0;
+  if (!owned.length) return list.replaceChildren();
+
+  let status = {};
+  try {
+    const { sites } = await api('/my-sites', { method: 'POST', json: { sites: owned } });
+    status = Object.fromEntries(sites.map((s) => [s.name, s]));
+  } catch {
+    /* show what we have locally */
+  }
+
+  list.replaceChildren(
+    ...owned.map(({ name, password }) => {
+      const info = status[name] || { status: 'unknown' };
+      const row = $('#my-row').content.firstElementChild.cloneNode(true);
+      row.dataset.name = name;
+      $('.site-name', row).textContent = name;
+      const url = info.url || siteUrl(name);
+      $('.site-url', row).textContent = url;
+      $('.site-url', row).href = url;
+      $('.site-pw code', row).textContent = password;
+      const meta = $('.site-meta', row);
+      const ok = info.status === 'ok' || info.status === 'unknown';
+      if (info.status === 'ok') {
+        meta.textContent = `${filesLabel(info.files)} · ${formatBytes(info.bytes)} · aktualizováno ${timeAgo(info.updatedAt)}`;
+      } else if (info.status === 'missing') {
+        meta.textContent = 'Web už neexistuje (byl smazán nebo přejmenován).';
+      } else if (info.status === 'wrong-password') {
+        meta.textContent = 'Uložené heslo už neplatí.';
+      }
+      if (!ok) row.classList.add('site-row-dim');
+      for (const action of ['update', 'delete']) $(`[data-action="${action}"]`, row).hidden = !ok;
+      $('[data-action="forget"]', row).hidden = ok;
+      return row;
+    }),
+  );
+}
+
+$('#my-list').addEventListener('click', async (e) => {
+  const button = e.target.closest('button[data-action]');
+  if (!button) return;
+  const row = button.closest('.site-row');
+  const name = row.dataset.name;
+  const password = ownedPassword(name);
+  const url = $('.site-url', row).href;
+  const action = button.dataset.action;
+
+  if (action === 'copy') return copy(url);
+  if (action === 'password') {
+    $('.site-pw', row).hidden = !$('.site-pw', row).hidden;
+    return;
+  }
+  if (action === 'forget') {
+    forgetSite(name);
+    return renderMySites();
+  }
+  if (action === 'delete') {
+    if (!confirm(`Smazat web „${name}“? Adresa ${url} přestane fungovat.`)) return;
+    try {
+      await api(`/sites/${encodeURIComponent(name)}/delete`, { method: 'POST', json: { password } });
+      forgetSite(name);
+      toast(`Web ${name} byl smazán`);
+      renderMySites();
+    } catch (err) {
+      alert(err.message);
+    }
+    return;
+  }
+  if (action === 'update') {
+    const files = cleanFiles(await pickFiles());
+    if (!files.length) return;
+    els.name.value = name;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    upload(files, name, password);
+  }
+});
+
+$('#add-toggle').addEventListener('click', () => {
+  const form = $('#add-form');
+  form.hidden = !form.hidden;
+  if (!form.hidden) form.site.focus();
+});
+
+$('#add-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const error = $('.alert', form);
+  error.hidden = true;
+  const name = slugify(form.site.value);
+  const password = form.password.value.trim();
+  try {
+    const { sites } = await api('/my-sites', { method: 'POST', json: { sites: [{ name, password }] } });
+    const result = sites[0];
+    if (result.status !== 'ok') {
+      throw new Error(result.status === 'missing' ? `Web „${name}“ neexistuje.` : 'Nesprávné heslo k webu.');
+    }
+    rememberSite(name, password);
+    form.reset();
+    form.hidden = true;
+    toast(`Web ${name} přidán`);
+    renderMySites();
+  } catch (err) {
+    error.textContent = err.message;
+    error.hidden = false;
+  }
 });
 
 init().catch((err) => {

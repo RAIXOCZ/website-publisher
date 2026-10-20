@@ -229,3 +229,31 @@ td.actions { text-align: right; white-space: nowrap; }
   background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
   padding: 12px 14px; overflow-x: auto; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+
+/* Password in the publish result */
+.result .pw-label { margin: 14px 0 6px; font-size: 13px; font-weight: 600; }
+.result code.pw { flex: 1; font-size: 15px; font-weight: 600; letter-spacing: .03em; }
+
+/* My sites */
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.section-head h2 { margin: 0; }
+#my-sites > p.muted { margin: 6px 0 12px; }
+.add-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; margin: 0 0 16px; }
+.add-form .alert { grid-column: 1 / -1; margin: 0; }
+.site-row { display: flex; gap: 12px; align-items: center; padding: 14px 0; border-top: 1px solid var(--border); }
+.site-row .site-meta { margin-top: 2px; }
+.site-row .site-pw { margin-top: 4px; }
+.site-row-dim .site-name, .site-row-dim .site-url { opacity: .55; }
+.site-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.badge { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 99px; background: var(--bg); border: 1px solid var(--border); color: var(--muted); font-weight: 600; vertical-align: 1px; }
+
+@media (max-width: 640px) {
+  .add-form { grid-template-columns: 1fr; }
+  .site-row { flex-direction: column; align-items: stretch; }
+  .site-actions { justify-content: flex-start; }
+}
+
+@media (min-width: 641px) {
+  #rows td:first-child { min-width: 220px; }
+  #rows .site-url { word-break: normal; }
+}
