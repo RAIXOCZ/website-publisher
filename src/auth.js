@@ -119,7 +119,7 @@ setInterval(() => {
   const now = Date.now();
   for (const [ip, entry] of failures) if (entry.until < now) failures.delete(ip);
   for (const [ip, times] of publishes) if (!times.some((t) => t > now - 3600 * 1000)) publishes.delete(ip);
-}, 5 * 60 * 1000).unref();
+}, 60 * 1000).unref();
 
 function checkPassword(password) {
   return safeEqual(password || '', config.ADMIN_PASSWORD);

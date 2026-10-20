@@ -295,7 +295,7 @@ async function renderMySites() {
       }
       if (!ok) row.classList.add('dim');
       for (const action of ['update', 'delete']) $(`[data-action="${action}"]`, row).hidden = !ok;
-      $('[data-action="forget"]', row).hidden = ok;
+      $('[data-action="forget"]', row).hidden = false;
       return row;
     }),
   );
