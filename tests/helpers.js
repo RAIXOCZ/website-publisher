@@ -131,16 +131,26 @@ async function publishViaApi(request, name, html = '<h1>API site</h1>', extra = 
   return { status: res.status(), body: await res.json() };
 }
 
-// Answers browser dialogs (confirm/prompt) in order; returns what they showed.
-function answerDialogs(page, answers) {
-  const seen = [];
-  page.on('dialog', async (dialog) => {
-    seen.push({ type: dialog.type(), message: dialog.message(), value: dialog.defaultValue() });
-    const answer = answers.shift();
-    if (answer === false) await dialog.dismiss();
-    else await dialog.accept(typeof answer === 'string' ? answer : undefined);
-  });
-  return seen;
+/**
+ * Answers the app's styled dialog (#ui-dialog): true/OK, false/Cancel, or a
+ * string to type first. Returns what the dialog showed.
+ */
+async function answerModal(page, answer = true) {
+  const dialog = page.locator('#ui-dialog');
+  await expect(dialog).toBeVisible();
+  const shown = {
+    title: await dialog.locator('#ui-dialog-title').textContent(),
+    text: await dialog.locator('.ui-text').textContent(),
+    value: await dialog.locator('.ui-value code').textContent(),
+  };
+  const seen = await dialog.getAttribute('data-shown');
+  if (typeof answer === 'string') await dialog.locator('.ui-input').fill(answer);
+  await dialog.locator(answer === false ? '[data-ui=cancel]' : '[data-ui=ok]').click();
+  // Closed, or already showing the next message.
+  await expect
+    .poll(async () => !(await dialog.isVisible()) || (await dialog.getAttribute('data-shown')) !== seen)
+    .toBe(true);
+  return shown;
 }
 
 async function clipboard(page) {
@@ -165,6 +175,6 @@ module.exports = {
   signInAsAdmin,
   apiToken,
   publishViaApi,
-  answerDialogs,
+  answerModal,
   clipboard,
 };

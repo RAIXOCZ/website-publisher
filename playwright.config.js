@@ -41,7 +41,8 @@ module.exports = defineConfig({
     {
       command: 'node --disable-warning=ExperimentalWarning tests/start-server.js',
       url: 'http://localhost:4319/api/config',
-      env: { ...common, PORT: '4319', PUBLIC_URL: 'http://localhost:4319', IP_WHITELIST: '127.0.0.1,::1' },
+      // tests/start-server.js puts these on the whitelist (the admin panel does it in production).
+      env: { ...common, PORT: '4319', PUBLIC_URL: 'http://localhost:4319', TEST_WHITELIST: '127.0.0.1,::1' },
       reuseExistingServer: false,
     },
   ],

@@ -1,6 +1,6 @@
 // @ts-check
-const { test, expect } = require('@playwright/test');
-const { FIXTURES, ADMIN_EMAIL, HEADERS, unique, pick, signIn, signInAsAdmin, createAccount, publishViaApi, answerDialogs, lastMail } = require('./helpers');
+const { test, expect } = require('./test');
+const { FIXTURES, ADMIN_EMAIL, HEADERS, unique, pick, signIn, signInAsAdmin, createAccount, publishViaApi, answerModal, lastMail } = require('./helpers');
 
 async function login(page) {
   await signInAsAdmin(page);
@@ -134,8 +134,8 @@ test('rename, edit and delete any site; deleted sites stay listed until purged',
   const { site } = await ownedSite(playwright);
   await login(page);
   const renamed = unique('adm');
-  answerDialogs(page, [renamed, true, true]);
   await siteRow(page, site).locator('[data-action=rename]').click();
+  await answerModal(page, renamed);
   await expect(siteRow(page, renamed)).toBeVisible();
   expect(await (await request.get(`/${renamed}/`)).text()).toContain('Owned');
 
@@ -151,6 +151,7 @@ test('rename, edit and delete any site; deleted sites stay listed until purged',
 
   await page.goto('/admin');
   await siteRow(page, renamed).locator('[data-action=delete]').click();
+  await answerModal(page, true);
   await expect(siteRow(page, renamed)).toBeHidden();
   expect((await request.get(`/${renamed}/`)).status()).toBe(404);
 
@@ -163,6 +164,7 @@ test('rename, edit and delete any site; deleted sites stay listed until purged',
   await page.locator('#audit-close').click();
 
   await row.locator('[data-action=purge]').click();
+  await answerModal(page, true);
   await expect(siteRow(page, renamed)).toHaveCount(0);
 });
 
@@ -184,15 +186,15 @@ test('users: history with IPs, delete (unlink, keep data) and purge', async ({ p
   await expect(siteRow(page, site)).toBeVisible();
   await page.locator('[role=tab][data-tab=users]').click();
 
-  const dialogs = answerDialogs(page, [true, true]);
   await row.locator('[data-action=delete]').click();
+  expect((await answerModal(page, true)).text).toContain('90 dní');
   await expect(userRow(page, email)).toBeHidden();
-  expect(dialogs[0].message).toContain('90 dní');
   expect((await request.get(`/${site}/`)).status()).toBe(404);
 
   await page.locator('#show-deleted-users').check();
   await expect(userRow(page, email)).toContainText('smazáno · správcem');
   await userRow(page, email).locator('[data-action=purge]').click();
+  expect((await answerModal(page, true)).title).toBe('Smazat trvale?');
   await expect(userRow(page, email)).toHaveCount(0);
   const { users } = await (await page.request.get('/api/admin/users')).json();
   expect(users.some((u) => u.email === email)).toBe(false);
@@ -208,13 +210,39 @@ test('IP whitelist can be edited', async ({ page }) => {
   const row = page.locator('#whitelist-rows tr', { hasText: '203.0.113.7' });
   await expect(row).toContainText('office');
 
-  page.once('dialog', (d) => d.accept());
   await page.locator('#whitelist-form input[name=ip]').fill('not an ip');
   await page.locator('#whitelist-form button').click();
+  expect((await answerModal(page, true)).text).toBe('Neplatná IP adresa.');
   await expect(page.locator('#whitelist-rows tr', { hasText: 'not an ip' })).toHaveCount(0);
 
   await row.locator('[data-action=remove]').click();
   await expect(row).toHaveCount(0);
+});
+
+test('"Přidat moji IP" whitelists the address the admin is using', async ({ page }) => {
+  // The whitelist is shared by tests running in parallel, so the list and the
+  // add request are intercepted here; adding and removing for real is tested above.
+  let entries = [{ ip: '203.0.113.9', note: 'office', createdAt: new Date().toISOString() }];
+  let posted = null;
+  await page.route('**/api/admin/whitelist', async (route) => {
+    if (route.request().method() === 'POST') {
+      posted = route.request().postDataJSON();
+      entries = [{ ...posted, createdAt: new Date().toISOString() }, ...entries];
+      return route.fulfill({ json: { ips: entries } });
+    }
+    return route.fulfill({ json: { ips: entries, yourIp: '198.51.100.23' } });
+  });
+  await login(page);
+  await page.locator('[role=tab][data-tab=whitelist]').click();
+  await expect(page.locator('#your-ip')).toHaveText('Vaše IP adresa: 198.51.100.23');
+  await expect(page.locator('#add-my-ip')).toHaveText('Přidat moji IP (198.51.100.23)');
+
+  await page.locator('#whitelist-form input[name=note]').fill('notebook');
+  await page.locator('#add-my-ip').click();
+  await expect(page.locator('#whitelist-rows tr', { hasText: '198.51.100.23' })).toContainText('notebook');
+  expect(posted).toEqual({ ip: '198.51.100.23', note: 'notebook' });
+  await expect(page.locator('#add-my-ip')).toBeHidden();
+  await expect(page.locator('#your-ip')).toHaveText('Vaše IP adresa 198.51.100.23 je na whitelistu.');
 });
 
 test('password sites can get a new password from the admin', async ({ page, playwright }) => {
@@ -228,10 +256,9 @@ test('password sites can get a new password from the admin', async ({ page, play
   await page.goto('http://localhost:4319/admin');
   const row = siteRow(page, name);
   await expect(row).toContainText('bez účtu (heslo)');
-  const dialogs = answerDialogs(page, [true, true]);
   await row.locator('[data-action=password]').click();
-  await expect.poll(() => dialogs.length).toBe(2);
-  const fresh = dialogs[1].value;
+  await answerModal(page, true);
+  const fresh = (await answerModal(page, true)).value;
   expect(fresh).not.toBe(created.body.password);
   const check = await wl.post('/api/my-sites', { headers: HEADERS, data: { sites: [{ name, password: fresh }, { name, password: created.body.password }] } });
   expect((await check.json()).sites.map((s) => s.status)).toEqual(['ok', 'wrong-password']);

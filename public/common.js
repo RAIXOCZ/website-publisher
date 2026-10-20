@@ -96,9 +96,83 @@ async function copy(text, message = t('toast.linkCopied')) {
     await navigator.clipboard.writeText(text);
     toast(message);
   } catch {
-    prompt(t('prompt.copy'), text);
+    await uiAlert(t('prompt.copy'), { value: text });
   }
 }
+
+/* ---------- styled dialogs (used instead of alert / confirm / prompt) ---------- */
+
+function uiDialogElement() {
+  let dialog = $('#ui-dialog');
+  if (dialog) return dialog;
+  dialog = document.createElement('dialog');
+  dialog.id = 'ui-dialog';
+  dialog.className = 'dialog glass ui-dialog';
+  dialog.setAttribute('aria-labelledby', 'ui-dialog-title');
+  dialog.innerHTML = `<form method="dialog">
+      <h2 id="ui-dialog-title"></h2>
+      <p class="ui-text"></p>
+      <input type="text" class="ui-input" autocomplete="off" spellcheck="false">
+      <div class="field ui-value"><code></code><button type="button" class="btn btn-sm" data-ui="copy"></button></div>
+      <div class="dialog-actions">
+        <button type="button" class="btn" data-ui="cancel"></button>
+        <button type="submit" class="btn btn-primary" data-ui="ok" value="ok"></button>
+      </div>
+    </form>`;
+  // The OK button is the form's only submit button, so Enter in the text
+  // field confirms; Cancel and Escape close without a value.
+  $('[data-ui=cancel]', dialog).addEventListener('click', () => dialog.close('cancel'));
+  $('[data-ui=copy]', dialog).addEventListener('click', () => copy($('.ui-value code', dialog).textContent, t('toast.copied')));
+  document.body.append(dialog);
+  return dialog;
+}
+
+/**
+ * Shows a message in a styled modal and resolves when it is closed:
+ * true/false for confirmations, the typed text (or null) with `input`.
+ */
+function uiDialog({ title = '', text = '', input = null, value = null, ok = t('ok'), cancel = t('cancel'), danger = false, showCancel = true }) {
+  const dialog = uiDialogElement();
+  $('#ui-dialog-title', dialog).textContent = title;
+  $('#ui-dialog-title', dialog).hidden = !title;
+  $('.ui-text', dialog).textContent = text;
+  const field = $('.ui-input', dialog);
+  field.hidden = input === null;
+  field.value = input ?? '';
+  field.required = input !== null;
+  $('.ui-value', dialog).hidden = value === null;
+  $('.ui-value code', dialog).textContent = value ?? '';
+  $('[data-ui=copy]', dialog).textContent = t('copy');
+  const okButton = $('[data-ui=ok]', dialog);
+  okButton.textContent = ok;
+  okButton.className = `btn ${danger ? 'btn-danger-solid' : 'btn-primary'}`;
+  $('[data-ui=cancel]', dialog).textContent = cancel;
+  $('[data-ui=cancel]', dialog).hidden = !showCancel;
+  dialog.returnValue = '';
+  dialog.dataset.shown = Number(dialog.dataset.shown || 0) + 1; // lets tests tell dialogs apart
+  dialog.showModal();
+  if (input !== null) {
+    field.focus();
+    field.select();
+  } else {
+    okButton.focus();
+  }
+  return new Promise((resolve) => {
+    dialog.addEventListener(
+      'close',
+      () => {
+        const confirmed = dialog.returnValue === 'ok';
+        resolve(input === null ? confirmed : confirmed ? field.value.trim() : null);
+      },
+      { once: true },
+    );
+  });
+}
+
+const uiConfirm = (text, options = {}) => uiDialog({ text, ...options });
+const uiPrompt = (text, input, options = {}) => uiDialog({ text, input, ...options });
+const uiAlert = (text, options = {}) => uiDialog({ text, showCancel: false, ok: t('ok'), ...options });
+const uiError = (err) => uiAlert(err.message || String(err), { title: t('error.title') });
 
 async function logout(e) {
   e?.preventDefault();

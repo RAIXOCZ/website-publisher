@@ -61,9 +61,6 @@ module.exports = {
   MAIL_DEV_OUTBOX: bool(process.env.MAIL_DEV_OUTBOX, false),
   EMAILS_PER_HOUR: int(process.env.EMAILS_PER_HOUR, 10),
 
-  // IPs allowed to publish without an account, using per-site passwords
-  // (comma separated; more can be added in the admin panel).
-  IP_WHITELIST: (process.env.IP_WHITELIST || '').split(',').map((s) => s.trim()).filter(Boolean),
 
   PREVIEW_MINUTES: int(process.env.PREVIEW_MINUTES, 5),
   // Uploads waiting for e-mail confirmation are dropped after this.

@@ -1,8 +1,8 @@
 // @ts-check
 // The :4319 server has this machine on its IP whitelist: publishing works
 // without an account, and every site gets a password (the original mode).
-const { test, expect } = require('@playwright/test');
-const { FIXTURES, HEADERS, PASSWORD_RE, unique, pick, pickAndPublish, publishViaApi, answerDialogs, clipboard } = require('./helpers');
+const { test, expect } = require('./test');
+const { FIXTURES, HEADERS, PASSWORD_RE, unique, pick, pickAndPublish, publishViaApi, answerModal, clipboard } = require('./helpers');
 
 const BASE = 'http://localhost:4319';
 test.use({ baseURL: BASE, permissions: ['clipboard-read', 'clipboard-write'] });
@@ -68,8 +68,8 @@ test('"Smazat" deletes the site and removes it from the list', async ({ page, re
   const name = unique('wldel');
   await page.goto('/');
   await publishViaUi(page, name);
-  answerDialogs(page, [true]);
   await page.locator(`.site-card[data-name="${name}"] [data-action=delete]`).click();
+  await answerModal(page, true);
   await expect(page.locator(`.site-card[data-name="${name}"]`)).toHaveCount(0);
   expect((await request.get(`/${name}/`)).status()).toBe(404);
 });

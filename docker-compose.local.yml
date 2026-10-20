@@ -16,7 +16,6 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       MAIL_FROM: ${MAIL_FROM:-}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-martin@balcar.me}
-      IP_WHITELIST: ${IP_WHITELIST:-}
     volumes:
       - publisher-data:/data
     ports:

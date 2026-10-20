@@ -1009,7 +1009,7 @@ $('#my-list').addEventListener('click', async (e) => {
     return renderMySites();
   }
   if (action === 'delete') {
-    if (!confirm(`${t('confirm.deleteOwn', { name, url })}\n\n${retentionNote(state.config)}`)) return;
+    if (!(await uiConfirm(`${t('confirm.deleteOwn', { name, url })}\n\n${retentionNote(state.config)}`, { title: t('delete.title'), ok: t('delete.ok'), danger: true }))) return;
     try {
       await api(`/sites/${encodeURIComponent(name)}/delete`, { method: 'POST', json: { password } });
       if (password) forgetSite(name);
@@ -1017,7 +1017,7 @@ $('#my-list').addEventListener('click', async (e) => {
       toast(t('toast.deleted', { name }));
       renderMySites();
     } catch (err) {
-      alert(err.message);
+      uiError(err);
     }
     return;
   }

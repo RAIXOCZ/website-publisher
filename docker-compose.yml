@@ -1,6 +1,6 @@
 # Docker Compose file for Dokploy (Compose service, default Compose Path).
 # Set RESEND_API_KEY (and optionally ADMIN_EMAIL, PUBLIC_URL, SITE_DOMAIN,
-# MAIL_FROM, IP_WHITELIST) in Dokploy's "Environment" tab. No ports are published on the host: Traefik reaches the
+# MAIL_FROM) in Dokploy's "Environment" tab. No ports are published on the host: Traefik reaches the
 # container over dokploy-network. For running without Dokploy see
 # docker-compose.local.yml.
 #
@@ -23,7 +23,6 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       MAIL_FROM: ${MAIL_FROM:-}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-martin@balcar.me}
-      IP_WHITELIST: ${IP_WHITELIST:-}
     volumes:
       - publisher-data:/data
     networks:

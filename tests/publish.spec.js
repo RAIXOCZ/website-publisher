@@ -1,7 +1,7 @@
 // @ts-check
 const fs = require('fs');
-const { test, expect } = require('@playwright/test');
-const { FIXTURES, HEADERS, unique, uniqueEmail, pick, pickAndPublish, mailToken, signIn, publishViaApi, answerDialogs, clipboard } = require('./helpers');
+const { test, expect } = require('./test');
+const { FIXTURES, HEADERS, unique, uniqueEmail, pick, pickAndPublish, mailToken, signIn, publishViaApi, answerModal, clipboard } = require('./helpers');
 
 test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
 
@@ -236,15 +236,22 @@ test.describe('signed in', () => {
     const name = unique('delete');
     await publishSignedIn(page, name);
     const card = page.locator(`.site-card[data-name="${name}"]`);
-    const dialogs = answerDialogs(page, [false, true]);
     await card.locator('[data-action=delete]').click();
+    const shown = await answerModal(page, false);
+    await expect(card).toBeVisible();
+    expect(shown.title).toBe('Smazat web?');
+    expect(shown.text).toContain(name);
+    expect(shown.text).toContain('90 dní');
+    expect(shown.text).toContain('martin@freepages.dev');
+    await expect(page.locator('#ui-dialog [data-ui=ok]')).toHaveClass(/btn-danger-solid/);
+
+    await card.locator('[data-action=delete]').click();
+    await page.keyboard.press('Escape'); // Escape cancels too
     await expect(card).toBeVisible();
     await card.locator('[data-action=delete]').click();
+    await answerModal(page, true);
     await expect(card).toHaveCount(0);
     await expect(page.locator('.toast')).toHaveText(`Web ${name} byl smazán`);
-    expect(dialogs[0].message).toContain(name);
-    expect(dialogs[0].message).toContain('90 dní');
-    expect(dialogs[0].message).toContain('martin@freepages.dev');
     expect((await request.get(`/${name}/`)).status()).toBe(404);
   });
 });

@@ -107,13 +107,16 @@
             <input type="text" name="note" class="grow" data-i18n-placeholder="admin.notePlaceholder" placeholder="Poznámka" autocomplete="off">
             <button class="btn btn-primary" type="submit" data-i18n="admin.ipAdd">Přidat</button>
           </form>
-          <p class="muted small" id="your-ip"></p>
+          <div class="my-ip">
+            <span class="muted small" id="your-ip"></span>
+            <button class="btn btn-sm" type="button" id="add-my-ip"></button>
+          </div>
           <div class="table-wrap">
             <table>
               <thead><tr><th data-i18n="audit.ip">IP adresa</th><th data-i18n="admin.thNote">Poznámka</th><th data-i18n="admin.thAdded">Přidáno</th><th></th></tr></thead>
               <tbody id="whitelist-rows"></tbody>
             </table>
-            <div class="empty" id="whitelist-empty" hidden data-i18n="admin.emptyWhitelist">Žádné adresy. Adresy z proměnné IP_WHITELIST se zde nezobrazují.</div>
+            <div class="empty" id="whitelist-empty" hidden data-i18n="admin.emptyWhitelist">Zatím tu nejsou žádné adresy.</div>
           </div>
         </section>
       </div>

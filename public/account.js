@@ -69,18 +69,19 @@ $('#sites').addEventListener('click', async (e) => {
   const name = button.closest('.site-card').dataset.name;
   try {
     if (button.dataset.action === 'rename') {
-      const next = prompt(t('admin.renamePrompt', { name }), name);
+      const next = await uiPrompt(t('rename.label', { name }), name, { title: t('rename.title'), ok: t('rename.ok') });
       if (!next || slugify(next) === name) return;
       const site = await api(`/sites/${encodeURIComponent(name)}/rename`, { method: 'POST', json: { name: next } });
       toast(t('admin.renamed', { name: site.name }));
     } else if (button.dataset.action === 'delete') {
-      if (!confirm(`${t('confirm.deleteOwn', { name, url: $('.site-url', button.closest('.site-card')).href })}\n\n${retentionNote(config)}`)) return;
+      const url = $('.site-url', button.closest('.site-card')).href;
+      if (!(await uiConfirm(`${t('confirm.deleteOwn', { name, url })}\n\n${retentionNote(config)}`, { title: t('delete.title'), ok: t('delete.ok'), danger: true }))) return;
       await api(`/sites/${encodeURIComponent(name)}/delete`, { method: 'POST', json: {} });
       toast(t('toast.deleted', { name }));
     }
     await load();
   } catch (err) {
-    alert(err.message);
+    uiError(err);
   }
 });
 
@@ -94,7 +95,7 @@ $('#profile').addEventListener('submit', async (e) => {
     toast(t('toast.saved'));
     await load();
   } catch (err) {
-    alert(err.message);
+    uiError(err);
   }
 });
 
@@ -129,7 +130,7 @@ function renderTokens(tokens) {
       const button = $('button', tr);
       button.textContent = t('account.revoke');
       button.addEventListener('click', async () => {
-        if (!confirm(t('account.revokeConfirm', { name: tok.name }))) return;
+        if (!(await uiConfirm(t('account.revokeConfirm', { name: tok.name }), { title: t('account.revokeTitle'), ok: t('account.revoke'), danger: true }))) return;
         await api(`/me/tokens/${tok.id}/revoke`, { method: 'POST' });
         $('#token-new').hidden = true;
         await load();
@@ -149,7 +150,7 @@ $('#token-form').addEventListener('submit', async (e) => {
     $('#token-new').hidden = false;
     $('#curl-example').textContent = curlExample(token);
   } catch (err) {
-    alert(err.message);
+    uiError(err);
   }
 });
 $('#token-copy').addEventListener('click', () => copy($('#token-value').textContent, t('toast.tokenCopied')));
@@ -174,13 +175,13 @@ async function renderAudit() {
 /* ---------- account deletion ---------- */
 
 $('#delete-account').addEventListener('click', async () => {
-  if (!confirm(t('account.deleteConfirm', { days: config.retentionDays, contact: config.contact }))) return;
+  if (!(await uiConfirm(t('account.deleteConfirm', { days: config.retentionDays, contact: config.contact }), { title: t('account.deleteTitle'), ok: t('account.deleteButton'), danger: true }))) return;
   try {
     await api('/me/delete', { method: 'POST' });
     $('#delete-sent').textContent = t('account.deleteSent', { email: config.user.email });
     $('#delete-sent').hidden = false;
   } catch (err) {
-    alert(err.message);
+    uiError(err);
   }
 });
 

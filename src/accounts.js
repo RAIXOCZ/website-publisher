@@ -212,14 +212,11 @@ const normIp = (ip) => String(ip || '').replace(/^::ffff:/, '').trim();
 function isWhitelisted(ip) {
   const n = normIp(ip);
   if (!n) return false;
-  return config.IP_WHITELIST.map(normIp).includes(n) || Boolean(one('SELECT 1 AS x FROM ip_whitelist WHERE ip = ?', n));
+  return Boolean(one('SELECT 1 AS x FROM ip_whitelist WHERE ip = ?', n));
 }
 
 function listWhitelist() {
-  return [
-    ...config.IP_WHITELIST.map((ip) => ({ ip: normIp(ip), note: 'IP_WHITELIST', fixed: true })),
-    ...all('SELECT ip, note, created_at AS createdAt FROM ip_whitelist ORDER BY created_at DESC'),
-  ];
+  return all('SELECT ip, note, created_at AS createdAt FROM ip_whitelist ORDER BY created_at DESC');
 }
 
 function addWhitelist(ip, note) {

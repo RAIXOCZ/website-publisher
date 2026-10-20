@@ -107,26 +107,26 @@ $('#site-rows').addEventListener('click', async (e) => {
       return showAudit(t('admin.siteHistory', { name }), site.owner ? site.owner.email : t('admin.passwordSite'), events);
     }
     if (el.dataset.action === 'rename') {
-      const next = prompt(t('admin.renamePrompt', { name }), name);
+      const next = await uiPrompt(t('rename.label', { name }), name, { title: t('rename.title'), ok: t('rename.ok') });
       if (!next || slugify(next) === name) return;
       const result = await api(`/admin/sites/${site.id}/rename`, { method: 'POST', json: { name: next } });
       toast(t('admin.renamed', { name: result.name }));
     } else if (el.dataset.action === 'password') {
-      if (!confirm(t('admin.resetConfirm', { name }))) return;
+      if (!(await uiConfirm(t('admin.resetConfirm', { name }), { title: t('admin.resetTitle'), ok: t('row.newPw') }))) return;
       const result = await api(`/admin/sites/${site.id}/reset-password`, { method: 'POST' });
-      prompt(t('admin.resetPrompt', { name }), result.password);
+      await uiAlert(t('admin.resetPrompt', { name }), { title: t('admin.resetTitle'), value: result.password });
     } else if (el.dataset.action === 'delete') {
-      if (!confirm(t('admin.deleteConfirm', { name, days: config.retentionDays }))) return;
+      if (!(await uiConfirm(t('admin.deleteConfirm', { name, days: config.retentionDays }), { title: t('delete.title'), ok: t('delete.ok'), danger: true }))) return;
       await api(`/admin/sites/${site.id}/delete`, { method: 'POST' });
       toast(t('admin.deleted', { name }));
     } else if (el.dataset.action === 'purge') {
-      if (!confirm(t('admin.purgeSiteConfirm', { name }))) return;
+      if (!(await uiConfirm(t('admin.purgeSiteConfirm', { name }), { title: t('admin.purgeTitle'), ok: t('admin.purge'), danger: true }))) return;
       await api(`/admin/sites/${site.id}/purge`, { method: 'POST' });
       toast(t('admin.purged', { name }));
     }
     await load();
   } catch (err) {
-    alert(err.message);
+    uiError(err);
   }
 });
 
@@ -141,16 +141,16 @@ function renderUsers() {
       const tr = document.createElement('tr');
       tr.dataset.id = user.id;
       if (user.deletedAt) tr.classList.add('dim');
-      tr.innerHTML = '<td><div class="owner"><b></b><span class="muted small"></span></div></td><td class="num"><span></span><br><code class="muted small"></code></td><td class="num hide-sm"></td><td class="actions"></td>';
+      tr.innerHTML = '<td><div class="owner"><div class="owner-name"><b></b></div><span class="muted small"></span></div></td><td class="num"><span></span><br><code class="muted small"></code></td><td class="num hide-sm"></td><td class="actions"></td>';
       $('b', tr).textContent = `${user.firstName} ${user.lastName}`.trim() || '–';
-      $('b', tr).insertAdjacentHTML('afterend', ` ${statusChip(user)}`);
+      $('.owner-name', tr).insertAdjacentHTML('beforeend', statusChip(user));
       $('.owner .muted', tr).textContent = user.email;
       $('td:nth-child(2) span', tr).textContent = formatDateTime(user.createdAt);
       $('td:nth-child(2) code', tr).textContent = user.createdIp || '';
       cell(tr, 2).textContent = user.deletedSites ? `${user.sites} (+${user.deletedSites} ${t('admin.deletedShort')})` : String(user.sites);
       const actions = [button(t('admin.history'), 'audit'), button(t('admin.sites'), 'sites')];
       if (user.isAdmin) {
-        $('b', tr).insertAdjacentHTML('afterend', ` <span class="chip">${t('admin.adminChip')}</span>`);
+        $('.owner-name', tr).insertAdjacentHTML('beforeend', `<span class="chip">${t('admin.adminChip')}</span>`);
       } else {
         if (!user.deletedAt) actions.push(button(t('row.delete'), 'delete', 'btn-danger'));
         actions.push(button(t('admin.purge'), 'purge', 'btn-danger'));
@@ -180,17 +180,17 @@ $('#user-rows').addEventListener('click', async (e) => {
       return showTab('sites');
     }
     if (el.dataset.action === 'delete') {
-      if (!confirm(t('admin.deleteUserConfirm', { email: label, days: config.retentionDays }))) return;
+      if (!(await uiConfirm(t('admin.deleteUserConfirm', { email: label, days: config.retentionDays }), { title: t('admin.deleteUserTitle'), ok: t('delete.ok'), danger: true }))) return;
       await api(`/admin/users/${user.id}/delete`, { method: 'POST' });
       toast(t('admin.userDeleted', { email: label }));
     } else if (el.dataset.action === 'purge') {
-      if (!confirm(t('admin.purgeUserConfirm', { email: label }))) return;
+      if (!(await uiConfirm(t('admin.purgeUserConfirm', { email: label }), { title: t('admin.purgeTitle'), ok: t('admin.purge'), danger: true }))) return;
       await api(`/admin/users/${user.id}/purge`, { method: 'POST' });
       toast(t('admin.purged', { name: label }));
     }
     await load();
   } catch (err) {
-    alert(err.message);
+    uiError(err);
   }
 });
 
@@ -229,7 +229,11 @@ $('#audit-dialog').addEventListener('click', (e) => {
 /* ---------- IP whitelist ---------- */
 
 function renderWhitelist() {
-  $('#your-ip').textContent = t('admin.yourIp', { ip: data.yourIp });
+  // The address this browser comes from, with a one-click way to allow it.
+  const listed = data.whitelist.some((entry) => entry.ip === data.yourIp);
+  $('#your-ip').textContent = t(listed ? 'admin.myIpListed' : 'admin.yourIp', { ip: data.yourIp });
+  $('#add-my-ip').textContent = t('admin.myIp', { ip: data.yourIp });
+  $('#add-my-ip').hidden = listed || !data.yourIp;
   $('#whitelist-rows').replaceChildren(
     ...data.whitelist.map((entry) => {
       const tr = document.createElement('tr');
@@ -253,7 +257,18 @@ $('#whitelist-form').addEventListener('submit', async (e) => {
     form.reset();
     await load();
   } catch (err) {
-    alert(err.message);
+    uiError(err);
+  }
+});
+
+$('#add-my-ip').addEventListener('click', async () => {
+  const note = $('#whitelist-form').note.value.trim() || t('admin.myIpNote');
+  try {
+    await api('/admin/whitelist', { method: 'POST', json: { ip: data.yourIp, note } });
+    $('#whitelist-form').reset();
+    await load();
+  } catch (err) {
+    uiError(err);
   }
 });
 

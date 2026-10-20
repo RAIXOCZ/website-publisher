@@ -1,6 +1,6 @@
 // @ts-check
-const { test, expect } = require('@playwright/test');
-const { HEADERS, htmlFile, unique, uniqueEmail, lastMail, mailToken, createAccount, signIn, answerDialogs, clipboard } = require('./helpers');
+const { test, expect } = require('./test');
+const { HEADERS, htmlFile, unique, uniqueEmail, lastMail, mailToken, createAccount, signIn, answerModal, clipboard } = require('./helpers');
 
 test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
 
@@ -64,15 +64,18 @@ test('the account page shows sites, lets you change your name and rename or dele
   await expect(page.locator('#account-name')).toHaveText('Jana Nováková');
 
   const renamed = unique('renamed');
-  const dialogs = answerDialogs(page, [renamed, true]);
   await card.locator('[data-action=rename]').click();
+  const rename = await answerModal(page, renamed);
+  expect(rename.title).toBe('Přejmenovat web');
   await expect(page.locator(`#sites .site-card[data-name="${renamed}"]`)).toBeVisible();
   expect((await request.get(`/${renamed}/`)).status()).toBe(200);
   expect((await request.get(`/${site}/`)).status()).toBe(404);
 
   await page.locator(`#sites .site-card[data-name="${renamed}"] [data-action=delete]`).click();
+  const confirmDelete = await answerModal(page, true);
+  expect(confirmDelete.title).toBe('Smazat web?');
+  expect(confirmDelete.text).toContain('90 dní');
   await expect(page.locator('#sites-empty')).toBeVisible();
-  expect(dialogs[1].message).toContain('90 dní');
   expect((await request.get(`/${renamed}/`)).status()).toBe(404);
 });
 
@@ -123,10 +126,13 @@ test('API tokens publish and update sites with curl, and can be revoked', async 
   expect((await res.json()).replaced).toBe(true);
   expect(await (await curl.get(`/${name}/docs/`)).text()).toContain('Docs');
 
-  page.on('dialog', (d) => d.accept());
   await page.reload();
   await expect(page.locator('#tokens')).toContainText('právě teď');
   await page.locator('#tokens button').click();
+  await answerModal(page, false);
+  await expect(page.locator('#tokens tr')).toHaveCount(1);
+  await page.locator('#tokens button').click();
+  expect((await answerModal(page, true)).text).toContain('notebook');
   await expect(page.locator('#tokens-empty')).toBeVisible();
   res = await curl.post('/api/sites', { headers: auth, multipart: { name: unique('cli'), f: htmlFile('x') } });
   expect(res.status()).toBe(400); // no account any more → asked for an e-mail
@@ -138,8 +144,8 @@ test('deleting the account needs the e-mail link; data is kept but the e-mail ca
   await page.goto('/ucet');
   await expect(page.locator('#delete-text')).toContainText('90 dní');
   await expect(page.locator('#delete-text')).toContainText('martin@freepages.dev');
-  answerDialogs(page, [true]);
   await page.locator('#delete-account').click();
+  await answerModal(page, true);
   await expect(page.locator('#delete-sent')).toContainText(email);
   // Nothing happens until the link is used.
   expect((await request.get(`/${site}/`)).status()).toBe(200);

@@ -1,6 +1,6 @@
 // @ts-check
 const http = require('http');
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./test');
 const { FIXTURES, unique, pickAndPublish, signIn, apiToken, publishViaApi } = require('./helpers');
 
 test.describe('path-style sites (localhost:4317/<name>/)', () => {
