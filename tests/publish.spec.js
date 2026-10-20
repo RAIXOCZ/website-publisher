@@ -1,7 +1,7 @@
 // @ts-check
 const fs = require('fs');
 const { test, expect } = require('@playwright/test');
-const { FIXTURES, PASSWORD_RE, unique, pick, publishViaUi, publishViaApi, answerDialogs, clipboard } = require('./helpers');
+const { FIXTURES, PASSWORD_RE, unique, pick, pickAndPublish, publishViaUi, publishViaApi, answerDialogs, clipboard } = require('./helpers');
 
 test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
 
@@ -24,7 +24,7 @@ test('the name is typed into an address bar and slugified', async ({ page }) => 
   await expect(page.locator('#name')).toHaveValue('muj-web');
 });
 
-test('"Vybrat složku" publishes a folder and shows link and password', async ({ page, context }) => {
+test('"Přidat složku" + "Zveřejnit web" publishes a folder and shows link and password', async ({ page, context }) => {
   const name = unique('folder');
   await page.goto('/');
   const password = await publishViaUi(page, name);
@@ -57,15 +57,15 @@ test('clicking the drop zone opens the folder picker', async ({ page }) => {
   const name = unique('dropzone');
   await page.goto('/');
   await page.locator('#name').fill(name);
-  await pick(page, page.locator('#dropzone .title'), FIXTURES.site);
+  await pickAndPublish(page, page.locator('#dropzone .title'), FIXTURES.site);
   await expect(page.locator('#result-title')).toHaveText(`Web ${name} je online`);
 });
 
-test('"Nahrát .zip" publishes the contents of a zip file', async ({ page, request }) => {
+test('"Přidat soubory" with a .zip publishes its contents', async ({ page, request }) => {
   const name = unique('zip');
   await page.goto('/');
   await page.locator('#name').fill(name);
-  await pick(page, page.locator('#pick-zip'), FIXTURES.zip);
+  await pickAndPublish(page, page.locator('#pick-files'), FIXTURES.zip);
   await expect(page.locator('#result-title')).toHaveText(`Web ${name} je online`);
   const res = await request.get(`/${name}/`);
   expect(await res.text()).toContain('Zipped site');
@@ -83,6 +83,8 @@ test('dropping a .zip file onto the drop zone publishes it', async ({ page, requ
     return dt;
   }, zip);
   await page.dispatchEvent('#dropzone', 'drop', { dataTransfer });
+  await expect(page.locator('.staged-item')).toHaveText(/dropped\.zip/);
+  await page.locator('#publish').click();
   await expect(page.locator('#result-title')).toHaveText(`Web ${name} je online`);
   expect(await (await request.get(`/${name}/`)).text()).toContain('Zipped site');
 });
@@ -99,7 +101,7 @@ test('"Zveřejnit další" resets the form', async ({ page }) => {
 test('reserved names are rejected', async ({ page }) => {
   await page.goto('/');
   await page.locator('#name').fill('admin');
-  await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+  await pickAndPublish(page, page.locator('#pick-folder'), FIXTURES.site);
   await expect(page.locator('#error-text')).toContainText('rezervovaný');
 });
 
@@ -110,7 +112,7 @@ test('re-publishing your own site fills in the saved password and replaces it', 
   await page.locator('#again').click();
 
   await page.locator('#name').fill(name);
-  await pick(page, page.locator('#pick-folder'), FIXTURES.siteV2);
+  await pickAndPublish(page, page.locator('#pick-folder'), FIXTURES.siteV2);
   await expect(page.locator('#error-text')).toContainText('je mezi vašimi weby');
   await expect(page.locator('#conflict-password')).toHaveValue(password);
   await page.locator('#conflict button[type=submit]').click();
@@ -126,7 +128,7 @@ test('"Zrušit" dismisses the replace prompt', async ({ page }) => {
   await publishViaUi(page, name);
   await page.locator('#again').click();
   await page.locator('#name').fill(name);
-  await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+  await pickAndPublish(page, page.locator('#pick-folder'), FIXTURES.site);
   await expect(page.locator('#conflict')).toBeVisible();
   await page.locator('#cancel').click();
   await expect(page.locator('#error')).toBeHidden();
@@ -140,7 +142,7 @@ test('someone else using a taken name gets the name with a random suffix', async
   const stranger = await (await browser.newContext({ locale: 'cs-CZ' })).newPage();
   await stranger.goto('/');
   await stranger.locator('#name').fill(name);
-  await pick(stranger, stranger.locator('#pick-folder'), FIXTURES.siteV2);
+  await pickAndPublish(stranger, stranger.locator('#pick-folder'), FIXTURES.siteV2);
   await expect(stranger.locator('#result')).toBeVisible();
   await expect(stranger.locator('#conflict')).toBeHidden();
 
@@ -162,7 +164,7 @@ test('"Zveřejnit jako nový web" publishes your own taken name with a suffix', 
   await publishViaUi(page, name);
   await page.locator('#again').click();
   await page.locator('#name').fill(name);
-  await pick(page, page.locator('#pick-folder'), FIXTURES.siteV2);
+  await pickAndPublish(page, page.locator('#pick-folder'), FIXTURES.siteV2);
   await expect(page.locator('#conflict')).toBeVisible();
   await page.locator('#as-new').click();
   await expect(page.locator('#result-title')).toHaveText(new RegExp(`^Web ${name}-[a-z0-9]{3} je online$`));
@@ -280,5 +282,83 @@ test.describe('Moje weby', () => {
     await expect(card.locator('[data-action=update]')).toBeHidden();
     await card.locator('[data-action=forget]').click();
     await expect(card).toHaveCount(0);
+  });
+});
+
+test.describe('staging before publishing', () => {
+  test('choosing a folder only adds it to the list and prefills the name', async ({ page, request }) => {
+    await page.goto('/');
+    await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+    await expect(page.locator('#result')).toBeHidden();
+    await expect(page.locator('#name')).toHaveValue('sample-site');
+    await expect(page.locator('.staged-item')).toHaveCount(1);
+    await expect(page.locator('.staged-item').first()).toContainText('sample-site/');
+    await expect(page.locator('.staged-item').first()).toContainText('5 souborů');
+    await expect(page.locator('#drop-title')).toHaveText('Přetáhněte sem další složku nebo soubory');
+    await expect(page.locator('#staged-summary')).toContainText('5 souborů');
+    expect((await request.get('/sample-site/')).status()).toBe(404);
+  });
+
+  test('a typed name is kept when a folder is added', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('#name').fill('my-own-name');
+    await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+    await expect(page.locator('#name')).toHaveValue('my-own-name');
+  });
+
+  test('loose files get a random 6-character name', async ({ page }) => {
+    await page.goto('/');
+    await pick(page, page.locator('#pick-files'), [`${FIXTURES.site}/index.html`, `${FIXTURES.site}/about.html`]);
+    await expect(page.locator('.staged-item')).toHaveCount(2);
+    await expect(page.locator('#name')).toHaveValue(/^[a-z0-9]{6}$/);
+  });
+
+  test('an emptied name gets a random 6-character name on publish', async ({ page }) => {
+    await page.goto('/');
+    await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+    await page.locator('#name').fill('');
+    await page.locator('#publish').click();
+    await expect(page.locator('#result-title')).toHaveText(/^Web [a-z0-9]{6} je online$/);
+  });
+
+  test('more folders and files can be added, removed and cleared', async ({ page }) => {
+    await page.goto('/');
+    await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+    await pick(page, page.locator('#pick-folder'), FIXTURES.siteV2);
+    await pick(page, page.locator('#pick-files'), FIXTURES.zip);
+    const items = page.locator('.staged-item');
+    await expect(items).toHaveCount(3);
+    await expect(items.nth(1)).toContainText('jako podsložka sample-site-v2/');
+
+    await items.nth(2).getByRole('button', { name: 'Odebrat zipped-site.zip' }).click();
+    await expect(items).toHaveCount(2);
+    await page.locator('#clear-staged').click();
+    await expect(page.locator('#staged')).toBeHidden();
+    await expect(page.locator('#drop-title')).toHaveText('Přetáhněte sem složku s webem');
+  });
+
+  test('the first folder is the site root, later folders become subfolders and files go to the root', async ({ page, request }) => {
+    const name = unique('combined');
+    await page.goto('/');
+    await page.locator('#name').fill(name);
+    await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+    await pick(page, page.locator('#pick-folder'), FIXTURES.siteV2);
+    await pick(page, page.locator('#pick-files'), FIXTURES.zip);
+    await page.locator('#publish').click();
+    await expect(page.locator('#result-title')).toHaveText(`Web ${name} je online`);
+    await expect(page.locator('#staged')).toBeHidden();
+
+    expect(await (await request.get(`/${name}/`)).text()).toContain('Sample site');
+    expect(await (await request.get(`/${name}/sample-site-v2/`)).text()).toContain('Version 2');
+    expect((await request.get(`/${name}/zipped-site.zip`)).status()).toBe(200);
+  });
+
+  test('pressing Enter in the name field publishes the staged files', async ({ page }) => {
+    const name = unique('enter');
+    await page.goto('/');
+    await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+    await page.locator('#name').fill(name);
+    await page.locator('#name').press('Enter');
+    await expect(page.locator('#result-title')).toHaveText(`Web ${name} je online`);
   });
 });

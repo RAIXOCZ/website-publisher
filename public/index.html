@@ -50,11 +50,22 @@
             <div class="icon">
               <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>
             </div>
-            <p class="title" data-i18n="drop.title">Přetáhněte sem složku s webem</p>
-            <p class="hint" data-i18n-html="drop.hint">nebo soubor .zip &middot; musí obsahovat <code>index.html</code></p>
+            <p class="title" id="drop-title" data-i18n="drop.title">Přetáhněte sem složku s webem</p>
+            <p class="hint" data-i18n-html="drop.hint">nebo soubory či .zip &middot; web musí obsahovat <code>index.html</code></p>
             <div class="actions">
-              <button class="btn btn-primary" id="pick-folder" type="button" data-i18n="pick.folder">Vybrat složku</button>
-              <button class="btn" id="pick-zip" type="button" data-i18n="pick.zip">Nahrát .zip</button>
+              <button class="btn btn-primary" id="pick-folder" type="button" data-i18n="pick.folder">Přidat složku</button>
+              <button class="btn" id="pick-files" type="button" data-i18n="pick.files">Přidat soubory</button>
+            </div>
+          </div>
+
+          <div class="staged" id="staged" hidden>
+            <ul class="staged-list" id="staged-list"></ul>
+            <div class="staged-foot">
+              <span class="muted small" id="staged-summary"></span>
+              <div class="row">
+                <button class="btn" id="clear-staged" type="button" data-i18n="staged.clear">Vyprázdnit</button>
+                <button class="btn btn-primary" id="publish" type="button" data-i18n="publish">Zveřejnit web</button>
+              </div>
             </div>
             <p class="consent" data-i18n-html="consent">Nahráním souhlasíte s <a href="/podminky">podmínkami použití</a>. Jak zacházíme s údaji, popisují <a href="/soukromi">zásady ochrany osobních údajů</a>.</p>
           </div>

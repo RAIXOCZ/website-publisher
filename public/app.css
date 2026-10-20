@@ -311,8 +311,31 @@ input:focus { border-color: var(--teal-2); box-shadow: 0 0 0 4px var(--ring); }
 .dropzone .title { margin: 0 0 4px; font: 650 22px/1.2 var(--display); letter-spacing: -0.02em; color: var(--ink); }
 .dropzone .hint { margin: 0; font-size: 14px; color: var(--muted); }
 .dropzone .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 22px; }
-.dropzone .consent { margin: 16px 0 0; max-width: 440px; font-size: 12.5px; color: var(--faint); cursor: default; }
-.dropzone .consent a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+.consent { margin: 4px 0 0; font-size: 12.5px; color: var(--faint); }
+.consent a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+
+.dropzone.compact { padding: 22px 20px; }
+.dropzone.compact .icon { width: 44px; height: 44px; margin-bottom: 8px; border-radius: 14px; }
+.dropzone.compact .icon svg { width: 22px; height: 22px; }
+.dropzone.compact .title { font-size: 17px; }
+.dropzone.compact .actions { margin-top: 14px; }
+
+.staged { display: flex; flex-direction: column; gap: 12px; }
+.staged-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.staged-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 8px 8px 12px;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--r-sm);
+}
+.staged-item .grow { display: flex; flex-direction: column; line-height: 1.35; }
+.staged-item b { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.staged-item .grow span { font-size: 13px; color: var(--muted); }
+.staged-icon { display: grid; place-items: center; width: 34px; height: 34px; flex: none; border-radius: 9px; color: var(--teal); background: var(--ok-soft); }
+.staged-item .btn-quiet { font-size: 18px; line-height: 1; padding: 6px 10px; color: var(--muted); }
+.staged-item .btn-quiet:hover { color: var(--danger); background: var(--danger-soft); }
+.staged-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 
 .progress p { margin: 0 0 10px; }
 .meter { height: 10px; border-radius: 6px; background: var(--well); border: 1px solid var(--glass-line); overflow: hidden; }

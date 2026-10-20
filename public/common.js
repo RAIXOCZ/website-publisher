@@ -165,13 +165,14 @@ function ownedPassword(name) {
 
 /* ---------- picking and uploading folders ---------- */
 
-// Opens the browser's folder (or .zip) picker; resolves with [{ path, file }].
-function pickFiles({ zip = false } = {}) {
+// Opens the browser's folder picker (or, with folder: false, a picker for any
+// number of files); resolves with [{ path, file }].
+function pickFiles({ folder = true } = {}) {
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
-    if (zip) input.accept = '.zip,application/zip';
-    else input.webkitdirectory = true;
+    if (folder) input.webkitdirectory = true;
+    else input.multiple = true;
     input.addEventListener('change', () => {
       resolve([...input.files].map((file) => ({ path: file.webkitRelativePath || file.name, file })));
     });

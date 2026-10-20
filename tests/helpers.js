@@ -23,10 +23,16 @@ async function pick(page, locator, files) {
   await chooser.setFiles(files);
 }
 
+// Adds files through a picker, then presses "Zveřejnit web".
+async function pickAndPublish(page, locator, files) {
+  await pick(page, locator, files);
+  await page.locator('#publish').click();
+}
+
 // Publishes FIXTURES.site (or `dir`) through the UI and returns the password.
 async function publishViaUi(page, name, dir = FIXTURES.site) {
   await page.locator('#name').fill(name);
-  await pick(page, page.locator('#pick-folder'), dir);
+  await pickAndPublish(page, page.locator('#pick-folder'), dir);
   await page.locator('#result').waitFor();
   return (await page.locator('#result-password-value').textContent()).trim();
 }
@@ -56,4 +62,4 @@ async function clipboard(page) {
   return page.evaluate(() => navigator.clipboard.readText());
 }
 
-module.exports = { FIXTURES, ADMIN_PASSWORD, PASSWORD_RE, unique, pick, publishViaUi, publishViaApi, answerDialogs, clipboard };
+module.exports = { FIXTURES, ADMIN_PASSWORD, PASSWORD_RE, unique, pick, pickAndPublish, publishViaUi, publishViaApi, answerDialogs, clipboard };

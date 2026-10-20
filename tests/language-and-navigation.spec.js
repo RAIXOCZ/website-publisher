@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { FIXTURES, pick } = require('./helpers');
+const { FIXTURES, pick, pickAndPublish } = require('./helpers');
 
 test.describe('language detection', () => {
   test('Czech browsers get Czech', async ({ page }) => {
@@ -19,7 +19,7 @@ test.describe('language detection', () => {
       await expect(page).toHaveTitle('Publish a website');
       await expect(page.locator('h1')).toHaveText('Your site online in one drop.');
       await page.locator('#name').fill('api');
-      await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+      await pickAndPublish(page, page.locator('#pick-folder'), FIXTURES.site);
       await expect(page.locator('#error-text')).toHaveText('"api" is reserved, please choose another name.');
     });
   });

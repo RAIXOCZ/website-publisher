@@ -1,7 +1,7 @@
 // @ts-check
 const http = require('http');
 const { test, expect } = require('@playwright/test');
-const { FIXTURES, unique, pick, publishViaApi } = require('./helpers');
+const { FIXTURES, unique, pick, pickAndPublish, publishViaApi } = require('./helpers');
 
 test.describe('path-style sites (localhost:4317/<name>/)', () => {
   let name;
@@ -50,7 +50,7 @@ test.describe('site features', () => {
     const name = unique('features');
     await page.goto('/');
     await page.locator('#name').fill(name);
-    await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+    await pickAndPublish(page, page.locator('#pick-folder'), FIXTURES.site);
     await page.locator('#result').waitFor();
 
     expect(await (await request.get(`/${name}/about`)).text()).toContain('About page');

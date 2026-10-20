@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { FIXTURES, pick } = require('./helpers');
+const { FIXTURES, pick, pickAndPublish } = require('./helpers');
 
 const PAGES = [
   { cs: '/podminky', en: '/terms', csTitle: 'Podmínky použití', enTitle: 'Terms of use' },
@@ -38,7 +38,8 @@ for (const path of ['/', '/docs', '/admin', '/podminky', '/soukromi']) {
 
 test('the upload area says that uploading means accepting the terms', async ({ page }) => {
   await page.goto('/');
-  const consent = page.locator('#dropzone .consent');
+  await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+  const consent = page.locator('#staged .consent');
   await expect(consent).toContainText('Nahráním souhlasíte s podmínkami použití');
 
   // Clicking the link opens the terms, not the folder picker.
@@ -53,7 +54,7 @@ test('legal page names cannot be taken by a site', async ({ page }) => {
   for (const name of ['podminky', 'soukromi', 'terms', 'privacy']) {
     await page.goto('/');
     await page.locator('#name').fill(name);
-    await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+    await pickAndPublish(page, page.locator('#pick-folder'), FIXTURES.site);
     await expect(page.locator('#error-text')).toContainText('rezervovaný');
   }
 });
@@ -62,7 +63,8 @@ test.describe('English browser', () => {
   test.use({ locale: 'en-US' });
   test('sees the English consent line and footer links', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('#dropzone .consent')).toContainText('By uploading, you agree to the terms of use');
+    await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+    await expect(page.locator('#staged .consent')).toContainText('By uploading, you agree to the terms of use');
     await expect(page.locator('.site-footer a[href="/podminky"]')).toHaveText('Terms');
     await expect(page.locator('.site-footer a[href="/soukromi"]')).toHaveText('Privacy');
   });

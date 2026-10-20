@@ -39,9 +39,9 @@ function updatePreview() {
 
 // After a name problem, pressing Enter retries with the files already chosen.
 els.name.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && state.pending) {
+  if (e.key === 'Enter' && state.staged.length) {
     e.preventDefault();
-    start(state.pending.files);
+    start(stagedFiles());
   }
 });
 els.name.addEventListener('blur', () => {
@@ -53,20 +53,20 @@ els.name.addEventListener('blur', () => {
 
 $('#pick-folder').addEventListener('click', async (e) => {
   e.stopPropagation();
-  start(await pickFiles());
+  stageFolderSelection(await pickFiles());
 });
-$('#pick-zip').addEventListener('click', async (e) => {
+$('#pick-files').addEventListener('click', async (e) => {
   e.stopPropagation();
-  start(await pickFiles({ zip: true }));
+  stageFiles((await pickFiles({ folder: false })).map((f) => f.file));
 });
 els.dropzone.addEventListener('click', async (e) => {
-  if (e.target.closest('a')) return; // links in the consent line
-  start(await pickFiles());
+  if (e.target.closest('a, button')) return;
+  stageFolderSelection(await pickFiles());
 });
 els.dropzone.addEventListener('keydown', async (e) => {
   if (e.target === els.dropzone && (e.key === 'Enter' || e.key === ' ')) {
     e.preventDefault();
-    start(await pickFiles());
+    stageFolderSelection(await pickFiles());
   }
 });
 
@@ -93,14 +93,18 @@ els.dropzone.addEventListener('drop', async (e) => {
   const entries = [...e.dataTransfer.items]
     .filter((item) => item.kind === 'file')
     .map((item) => (item.webkitGetAsEntry ? item.webkitGetAsEntry() : null));
-  let files;
-  if (entries.length && entries.every(Boolean)) {
-    files = [];
-    for (const entry of entries) await walk(entry, '', files);
-  } else {
-    files = [...e.dataTransfer.files].map((file) => ({ path: file.name, file }));
+  if (!entries.length || !entries.every(Boolean)) return stageFiles([...e.dataTransfer.files]);
+  const loose = [];
+  for (const entry of entries) {
+    if (entry.isDirectory) {
+      const files = [];
+      await walk(entry, '', files);
+      stageFolder(entry.name, files);
+    } else {
+      loose.push(await new Promise((resolve, reject) => entry.file(resolve, reject)));
+    }
   }
-  start(files);
+  if (loose.length) stageFiles(loose);
 });
 
 function readAllEntries(reader) {
@@ -129,11 +133,91 @@ async function walk(entry, prefix, out) {
 
 /* ---------- publishing ---------- */
 
-function suggestName(files) {
-  if (files.length === 1 && /\.zip$/i.test(files[0].path)) return slugify(files[0].path.split('/').pop());
-  const tops = new Set(files.map((f) => (f.path.includes('/') ? f.path.split('/')[0] : '')));
-  return tops.size === 1 ? slugify([...tops][0]) : '';
+/* ---------- staging: collect folders and files before publishing ---------- */
+
+state.staged = []; // [{ kind: 'folder' | 'file', label, files: [{ path, file }] }]
+
+function randomName() {
+  const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  return [...crypto.getRandomValues(new Uint8Array(6))].map((b) => alphabet[b % alphabet.length]).join('');
 }
+
+// A folder's files arrive as "folder/…". The first folder becomes the site
+// root; folders added later keep their name as a subfolder (e.g. img/).
+function stageFolder(label, files) {
+  const asRoot = state.staged.length === 0;
+  const mapped = files.map(({ path, file }) => ({ path: asRoot ? path.split('/').slice(1).join('/') : path, file }));
+  addStaged({ kind: 'folder', label, root: asRoot, files: cleanFiles(mapped) });
+}
+
+function stageFolderSelection(files) {
+  if (!files.length) return;
+  stageFolder(files[0].path.split('/')[0], files);
+}
+
+function stageFiles(files) {
+  for (const file of files) addStaged({ kind: 'file', label: file.name, files: cleanFiles([{ path: file.name, file }]) });
+}
+
+function addStaged(item) {
+  if (!item.files.length) return;
+  els.error.hidden = true;
+  state.staged.push(item);
+  if (!slugify(els.name.value)) {
+    const first = state.staged[0];
+    const isZip = first.kind === 'file' && /\.zip$/i.test(first.label);
+    els.name.value = (first.kind === 'folder' || isZip ? slugify(first.label) : '') || randomName();
+  }
+  renderStaged();
+}
+
+function stagedFiles() {
+  return state.staged.flatMap((item) => item.files);
+}
+
+const ICONS = {
+  folder: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+  file: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>',
+};
+
+function renderStaged() {
+  const items = state.staged;
+  $('#staged').hidden = items.length === 0;
+  els.dropzone.classList.toggle('compact', items.length > 0);
+  $('#drop-title').textContent = t(items.length ? 'drop.titleMore' : 'drop.title');
+  $('#staged-list').replaceChildren(
+    ...items.map((item, index) => {
+      const li = document.createElement('li');
+      li.className = 'staged-item';
+      const size = item.files.reduce((sum, f) => sum + f.file.size, 0);
+      const name = item.kind === 'folder' ? `${item.label}/` : item.label;
+      const where = item.kind === 'folder' && !item.root ? ` · ${t('staged.asSubfolder', { name: item.label })}` : '';
+      li.innerHTML = `<span class="staged-icon">${ICONS[item.kind]}</span><div class="grow"><b></b><span></span></div>`;
+      $('b', li).textContent = name;
+      $('span:not(.staged-icon)', li).textContent =
+        (item.kind === 'folder' ? `${filesLabel(item.files.length)} · ` : '') + formatBytes(size) + where;
+      const remove = Object.assign(document.createElement('button'), { type: 'button', className: 'btn btn-sm btn-quiet', textContent: '×' });
+      remove.setAttribute('aria-label', t('staged.remove', { name }));
+      remove.dataset.index = index;
+      li.append(remove);
+      return li;
+    }),
+  );
+  const files = stagedFiles();
+  $('#staged-summary').textContent = `${filesLabel(files.length)} · ${formatBytes(files.reduce((sum, f) => sum + f.file.size, 0))}`;
+}
+
+$('#staged-list').addEventListener('click', (e) => {
+  const button = e.target.closest('button[data-index]');
+  if (!button) return;
+  state.staged.splice(Number(button.dataset.index), 1);
+  renderStaged();
+});
+$('#clear-staged').addEventListener('click', () => {
+  state.staged = [];
+  renderStaged();
+});
+$('#publish').addEventListener('click', () => start(stagedFiles()));
 
 function showError(message, { askPassword = false } = {}) {
   els.errorText.textContent = message;
@@ -144,6 +228,7 @@ function showError(message, { askPassword = false } = {}) {
 
 function setStage(stage) {
   els.dropzone.hidden = stage !== 'pick';
+  $('#staged').hidden = stage !== 'pick' || state.staged.length === 0;
   els.progress.hidden = stage !== 'upload';
   els.result.hidden = stage !== 'done';
   els.name.disabled = stage === 'upload';
@@ -154,14 +239,10 @@ async function start(files) {
   files = cleanFiles(files);
   if (!files.length) return;
 
-  const name = slugify(els.name.value) || suggestName(files);
-  if (!els.name.value && name) els.name.value = name;
-  updatePreview();
+  if (!slugify(els.name.value)) els.name.value = randomName();
+  const name = slugify(els.name.value);
+  els.name.value = name;
   state.pending = { files, name };
-  if (!name) {
-    els.name.focus();
-    return showError(t('err.enterName'));
-  }
 
   let check;
   try {
@@ -227,6 +308,8 @@ async function upload(files, name, password = null) {
 
   if (status >= 200 && status < 300) {
     state.pending = null;
+    state.staged = [];
+    renderStaged();
     if (data.password) rememberSite(data.name, data.password);
     else if (password) rememberSite(data.name, password);
     done(data);
