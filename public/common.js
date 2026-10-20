@@ -77,18 +77,32 @@ function sitesLabel(n) {
   return plural(n, ['web', 'weby', 'webů'], ['site', 'sites']);
 }
 
+// A short message in a pill at the bottom of the screen; it slides in and
+// stays a few seconds (errors a little longer).
+const TOAST_ICONS = {
+  ok: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  error: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 7v6M12 17h.01"/></svg>',
+};
 let toastTimer;
-function toast(message) {
+function toast(message, { type = 'ok' } = {}) {
   let el = $('.toast');
   if (!el) {
     el = document.createElement('div');
     el.className = 'toast';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+    el.innerHTML = '<span class="toast-icon" aria-hidden="true"></span><span class="toast-text"></span>';
     document.body.append(el);
   }
-  el.textContent = message;
-  el.hidden = false;
+  el.dataset.type = type;
+  $('.toast-icon', el).innerHTML = TOAST_ICONS[type] || TOAST_ICONS.ok;
+  $('.toast-text', el).textContent = message;
+  // Restart the entrance animation when a new message replaces the old one.
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (el.hidden = true), 2200);
+  toastTimer = setTimeout(() => el.classList.remove('show'), type === 'error' ? 6000 : 4500);
 }
 
 async function copy(text, message = t('toast.linkCopied')) {
@@ -284,6 +298,28 @@ function uploadSite({ files, name, overwrite = false, password = '', preview = f
     );
     xhr.send(form);
   });
+}
+
+/* ---------- side navigation that follows the scroll position ---------- */
+
+// Marks the link in `nav` whose section is currently on screen.
+function scrollSpy(nav) {
+  const links = [...nav.querySelectorAll('a[href^="#"]')];
+  const sections = links.map((a) => document.getElementById(decodeURIComponent(a.hash.slice(1)))).filter(Boolean);
+  if (!sections.length || !('IntersectionObserver' in window)) return;
+  const visible = new Set();
+  const update = () => {
+    const current = sections.find((s) => visible.has(s)) || null;
+    for (const a of links) a.classList.toggle('active', Boolean(current) && a.hash.slice(1) === current.id);
+  };
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) (e.isIntersecting ? visible.add(e.target) : visible.delete(e.target));
+      update();
+    },
+    { rootMargin: '-100px 0px -55% 0px' },
+  );
+  for (const s of sections) observer.observe(s);
 }
 
 /* ---------- signing in with an e-mail link ---------- */

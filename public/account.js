@@ -19,6 +19,7 @@ async function load() {
   }
   const { user, sites, tokens, usage } = me;
   $('#account-name').textContent = `${user.firstName} ${user.lastName}`.trim() || user.email;
+  $('#account-avatar').textContent = (user.firstName || user.email)[0].toUpperCase();
   $('#account-email').textContent = t('account.since', { email: user.email, date: new Date(user.createdAt).toLocaleDateString(LANG) });
   $('#profile').firstName.value = user.firstName;
   $('#profile').lastName.value = user.lastName;
@@ -202,6 +203,7 @@ $('#logout').addEventListener('click', async () => {
 });
 
 setupEmailLogin($('#signin-form'));
+scrollSpy($('.side-nav'));
 
 init().catch((err) => {
   document.querySelector('main').textContent = t('err.load', { message: err.message });

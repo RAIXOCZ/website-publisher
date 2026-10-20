@@ -61,7 +61,7 @@ function renderSites() {
       const tr = document.createElement('tr');
       tr.dataset.id = site.id;
       if (site.deletedAt) tr.classList.add('dim');
-      tr.innerHTML = '<td><div class="site-name"><span></span> </div><a class="site-url" target="_blank" rel="noopener"></a></td><td></td><td class="num hide-sm"></td><td class="num"></td><td class="actions"></td>';
+      tr.innerHTML = '<td><div class="site-name"><span></span> </div><a class="site-url" target="_blank" rel="noopener"></a></td><td></td><td class="num hide-sm"><span></span><br><span class="muted small"></span></td><td class="actions"></td>';
       $('.site-name span', tr).textContent = site.name;
       $('.site-name', tr).insertAdjacentHTML('beforeend', statusChip(site));
       if (site.deletedAt) $('.site-url', tr).remove();
@@ -76,9 +76,10 @@ function renderSites() {
       } else {
         cell(tr, 1).innerHTML = `<span class="chip">${t('admin.passwordSite')}</span>`;
       }
-      cell(tr, 2).textContent = `${filesLabel(site.files)} · ${formatBytes(site.bytes)}`;
-      cell(tr, 3).textContent = timeAgo(site.updatedAt);
-      cell(tr, 3).title = formatDateTime(site.updatedAt);
+      // Size, and below it when the site last changed.
+      cell(tr, 2).children[0].textContent = `${filesLabel(site.files)} · ${formatBytes(site.bytes)}`;
+      cell(tr, 2).children[2].textContent = t('chip.updated', { ago: timeAgo(site.updatedAt) });
+      cell(tr, 2).children[2].title = formatDateTime(site.updatedAt);
       const actions = [button(t('admin.history'), 'audit')];
       if (!site.deletedAt) {
         actions.push(`<a class="btn btn-sm" href="/?edit=${encodeURIComponent(site.name)}">${t('row.edit')}</a>`);
@@ -87,13 +88,17 @@ function renderSites() {
         actions.push(button(t('row.delete'), 'delete', 'btn-danger'));
       }
       actions.push(button(t('admin.purge'), 'purge', 'btn-danger'));
-      cell(tr, 4).innerHTML = actions.join('');
+      cell(tr, 3).innerHTML = `<div class="actions-wrap">${actions.join('')}</div>`;
       return tr;
     }),
   );
   $('#sites-empty').hidden = sites.length > 0;
   const active = data.sites.filter((s) => !s.deletedAt);
   $('#count-sites').textContent = active.length;
+  const share = data.storage.limit ? Math.min(1, data.storage.used / data.storage.limit) : 0;
+  $('#storage-text').textContent = `${formatBytes(data.storage.used)} / ${formatBytes(data.storage.limit)}`;
+  $('#storage-bar').style.width = `${(share * 100).toFixed(1)}%`;
+  $('#storage-bar').classList.toggle('full', share >= 0.8);
   $('#stats').textContent = `${sitesLabel(active.length)} · ${t('usage.total', { used: formatBytes(data.storage.used), limit: formatBytes(data.storage.limit) })}`;
 }
 
@@ -156,7 +161,7 @@ function renderUsers() {
         if (!user.deletedAt) actions.push(button(t('row.delete'), 'delete', 'btn-danger'));
         actions.push(button(t('admin.purge'), 'purge', 'btn-danger'));
       }
-      cell(tr, 3).innerHTML = actions.join('');
+      cell(tr, 3).innerHTML = `<div class="actions-wrap">${actions.join('')}</div>`;
       return tr;
     }),
   );

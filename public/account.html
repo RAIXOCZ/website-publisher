@@ -38,28 +38,40 @@
       </section>
 
       <div class="account" id="account" hidden>
-        <div class="account-head">
-          <div>
-            <h1 id="account-name"></h1>
-            <p class="lead" id="account-email"></p>
+        <aside class="account-side glass">
+          <div class="profile-card">
+            <span class="avatar" id="account-avatar" aria-hidden="true"></span>
+            <div>
+              <h1 id="account-name"></h1>
+              <p class="muted small" id="account-email"></p>
+            </div>
           </div>
-          <div class="row">
+          <div class="usage" id="usage">
+            <div class="usage-label"><span id="usage-text"></span></div>
+            <div class="meter"><div id="usage-bar"></div></div>
+            <span class="muted small" id="usage-limit"></span>
+          </div>
+          <nav class="side-nav" aria-label="Účet">
+            <a href="#weby" data-i18n="account.sites">Weby</a>
+            <a href="#udaje" data-i18n="account.profile">Osobní údaje</a>
+            <a href="#cli" data-i18n="account.cliShort">Příkazová řádka</a>
+            <a href="#historie" data-i18n="account.audit">Historie aktivit</a>
+            <a href="#smazani" data-i18n="account.delete">Smazání účtu</a>
+          </nav>
+          <div class="side-buttons">
             <a class="btn" href="/admin" id="admin-link" hidden data-i18n="account.admin">Správa</a>
             <button class="btn" id="logout" data-i18n="nav.logout">Odhlásit</button>
           </div>
-        </div>
+        </aside>
 
-        <section class="card glass">
+        <div class="account-main">
+        <section class="card glass" id="weby">
           <h2 data-i18n="account.sites">Weby</h2>
-          <div class="usage" id="usage">
-            <div class="usage-label"><span id="usage-text"></span><span class="muted" id="usage-limit"></span></div>
-            <div class="meter"><div id="usage-bar"></div></div>
-          </div>
           <div class="site-list" id="sites"></div>
           <div class="empty" id="sites-empty" hidden data-i18n-html="account.sitesEmpty">Zatím nemáte žádné weby. <a href="/">Zveřejnit první →</a></div>
         </section>
 
-        <section class="card glass">
+        <section class="card glass" id="udaje">
           <h2 data-i18n="account.profile">Osobní údaje</h2>
           <form class="profile" id="profile">
             <label><span data-i18n="identity.first">Jméno</span><input type="text" name="firstName" autocomplete="given-name" maxlength="80" required></label>
@@ -69,7 +81,7 @@
           <p class="muted small" data-i18n="account.emailNote">E-mail nelze změnit. Pokud ho potřebujete změnit, napište nám.</p>
         </section>
 
-        <section class="card glass">
+        <section class="card glass" id="cli">
           <h2 data-i18n="account.cli">Příkazová řádka (API tokeny)</h2>
           <p class="muted" data-i18n="account.cliText">S tokenem můžete zveřejňovat a aktualizovat weby přes curl, například ze skriptu nebo CI. Token je jako heslo – nikomu ho nedávejte.</p>
           <form class="row" id="token-form">
@@ -88,7 +100,7 @@
           <p class="muted small" id="tokens-empty" data-i18n="account.tokensEmpty">Zatím nemáte žádné tokeny.</p>
         </section>
 
-        <section class="card glass">
+        <section class="card glass" id="historie">
           <h2 data-i18n="account.audit">Historie aktivit</h2>
           <p class="muted small" data-i18n="account.auditText">Záznam přihlášení a změn vašeho účtu a webů včetně IP adres, ze kterých byly provedeny.</p>
           <div class="table-wrap">
@@ -99,13 +111,14 @@
           </div>
         </section>
 
-        <section class="card glass danger-zone">
+        <section class="card glass danger-zone" id="smazani">
           <h2 data-i18n="account.delete">Smazání účtu</h2>
           <p id="delete-text"></p>
           <div class="row"><button class="btn btn-danger" id="delete-account" data-i18n="account.deleteButton">Smazat účet</button></div>
           <p class="muted small" id="delete-admin" hidden data-i18n="account.deleteAdmin">Účet správce nelze smazat. Správce se mění proměnnou ADMIN_EMAIL.</p>
           <div class="notice" id="delete-sent" hidden></div>
         </section>
+        </div>
       </div>
     </div>
   </main>

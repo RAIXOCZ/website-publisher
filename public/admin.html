@@ -14,7 +14,7 @@
         <a class="brand" href="/"><img class="logo" src="/_app/favicon.svg" alt=""><span data-brand>freepages</span><span class="sub hide-sm" data-i18n="brand.admin">správa</span></a>
         <div class="bar-right">
           <nav class="nav" id="nav" hidden>
-            <a href="/" data-i18n="nav.publish">+ Zveřejnit</a>
+            <a href="/" class="hide-sm" data-i18n="nav.publish">+ Zveřejnit</a>
             <a href="#" id="logout" data-i18n="nav.logout">Odhlásit</a>
           </nav>
           <div class="lang" data-lang-switch></div>
@@ -50,11 +50,20 @@
           <p class="lead" data-i18n="admin.lead">Weby, uživatelé a jejich historie včetně IP adres. Smazané položky zůstávají uložené po dobu uchování, pokud je nesmažete trvale.</p>
         </div>
 
-        <div class="tabs" role="tablist">
-          <button type="button" role="tab" data-tab="sites" aria-selected="true"><span data-i18n="admin.tabSites">Weby</span> <span class="count" id="count-sites">0</span></button>
-          <button type="button" role="tab" data-tab="users" aria-selected="false"><span data-i18n="admin.tabUsers">Uživatelé</span> <span class="count" id="count-users">0</span></button>
-          <button type="button" role="tab" data-tab="whitelist" aria-selected="false"><span data-i18n="admin.tabWhitelist">IP whitelist</span> <span class="count" id="count-whitelist">0</span></button>
-        </div>
+        <div class="with-side">
+          <aside class="side-panel glass">
+            <div class="usage">
+              <div class="usage-label"><span data-i18n="admin.storage">Úložiště</span><span class="muted" id="storage-text"></span></div>
+              <div class="meter"><div id="storage-bar"></div></div>
+            </div>
+            <nav class="side-nav" role="tablist" aria-orientation="vertical">
+              <button type="button" role="tab" data-tab="sites" aria-selected="true"><span data-i18n="admin.tabSites">Weby</span> <span class="count" id="count-sites">0</span></button>
+              <button type="button" role="tab" data-tab="users" aria-selected="false"><span data-i18n="admin.tabUsers">Uživatelé</span> <span class="count" id="count-users">0</span></button>
+              <button type="button" role="tab" data-tab="whitelist" aria-selected="false"><span data-i18n="admin.tabWhitelist">IP whitelist</span> <span class="count" id="count-whitelist">0</span></button>
+            </nav>
+          </aside>
+
+          <div class="admin-main">
 
         <section class="table-panel glass" data-panel="sites">
           <div class="toolbar">
@@ -69,7 +78,6 @@
                   <th data-i18n="admin.thSite">Web</th>
                   <th data-i18n="admin.thOwner">Vlastník</th>
                   <th class="hide-sm" data-i18n="admin.thSize">Velikost</th>
-                  <th data-i18n="admin.thUpdated">Aktualizováno</th>
                   <th></th>
                 </tr>
               </thead>
@@ -119,6 +127,8 @@
             <div class="empty" id="whitelist-empty" hidden data-i18n="admin.emptyWhitelist">Zatím tu nejsou žádné adresy.</div>
           </div>
         </section>
+          </div>
+        </div>
       </div>
 
       <dialog class="dialog glass" id="audit-dialog">

@@ -64,43 +64,48 @@
           </div>
 
           <div class="staged" id="staged" hidden>
-            <div class="tree-toolbar">
-              <button class="btn btn-sm" type="button" data-tool="files"><span aria-hidden="true">+</span> <span data-i18n="tool.files">Soubory</span></button>
-              <button class="btn btn-sm" type="button" data-tool="folder"><span aria-hidden="true">+</span> <span data-i18n="tool.folder">Složka</span></button>
-              <button class="btn btn-sm" type="button" data-tool="mkdir" data-i18n="tool.mkdir">Nová složka</button>
-              <button class="btn btn-sm btn-quiet" type="button" data-tool="replace-all" data-i18n="tool.replaceAll">Nahradit vše složkou</button>
-            </div>
-            <ul class="file-tree" id="staged-list"></ul>
-            <p class="tree-hint" data-i18n="tree.hint">Přetáhněte soubory a složky na jinou složku, nebo je sem přetáhněte z počítače. Další možnosti najdete pod ⋯.</p>
-
-            <div class="preview-box" id="preview-box" hidden>
-              <span class="preview-dot" aria-hidden="true"></span>
-              <div class="grow">
-                <b id="preview-title" data-i18n="preview.ready">Náhled je připravený</b>
-                <span class="muted small" id="preview-time"></span>
+            <div class="staged-main">
+              <div class="tree-toolbar">
+                <button class="btn btn-sm" type="button" data-tool="files"><span aria-hidden="true">+</span> <span data-i18n="tool.files">Soubory</span></button>
+                <button class="btn btn-sm" type="button" data-tool="folder"><span aria-hidden="true">+</span> <span data-i18n="tool.folder">Složka</span></button>
+                <button class="btn btn-sm" type="button" data-tool="mkdir" data-i18n="tool.mkdir">Nová složka</button>
+                <button class="btn btn-sm btn-quiet" type="button" data-tool="replace-all" data-i18n="tool.replaceAll">Nahradit vše složkou</button>
               </div>
-              <a class="btn btn-sm btn-primary" id="preview-open" target="_blank" rel="noopener" data-i18n="preview.open">Otevřít náhled</a>
+              <ul class="file-tree" id="staged-list"></ul>
+              <p class="tree-hint" data-i18n="tree.hint">Přetáhněte soubory a složky na jinou složku, nebo je sem přetáhněte z počítače. Další možnosti najdete pod ⋯.</p>
             </div>
 
-            <form class="identity" id="identity" hidden>
-              <p class="identity-lead" data-i18n="identity.lead">Kam poslat potvrzení? Web zveřejníme, jakmile potvrdíte svůj e-mail. Účet se vytvoří automaticky.</p>
-              <input type="email" name="email" id="id-email" data-i18n-placeholder="identity.email" placeholder="E-mail" autocomplete="email" required>
-              <input type="text" name="firstName" id="id-first" data-i18n-placeholder="identity.first" placeholder="Jméno" autocomplete="given-name" maxlength="80" required>
-              <input type="text" name="lastName" id="id-last" data-i18n-placeholder="identity.last" placeholder="Příjmení" autocomplete="family-name" maxlength="80" required>
-              <label class="check identity-remember"><input type="checkbox" id="id-remember"> <span data-i18n="identity.remember">Zapamatovat si mé údaje v tomto prohlížeči</span></label>
-              <p class="identity-note"><span data-i18n="identity.have">Už máte účet?</span> <a href="/ucet" data-i18n="identity.login">Přihlaste se</a> <span data-i18n="identity.haveTail">a web se zveřejní hned.</span></p>
-            </form>
-            <p class="signed-as muted small" id="signed-as" hidden></p>
-
-            <div class="staged-foot">
-              <span class="muted small" id="staged-summary"></span>
-              <div class="row">
-                <button class="btn" id="clear-staged" type="button" data-i18n="staged.clear">Vyprázdnit</button>
-                <button class="btn" id="preview" type="button" data-i18n="preview.button">Náhled</button>
-                <button class="btn btn-primary" id="publish" type="button" data-i18n="publish">Zveřejnit web</button>
+            <aside class="staged-side">
+              <div class="side-summary">
+                <span class="side-label" data-i18n="staged.contents">Obsah webu</span>
+                <b id="staged-summary"></b>
               </div>
-            </div>
-            <p class="consent" data-i18n-html="consent">Nahráním souhlasíte s <a href="/podminky">podmínkami použití</a>. Jak zacházíme s údaji, popisují <a href="/soukromi">zásady ochrany osobních údajů</a>.</p>
+              <div class="preview-box" id="preview-box" hidden>
+                <span class="preview-dot" aria-hidden="true"></span>
+                <div class="grow">
+                  <b id="preview-title" data-i18n="preview.ready">Náhled je připravený</b>
+                  <span class="muted small" id="preview-time"></span>
+                </div>
+                <a class="btn btn-sm btn-primary" id="preview-open" target="_blank" rel="noopener" data-i18n="preview.open">Otevřít náhled</a>
+              </div>
+              <form class="identity" id="identity" hidden>
+                <p class="identity-lead" data-i18n="identity.lead">Kam poslat potvrzení? Web zveřejníme, jakmile potvrdíte svůj e-mail. Účet se vytvoří automaticky.</p>
+                <input type="email" name="email" id="id-email" data-i18n-placeholder="identity.email" placeholder="E-mail" autocomplete="email" required>
+                <input type="text" name="firstName" id="id-first" data-i18n-placeholder="identity.first" placeholder="Jméno" autocomplete="given-name" maxlength="80" required>
+                <input type="text" name="lastName" id="id-last" data-i18n-placeholder="identity.last" placeholder="Příjmení" autocomplete="family-name" maxlength="80" required>
+                <label class="check identity-remember"><input type="checkbox" id="id-remember"> <span data-i18n="identity.remember">Zapamatovat si mé údaje v tomto prohlížeči</span></label>
+                <p class="identity-note"><span data-i18n="identity.have">Už máte účet?</span> <a href="/ucet" data-i18n="identity.login">Přihlaste se</a> <span data-i18n="identity.haveTail">a web se zveřejní hned.</span></p>
+              </form>
+              <p class="signed-as muted small" id="signed-as" hidden></p>
+              <div class="side-actions">
+                <button class="btn btn-primary btn-block" id="publish" type="button" data-i18n="publish">Zveřejnit web</button>
+                <div class="side-secondary">
+                  <button class="btn" id="preview" type="button" data-i18n="preview.button">Náhled</button>
+                  <button class="btn" id="clear-staged" type="button" data-i18n="staged.clear">Vyprázdnit</button>
+                </div>
+              </div>
+              <p class="consent" data-i18n-html="consent">Nahráním souhlasíte s <a href="/podminky">podmínkami použití</a>. Jak zacházíme s údaji, popisují <a href="/soukromi">zásady ochrany osobních údajů</a>.</p>
+            </aside>
           </div>
 
           <div class="progress" id="progress" hidden>
