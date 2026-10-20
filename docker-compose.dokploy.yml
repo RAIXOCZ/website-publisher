@@ -2,8 +2,9 @@
 # Set ADMIN_PASSWORD, PUBLIC_URL, SITE_DOMAIN in Dokploy's "Environment" tab.
 #
 # Routing is done with the Traefik labels below instead of Dokploy's "Domains"
-# tab, because they also match the wildcard *.pub.raixo.org. Point your
-# Cloudflare Tunnel's public hostnames (pub.raixo.org and *.pub.raixo.org) at
+# tab, because they also match the wildcard *.freepages.dev. Point your
+# Cloudflare Tunnel's public hostnames (pub.raixo.org, freepages.dev and
+# *.freepages.dev) at
 # Dokploy's Traefik on plain HTTP, e.g. http://localhost:80 (cloudflared on the
 # host) or http://dokploy-traefik:80 (cloudflared on dokploy-network).
 # If you change the domains, edit the Host/HostRegexp rule too.
@@ -15,7 +16,7 @@ services:
     environment:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD}
       PUBLIC_URL: ${PUBLIC_URL:-https://pub.raixo.org}
-      SITE_DOMAIN: ${SITE_DOMAIN:-pub.raixo.org}
+      SITE_DOMAIN: ${SITE_DOMAIN:-freepages.dev}
       PUBLIC_UPLOAD: ${PUBLIC_UPLOAD:-false}
       MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-100}
     volumes:
@@ -26,7 +27,7 @@ services:
       - traefik.enable=true
       - traefik.docker.network=dokploy-network
       - traefik.http.routers.website-publisher.entrypoints=web
-      - traefik.http.routers.website-publisher.rule=Host(`pub.raixo.org`) || HostRegexp(`^[a-z0-9-]+\.pub\.raixo\.org$$`)
+      - traefik.http.routers.website-publisher.rule=Host(`pub.raixo.org`) || Host(`freepages.dev`) || HostRegexp(`^[a-z0-9-]+\.freepages\.dev$$`)
       - traefik.http.services.website-publisher.loadbalancer.server.port=3000
 
 volumes:

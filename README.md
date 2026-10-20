@@ -5,7 +5,7 @@ Drop a folder, get a website. A small self-hosted static site publisher with a C
 - **Upload page** (`/`): drag & drop a folder (or a `.zip`) and it is live as soon as the upload finishes.
 - **Admin panel** (`/admin`): list, rename and delete sites. Protected by `ADMIN_PASSWORD` from `.env`.
 - **Guide** (`/docs`): how to publish, for whoever uses it.
-- Sites are served either as `https://pub.raixo.org/<name>/` or, with `SITE_DOMAIN`, on their own subdomain `https://<name>.pub.raixo.org/`.
+- Sites are served either as `https://pub.raixo.org/<name>/` or, with `SITE_DOMAIN`, on their own subdomain such as `https://<name>.freepages.dev/`.
 - Everything is stored in one Docker volume (`/data`). There is no database.
 
 ## Quick start (Docker Compose)
@@ -33,7 +33,7 @@ Back up that volume and you have backed up everything.
 | --- | --- | --- |
 | `ADMIN_PASSWORD` | required | Password for publishing and `/admin`. Changing it logs everyone out. |
 | `PUBLIC_URL` | `http://localhost:3000` | Address of the publisher as the browser sees it, e.g. `https://pub.raixo.org`. Secure cookies are enabled when it starts with `https`. |
-| `SITE_DOMAIN` | empty | Empty: sites live at `PUBLIC_URL/<name>/`. Set to `pub.raixo.org`: sites live at `https://<name>.pub.raixo.org/` and the path URLs redirect there. |
+| `SITE_DOMAIN` | empty | Empty: sites live at `PUBLIC_URL/<name>/`. Set to `freepages.dev`: sites live at `https://<name>.freepages.dev/` and the path URLs redirect there. |
 | `PUBLIC_UPLOAD` | `false` | `true` lets anyone publish without a password (they can't replace existing sites). |
 | `MAX_UPLOAD_MB` | `100` | Upload limit. Cloudflare Free/Pro rejects request bodies over 100 MB anyway. |
 | `PATH_SANDBOX` | `true` | Serve path-style sites with a CSP sandbox (see Security). |
@@ -47,17 +47,24 @@ Works with zero extra setup:
 1. In Zero Trust → Networks → Tunnels → your tunnel → **Public hostnames**, add `pub.raixo.org` → `http://<host>:3000` (or the Dokploy Traefik, see below).
 2. `.env`: `PUBLIC_URL=https://pub.raixo.org`, `SITE_DOMAIN=` (empty).
 
-### Option B: a subdomain per site (`<name>.pub.raixo.org`)
+### Option B: a subdomain per site on a separate domain (`<name>.freepages.dev`)
 
-The app already supports this: it reads the `Host` header, so one container serves every subdomain. You need to route `*.pub.raixo.org` to it:
+The publisher stays on `pub.raixo.org`, and every site gets `https://<name>.freepages.dev/`. A separate domain is covered by Cloudflare's free certificate (apex + `*.freepages.dev`) and fully isolates uploaded sites from your other services. `freepages.dev` and `www.freepages.dev` redirect to the publisher.
 
-1. **DNS**: in Cloudflare DNS add a proxied `CNAME` record `*.pub` → `<tunnel-id>.cfargotunnel.com`. The dashboard usually doesn't create wildcard records for you.
-2. **Tunnel**: add a public hostname with subdomain `*.pub`, domain `raixo.org`, pointing to the same service as `pub.raixo.org`. More specific hostnames always win over the wildcard.
-3. **`.env`**: `PUBLIC_URL=https://pub.raixo.org`, `SITE_DOMAIN=pub.raixo.org`.
-4. **TLS certificate (the catch)**: Cloudflare's free Universal SSL only covers `raixo.org` and `*.raixo.org`, **one level deep**. `xsite.pub.raixo.org` is two levels deep, so browsers would show a certificate error. Your choices:
-   - **Advanced Certificate Manager** (about $10/month per zone): order a certificate for `*.pub.raixo.org` (SSL/TLS → Edge Certificates → Order advanced certificate). Nothing else changes.
-   - **Use one level instead** (free): `SITE_DOMAIN=raixo.org`, so sites become `xsite.raixo.org`, plus a `*` wildcard DNS record and tunnel hostname. Your existing explicit subdomains keep working because specific records win. Downside: uploaded sites then share a domain with your other apps, so cookies set for `.raixo.org` would be visible to them.
-   - **A separate cheap domain** (free certificate, best isolation): e.g. `raixo.site` with `SITE_DOMAIN=raixo.site` → `xsite.raixo.site`. This is the same approach as GitHub Pages using `github.io`.
+1. **Zone**: `freepages.dev` must be an active zone in your Cloudflare account. If you bought it elsewhere, add it and switch the nameservers at the registrar. Wait until the Universal SSL certificate shows **Active** (SSL/TLS → Edge Certificates).
+2. **Tunnel**: in Zero Trust → Networks → Tunnels → your tunnel → **Public hostnames**, add three hostnames, all with the same service:
+
+   | Subdomain | Domain | Service |
+   | --- | --- | --- |
+   | `pub` | `raixo.org` | `HTTP` → `publisher:3000` |
+   | *(empty)* | `freepages.dev` | `HTTP` → `publisher:3000` |
+   | `*` | `freepages.dev` | `HTTP` → `publisher:3000` |
+
+   Use `publisher:3000` when cloudflared runs in the same compose project. With Dokploy use Traefik instead: `dokploy-traefik:80` if cloudflared runs on `dokploy-network`, or `localhost:80` if it runs on the host.
+3. **DNS**: check that `freepages.dev` has a DNS record `*` → `CNAME` → `<tunnel-id>.cfargotunnel.com`, **Proxied**. The dashboard creates it for normal hostnames but often not for the wildcard; if it's missing, add it by hand. The tunnel ID is shown on the tunnel's overview page.
+4. **`.env`**: `PUBLIC_URL=https://pub.raixo.org`, `SITE_DOMAIN=freepages.dev`.
+
+Any domain works the same way. Just change `SITE_DOMAIN`, the tunnel hostnames, and (on Dokploy) the Traefik rule. A two-level wildcard like `*.pub.raixo.org` would need Cloudflare's paid Advanced Certificate Manager, because the free certificate only covers one level of subdomains.
 
 ### Running cloudflared next to the app (plain Compose)
 
@@ -71,15 +78,13 @@ Point the tunnel's public hostnames at `http://publisher:3000`.
 ## Deploying on Dokploy
 
 1. Create a **Compose** service from this repo and set **Compose Path** to `./docker-compose.dokploy.yml`.
-2. In **Environment** set `ADMIN_PASSWORD`, `PUBLIC_URL=https://pub.raixo.org`, `SITE_DOMAIN=pub.raixo.org` (or empty).
+2. In **Environment** set `ADMIN_PASSWORD`, `PUBLIC_URL=https://pub.raixo.org`, `SITE_DOMAIN=freepages.dev` (or empty).
 3. Deploy. Routing is done by the Traefik labels in the compose file, not the Domains tab, because they include the wildcard rule:
    ```
-   Host(`pub.raixo.org`) || HostRegexp(`^[a-z0-9-]+\.pub\.raixo\.org$`)
+   Host(`pub.raixo.org`) || Host(`freepages.dev`) || HostRegexp(`^[a-z0-9-]+\.freepages\.dev$`)
    ```
    If you use other domains, edit that line.
-4. Point the Cloudflare Tunnel hostnames (`pub.raixo.org` and `*.pub.raixo.org`) at Dokploy's Traefik over plain HTTP: `http://localhost:80` if cloudflared runs on the host, or `http://dokploy-traefik:80` if it runs in Docker on `dokploy-network`. Cloudflare terminates TLS, so the router uses the `web` (HTTP) entrypoint.
-
-How hard is the wildcard on Dokploy? With the steps above it takes about 15 minutes. The only real decision is the certificate (step 4 of Option B).
+4. Point the Cloudflare Tunnel hostnames (`pub.raixo.org`, `freepages.dev` and `*.freepages.dev`) at Dokploy's Traefik over plain HTTP: `http://localhost:80` if cloudflared runs on the host, or `http://dokploy-traefik:80` if it runs in Docker on `dokploy-network`. Cloudflare terminates TLS, so the router uses the `web` (HTTP) entrypoint.
 
 ## Security notes
 

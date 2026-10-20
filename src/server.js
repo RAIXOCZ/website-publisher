@@ -18,7 +18,12 @@ if (config.SITE_DOMAIN) {
   const suffix = `.${config.SITE_DOMAIN}`;
   app.use((req, res, next) => {
     const host = hostOf(req);
-    if (host === config.APP_HOSTNAME || !host.endsWith(suffix)) return next();
+    if (host === config.APP_HOSTNAME) return next();
+    // The bare site domain (and www) has no site of its own: send visitors to the publisher.
+    if (host === config.SITE_DOMAIN || host === `www${suffix}`) {
+      return res.redirect(302, config.PUBLIC_URL + '/');
+    }
+    if (!host.endsWith(suffix)) return next();
     const name = host.slice(0, -suffix.length);
     if (req.method !== 'GET' && req.method !== 'HEAD') return res.status(405).send('Metoda není povolena');
     serveSite(req, res, name, req.path, '').catch(next);

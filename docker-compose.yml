@@ -20,7 +20,7 @@ services:
       - "${HOST_PORT:-3000}:3000"
 
   # In the Cloudflare Zero Trust dashboard point the tunnel's public hostnames
-  # (pub.raixo.org and *.pub.raixo.org) at http://publisher:3000
+  # (pub.raixo.org, freepages.dev and *.freepages.dev) at http://publisher:3000
   cloudflared:
     image: cloudflare/cloudflared:latest
     profiles: ["tunnel"]
