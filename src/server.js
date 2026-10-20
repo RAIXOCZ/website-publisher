@@ -1,5 +1,7 @@
 'use strict';
 
+const crypto = require('crypto');
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const config = require('./config');
@@ -48,10 +50,41 @@ const securityHeaders = (req, res, next) => {
 };
 
 const publicDir = path.join(__dirname, '..', 'public');
-app.use('/_app', securityHeaders, express.static(publicDir, { index: false, maxAge: 0 }));
-app.get('/', securityHeaders, (req, res) => res.sendFile(path.join(publicDir, 'index.html')));
-app.get(['/admin', '/admin/'], securityHeaders, (req, res) => res.sendFile(path.join(publicDir, 'admin.html')));
-app.get(['/docs', '/docs/'], securityHeaders, (req, res) => res.sendFile(path.join(publicDir, 'docs.html')));
+
+// Asset URLs in the pages carry a hash of the public files (?v=…), so a new
+// deploy never mixes fresh HTML with CSS/JS cached by browsers or Cloudflare.
+const assetVersion = (() => {
+  const hash = crypto.createHash('sha256');
+  for (const entry of fs.readdirSync(publicDir, { withFileTypes: true, recursive: true })) {
+    if (!entry.isFile()) continue;
+    const file = path.join(entry.parentPath ?? entry.path, entry.name);
+    hash.update(path.relative(publicDir, file)).update(fs.readFileSync(file));
+  }
+  return hash.digest('hex').slice(0, 12);
+})();
+
+const pages = {};
+function appPage(name) {
+  pages[name] ??= fs
+    .readFileSync(path.join(publicDir, name), 'utf8')
+    .replace(/((?:src|href)=")\/_app\/([^"?]+)"/g, `$1/_app/$2?v=${assetVersion}"`);
+  return (req, res) => res.set('Cache-Control', 'no-cache').type('html').send(pages[name]);
+}
+
+app.use(
+  '/_app',
+  securityHeaders,
+  express.static(publicDir, {
+    index: false,
+    setHeaders: (res) => {
+      const versioned = res.req.query.v === assetVersion;
+      res.set('Cache-Control', versioned ? 'public, max-age=31536000, immutable' : 'no-cache');
+    },
+  }),
+);
+app.get('/', securityHeaders, appPage('index.html'));
+app.get(['/admin', '/admin/'], securityHeaders, appPage('admin.html'));
+app.get(['/docs', '/docs/'], securityHeaders, appPage('docs.html'));
 app.get('/robots.txt', (req, res) => res.type('text').send('User-agent: *\nDisallow: /admin\n'));
 app.get('/favicon.ico', (req, res) => res.sendFile(path.join(publicDir, 'favicon.svg'), { headers: { 'Content-Type': 'image/svg+xml' } }));
 

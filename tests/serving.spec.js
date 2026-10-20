@@ -129,3 +129,19 @@ test.describe('subdomain sites (<name>.pub.test)', () => {
     expect(res.status).toBe(403);
   });
 });
+
+test('pages reference versioned assets so a deploy never mixes old CSS/JS with new HTML', async ({ request }) => {
+  for (const path of ['/', '/docs', '/admin']) {
+    const res = await request.get(path);
+    expect(res.headers()['cache-control'], path).toBe('no-cache');
+    const html = await res.text();
+    const assets = [...html.matchAll(/(?:src|href)="(\/_app\/[^"]+)"/g)].map((m) => m[1]);
+    expect(assets.length, path).toBeGreaterThan(3);
+    for (const asset of assets) expect(asset, path).toMatch(/\?v=[0-9a-f]{12}$/);
+  }
+  const html = await (await request.get('/')).text();
+  const css = html.match(/href="(\/_app\/app\.css\?v=[0-9a-f]+)"/)[1];
+  expect((await request.get(css)).headers()['cache-control']).toContain('immutable');
+  expect((await request.get('/_app/app.css')).headers()['cache-control']).toBe('no-cache');
+  expect((await request.get('/_app/app.css?v=stale')).headers()['cache-control']).toBe('no-cache');
+});
