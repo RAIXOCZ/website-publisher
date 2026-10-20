@@ -3,160 +3,146 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="author" content="Martin Balcar">
   <title data-i18n="title.index">Publikování webů</title>
   <link rel="icon" href="/_app/favicon.svg" type="image/svg+xml">
-  <link rel="preload" href="/_app/font/montserrat.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/_app/app.css">
 </head>
 <body>
-  <header class="site-header">
+  <header class="topbar">
     <div class="wrap">
-      <a class="brand" href="/" data-brand>freepages</a>
-      <div class="header-right">
-        <nav class="nav">
-          <a href="#my-sites" class="hide-sm" data-i18n="nav.mySites">Moje weby</a>
-          <a href="/docs" data-i18n="nav.docs">Návod</a>
-        </nav>
-        <div class="lang" data-lang-switch></div>
+      <div class="bar glass">
+        <a class="brand" href="/"><img class="logo" src="/_app/favicon.svg" alt=""><span data-brand>freepages</span></a>
+        <div class="bar-right">
+          <nav class="nav">
+            <a href="#my-sites" class="hide-sm" data-i18n="nav.mySites">Moje weby</a>
+            <a href="/docs" data-i18n="nav.docs">Návod</a>
+          </nav>
+          <div class="lang" data-lang-switch></div>
+        </div>
       </div>
     </div>
   </header>
 
   <main>
     <div class="wrap page">
-      <section class="hero">
-        <div class="blob blob-a" aria-hidden="true"></div>
-        <div class="blob blob-b" aria-hidden="true"></div>
-        <div class="hero-grid">
-          <div class="hero-copy">
-            <p class="eyebrow" data-i18n="hero.eyebrow">Statický hosting zdarma</p>
-            <div class="titles">
-              <h1 data-i18n="hero.title">Web online jedním přetažením.</h1>
-              <p class="subtitle" data-i18n="hero.subtitle">Bez registrace, bez serveru.</p>
+      <section class="intro">
+        <span class="tag glass" data-i18n="hero.tag">Zdarma · bez registrace · HTTPS</span>
+        <h1><span data-i18n="hero.title1">Web online</span> <span class="gradient-text" data-i18n="hero.title2">jedním přetažením.</span></h1>
+        <p class="lead" data-i18n="hero.text">Přetáhněte složku s webem a za pár sekund běží na vlastní adrese. Každý web dostane heslo, takže ho nikdo jiný nepřepíše.</p>
+      </section>
+
+      <section class="studio">
+        <label class="address glass" for="name">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+          <span class="prefix" id="url-prefix">https://</span><input type="text" id="name" data-i18n-placeholder="name.placeholder" placeholder="muj-web" autocomplete="off" spellcheck="false" maxlength="63"><span class="suffix" id="url-suffix">/</span>
+          <span class="hint" data-i18n="name.inline">název je nepovinný</span>
+        </label>
+
+        <div class="panel glass">
+          <div class="alert" id="error" hidden>
+            <span id="error-text"></span>
+            <form class="row" id="conflict" hidden>
+              <input type="text" id="conflict-password" class="grow" data-i18n-placeholder="conflict.placeholder" placeholder="Heslo k webu" autocomplete="off" spellcheck="false">
+              <button class="btn btn-sm btn-primary" type="submit" data-i18n="conflict.replace">Nahradit web</button>
+              <button class="btn btn-sm" type="button" id="cancel" data-i18n="cancel">Zrušit</button>
+            </form>
+          </div>
+
+          <div class="dropzone" id="dropzone" tabindex="0" role="button" data-i18n-aria="drop.aria" aria-label="Vybrat složku ke zveřejnění">
+            <div class="icon">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>
             </div>
-            <p class="lead" data-i18n="hero.text">Přetáhněte složku s webem a během pár sekund běží na vlastní adrese s HTTPS. Každý web dostane heslo, takže ho nikdo jiný nepřepíše.</p>
-            <div class="chips">
-              <span class="chip" data-i18n="chip.subdomain">Vlastní subdoména</span>
-              <span class="chip" data-i18n="chip.https">HTTPS</span>
-              <span class="chip" data-i18n="chip.password">Heslo ke každému webu</span>
-              <span class="chip" data-i18n="chip.zip">Složka nebo .zip</span>
+            <p class="title" data-i18n="drop.title">Přetáhněte sem složku s webem</p>
+            <p class="hint" data-i18n-html="drop.hint">nebo soubor .zip &middot; musí obsahovat <code>index.html</code></p>
+            <div class="actions">
+              <button class="btn btn-primary" id="pick-folder" type="button" data-i18n="pick.folder">Vybrat složku</button>
+              <button class="btn" id="pick-zip" type="button" data-i18n="pick.zip">Nahrát .zip</button>
             </div>
           </div>
 
-          <div class="publisher">
-            <div>
-              <label for="name"><span data-i18n="name.label">Název webu</span> <span class="label-hint" data-i18n="name.hint">(nepovinné, jinak podle názvu složky)</span></label>
-              <input type="text" id="name" data-i18n-placeholder="name.placeholder" placeholder="muj-web" autocomplete="off" spellcheck="false" maxlength="63">
-              <div class="url-preview" id="url-preview"></div>
-            </div>
+          <div class="progress" id="progress" hidden>
+            <p><b id="progress-title" data-i18n="progress.uploading">Nahrávám…</b></p>
+            <div class="meter"><div id="progress-bar"></div></div>
+            <div class="progress-label"><span id="progress-files"></span><span id="progress-pct"></span></div>
+          </div>
 
-            <div class="alert" id="error" hidden>
-              <span id="error-text"></span>
-              <form class="row" id="conflict" hidden>
-                <input type="text" id="conflict-password" class="grow" data-i18n-placeholder="conflict.placeholder" placeholder="Heslo k webu" autocomplete="off" spellcheck="false">
-                <button class="btn btn-sm btn-primary" type="submit" data-i18n="conflict.replace">Nahradit web</button>
-                <button class="btn btn-sm" type="button" id="cancel" data-i18n="cancel">Zrušit</button>
-              </form>
+          <div class="result" id="result" hidden>
+            <p class="title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+              <span id="result-title" data-i18n="result.live">Web je online</span>
+            </p>
+            <div class="field">
+              <a id="result-link" target="_blank" rel="noopener"></a>
+              <button class="btn btn-sm" id="copy" data-i18n="copy">Kopírovat</button>
+              <a class="btn btn-sm btn-primary" id="open" target="_blank" rel="noopener" data-i18n="open">Otevřít</a>
             </div>
-
-            <div class="dropzone" id="dropzone" tabindex="0" role="button" data-i18n-aria="drop.aria" aria-label="Vybrat složku ke zveřejnění">
-              <div class="icon">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>
+            <div id="result-password" hidden>
+              <p class="field-label" data-i18n="result.pwLabel">Heslo k webu</p>
+              <div class="field mt-8">
+                <code id="result-password-value"></code>
+                <button class="btn btn-sm" id="copy-password" data-i18n="copy">Kopírovat</button>
               </div>
-              <p class="title" data-i18n="drop.title">Přetáhněte sem složku s webem</p>
-              <p class="hint" data-i18n-html="drop.hint">nebo soubor .zip &middot; musí obsahovat <code>index.html</code></p>
-              <div class="actions">
-                <button class="btn btn-primary" id="pick-folder" type="button" data-i18n="pick.folder">Vybrat složku</button>
-                <button class="btn btn-outline" id="pick-zip" type="button" data-i18n="pick.zip">Nahrát .zip</button>
-              </div>
+              <p class="note mt-8" data-i18n="result.pwNote">Heslo je uložené v tomto prohlížeči (Moje weby). Bez něj web nepůjde aktualizovat ani smazat, proto si ho uschovejte.</p>
             </div>
-
-            <div class="progress" id="progress" hidden>
-              <p><b id="progress-title" data-i18n="progress.uploading">Nahrávám…</b></p>
-              <div class="bar"><div id="progress-bar"></div></div>
-              <div class="progress-label"><span id="progress-files"></span><span id="progress-pct"></span></div>
-            </div>
-
-            <div class="result" id="result" hidden>
-              <p class="title">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
-                <span id="result-title" data-i18n="result.live">Web je online</span>
-              </p>
-              <div class="pill-field">
-                <a id="result-link" target="_blank" rel="noopener"></a>
-                <button class="btn btn-sm" id="copy" data-i18n="copy">Kopírovat</button>
-                <a class="btn btn-sm btn-primary" id="open" target="_blank" rel="noopener" data-i18n="open">Otevřít</a>
-              </div>
-              <div id="result-password" hidden>
-                <p class="field-label" data-i18n="result.pwLabel">Heslo k webu</p>
-                <div class="pill-field mt-8">
-                  <code id="result-password-value"></code>
-                  <button class="btn btn-sm" id="copy-password" data-i18n="copy">Kopírovat</button>
-                </div>
-                <p class="note mt-8" data-i18n="result.pwNote">Heslo je uložené v tomto prohlížeči (Moje weby). Bez něj web nepůjde aktualizovat ani smazat, proto si ho uschovejte.</p>
-              </div>
-              <p class="note" id="result-note"></p>
-              <div class="row">
-                <button class="btn btn-sm" id="again" data-i18n="again">Zveřejnit další</button>
-              </div>
+            <p class="note" id="result-note"></p>
+            <div class="row">
+              <button class="btn btn-sm" id="again" data-i18n="again">Zveřejnit další</button>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="stack-section" id="my-sites">
+      <section class="section" id="my-sites">
         <div class="section-head">
-          <div class="stack">
-            <p class="eyebrow" data-i18n="my.eyebrow">Moje weby</p>
-            <h2 data-i18n="my.heading">Weby z tohoto prohlížeče</h2>
-          </div>
-          <button class="btn btn-outline" id="add-toggle" data-i18n="my.add">Přidat existující web</button>
+          <h2><span data-i18n="my.title">Moje weby</span> <span class="count" id="my-count">0</span></h2>
+          <button class="btn" id="add-toggle" data-i18n="my.add">Přidat existující web</button>
         </div>
         <p class="muted" data-i18n="my.intro">Hesla jsou uložená jen v tomto prohlížeči. Na jiném zařízení web přidáte jeho názvem a heslem.</p>
 
-        <form class="add-form" id="add-form" hidden>
+        <form class="add-form glass" id="add-form" hidden>
           <input type="text" name="site" data-i18n-placeholder="my.namePlaceholder" placeholder="Název webu" autocomplete="off" spellcheck="false" required>
           <input type="text" name="password" data-i18n-placeholder="my.pwPlaceholder" placeholder="Heslo k webu" autocomplete="off" spellcheck="false" required>
           <button class="btn btn-primary" type="submit" data-i18n="my.addSubmit">Přidat</button>
           <div class="alert" hidden></div>
         </form>
 
-        <div class="site-grid" id="my-list"></div>
+        <div class="site-list" id="my-list"></div>
         <div class="empty" id="my-empty" hidden data-i18n="my.empty">Zatím jste odsud nic nezveřejnili.</div>
       </section>
 
-      <section class="band">
-        <div class="stack">
-          <p class="eyebrow orange" data-i18n="band.eyebrow">Jak to funguje</p>
-          <h3 data-i18n="band.title">Složka s index.html stačí.</h3>
-          <p data-i18n="band.text">HTML, CSS, JavaScript, obrázky i podsložky se zveřejní tak, jak jsou. Hezké adresy bez .html a vlastní stránka 404 fungují samy.</p>
-        </div>
-        <div class="actions">
-          <a class="btn btn-light" href="/docs" data-i18n="band.docs">Přečíst návod</a>
-          <a class="btn btn-ghost-light abuse-link" href="mailto:martin@balcar.me" data-i18n="footer.abuse">Nahlásit zneužití</a>
+      <section class="how glass">
+        <pre class="tree" aria-hidden="true" data-lang="cs"><b>muj-web/</b>
+├── <b>index.html</b>
+├── o-nas.html
+├── css/style.css
+└── img/logo.png</pre>
+        <pre class="tree" aria-hidden="true" data-lang="en" hidden><b>my-site/</b>
+├── <b>index.html</b>
+├── about.html
+├── css/style.css
+└── img/logo.png</pre>
+        <svg class="arrow" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <div class="copy">
+          <h3 data-i18n="how.title">Složka s index.html stačí.</h3>
+          <p data-i18n="how.text">HTML, CSS, JavaScript, obrázky i podsložky se zveřejní tak, jak jsou. Adresy bez .html a vlastní stránka 404 fungují samy.</p>
+          <p class="live" id="how-live"></p>
+          <div><a class="btn" href="/docs" data-i18n="how.docs">Přečíst návod</a></div>
         </div>
       </section>
     </div>
   </main>
 
   <footer class="site-footer">
-    <div class="blob blob-c" aria-hidden="true"></div>
-    <div class="blob blob-d" aria-hidden="true"></div>
     <div class="wrap">
-      <div>
-        <p class="strong" data-brand>freepages</p>
-        <p class="muted"><span data-i18n="footer.by">Vytvořil</span> <a href="https://martin-balcar.cz" target="_blank" rel="noopener">Martin Balcar</a></p>
-      </div>
-      <div class="right">
-        <p class="muted" data-i18n="footer.abuse">Nahlásit zneužití</p>
-        <p><a class="abuse-link" href="mailto:martin@balcar.me">martin@balcar.me</a></p>
+      <div class="bar glass">
+        <p><span data-i18n="footer.by">Vytvořil</span> <a href="https://martin-balcar.cz" target="_blank" rel="noopener">Martin Balcar</a></p>
+        <p><span data-i18n="footer.abuse">Nahlásit zneužití</span>: <a class="abuse-link" href="mailto:martin@balcar.me">martin@balcar.me</a></p>
       </div>
     </div>
   </footer>
 
   <template id="my-row">
-    <article class="site-card">
+    <article class="site-card glass">
       <div>
         <h3 class="site-name"></h3>
         <a class="site-url" target="_blank" rel="noopener"></a>

@@ -8,23 +8,15 @@ const LANGS = ['cs', 'en'];
 
 const I18N = {
   cs: {
-    'hero.eyebrow': 'Statický hosting zdarma',
-    'hero.title': 'Web online jedním přetažením.',
-    'hero.subtitle': 'Bez registrace, bez serveru.',
-    'hero.text': 'Přetáhněte složku s webem a během pár sekund běží na vlastní adrese s HTTPS. Každý web dostane heslo, takže ho nikdo jiný nepřepíše.',
-    'chip.subdomain': 'Vlastní subdoména',
-    'chip.https': 'HTTPS',
-    'chip.password': 'Heslo ke každému webu',
-    'chip.zip': 'Složka nebo .zip',
-    'my.eyebrow': 'Moje weby',
-    'my.heading': 'Weby z tohoto prohlížeče',
-    'band.eyebrow': 'Jak to funguje',
-    'band.title': 'Složka s index.html stačí.',
-    'band.text': 'HTML, CSS, JavaScript, obrázky i podsložky se zveřejní tak, jak jsou. Hezké adresy bez .html a vlastní stránka 404 fungují samy.',
-    'band.docs': 'Přečíst návod',
-    'docs.eyebrow': 'Návod',
-    'admin.eyebrow': 'Správa',
-    'lang.label': 'Jazyk',
+    'hero.tag': 'Zdarma · bez registrace · HTTPS',
+    'hero.title1': 'Web online',
+    'hero.title2': 'jedním přetažením.',
+    'hero.text': 'Přetáhněte složku s webem a za pár sekund běží na vlastní adrese. Každý web dostane heslo, takže ho nikdo jiný nepřepíše.',
+    'name.inline': 'název je nepovinný',
+    'how.title': 'Složka s index.html stačí.',
+    'how.text': 'HTML, CSS, JavaScript, obrázky i podsložky se zveřejní tak, jak jsou. Adresy bez .html a vlastní stránka 404 fungují samy.',
+    'how.docs': 'Přečíst návod',
+    'how.example': 'muj-web',
     'chip.updated': 'aktualizováno {ago}',
     'title.index': 'Publikování webů',
     'title.admin': 'Správa webů',
@@ -39,13 +31,7 @@ const I18N = {
     'footer.abuse': 'Nahlásit zneužití',
     'footer.abuseSubject': 'Nahlášení zneužití – {host}',
 
-    'index.h1': 'Zveřejnit web',
-    'index.lead': 'Přetáhněte sem složku s webem. Jakmile se nahraje, je hned online.',
-    'name.label': 'Název webu',
-    'name.hint': '(nepovinné, jinak podle názvu složky)',
     'name.placeholder': 'muj-web',
-    'name.previewDefault': 'nazev-slozky',
-    'preview.prefix': 'Bude zveřejněno na ',
     'conflict.placeholder': 'Heslo k webu',
     'conflict.replace': 'Nahradit web',
     cancel: 'Zrušit',
@@ -132,23 +118,15 @@ const I18N = {
   },
 
   en: {
-    'hero.eyebrow': 'Free static hosting',
-    'hero.title': 'Your site online in one drop.',
-    'hero.subtitle': 'No sign-up, no server.',
-    'hero.text': 'Drop your website folder and within seconds it runs on its own address with HTTPS. Every site gets a password, so nobody else can overwrite it.',
-    'chip.subdomain': 'Own subdomain',
-    'chip.https': 'HTTPS',
-    'chip.password': 'A password for every site',
-    'chip.zip': 'Folder or .zip',
-    'my.eyebrow': 'My sites',
-    'my.heading': 'Sites from this browser',
-    'band.eyebrow': 'How it works',
-    'band.title': 'A folder with index.html is all you need.',
-    'band.text': 'HTML, CSS, JavaScript, images and subfolders are published as they are. Clean URLs without .html and a custom 404 page just work.',
-    'band.docs': 'Read the guide',
-    'docs.eyebrow': 'Guide',
-    'admin.eyebrow': 'Admin',
-    'lang.label': 'Language',
+    'hero.tag': 'Free · no sign-up · HTTPS',
+    'hero.title1': 'Your site online',
+    'hero.title2': 'in one drop.',
+    'hero.text': 'Drop your website folder and within seconds it runs on its own address. Every site gets a password, so nobody else can overwrite it.',
+    'name.inline': 'the name is optional',
+    'how.title': 'A folder with index.html is all you need.',
+    'how.text': 'HTML, CSS, JavaScript, images and subfolders are published as they are. Clean URLs without .html and a custom 404 page just work.',
+    'how.docs': 'Read the guide',
+    'how.example': 'my-site',
     'chip.updated': 'updated {ago}',
     'title.index': 'Publish a website',
     'title.admin': 'Site admin',
@@ -163,13 +141,7 @@ const I18N = {
     'footer.abuse': 'Report abuse',
     'footer.abuseSubject': 'Abuse report – {host}',
 
-    'index.h1': 'Publish a website',
-    'index.lead': 'Drop a folder with your website here. It goes live as soon as the upload finishes.',
-    'name.label': 'Site name',
-    'name.hint': '(optional, defaults to the folder name)',
     'name.placeholder': 'my-site',
-    'name.previewDefault': 'folder-name',
-    'preview.prefix': 'Will be published at ',
     'conflict.placeholder': 'Site password',
     'conflict.replace': 'Replace site',
     cancel: 'Cancel',
@@ -300,41 +272,28 @@ function applyI18n(root = document) {
 
 applyI18n();
 
-// Flag dropdown, like on martin-balcar.cz.
-const LANG_INFO = { cs: { label: 'Čeština', flag: '/_app/flags/cs.svg' }, en: { label: 'English', flag: '/_app/flags/en.svg' } };
-const CHEVRON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 9l-7 7-7-7"/></svg>';
-
+// CS / EN toggle.
 for (const holder of document.querySelectorAll('[data-lang-switch]')) {
-  const current = LANG_INFO[LANG];
-  holder.innerHTML = `
-    <button class="lang-button" type="button" aria-haspopup="true" aria-expanded="false" aria-label="${t('lang.label')}">
-      <img src="${current.flag}" alt="" width="20" height="15"><span>${current.label}</span>${CHEVRON}
-    </button>
-    <div class="lang-menu" role="menu" hidden>
-      ${LANGS.filter((l) => l !== LANG)
-        .map((l) => `<button type="button" role="menuitem" data-set-lang="${l}"><img src="${LANG_INFO[l].flag}" alt="" width="24" height="16">${LANG_INFO[l].label}</button>`)
-        .join('')}
-    </div>`;
-  const button = holder.querySelector('.lang-button');
-  const menu = holder.querySelector('.lang-menu');
-  const close = () => {
-    menu.hidden = true;
-    button.setAttribute('aria-expanded', 'false');
-  };
-  button.addEventListener('click', (e) => {
-    e.stopPropagation();
-    menu.hidden = !menu.hidden;
-    button.setAttribute('aria-expanded', String(!menu.hidden));
-  });
-  document.addEventListener('click', close);
-  document.addEventListener('keydown', (e) => e.key === 'Escape' && close());
-  for (const item of menu.querySelectorAll('[data-set-lang]')) {
-    item.addEventListener('click', () => setLang(item.dataset.setLang));
+  holder.setAttribute('role', 'group');
+  holder.setAttribute('aria-label', 'Jazyk / Language');
+  for (const lang of LANGS) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.setLang = lang;
+    button.textContent = lang.toUpperCase();
+    button.setAttribute('aria-pressed', String(lang === LANG));
+    button.addEventListener('click', () => lang !== LANG && setLang(lang));
+    holder.append(button);
   }
 }
 
 // The brand is simply the domain this runs on.
-for (const el of document.querySelectorAll('[data-brand]')) el.textContent = location.hostname.replace(/^www\./, '');
+for (const el of document.querySelectorAll('[data-brand]')) {
+  const host = location.hostname.replace(/^www\./, '');
+  const dot = host.indexOf('.');
+  el.replaceChildren(dot > 0 ? host.slice(0, dot) : host);
+  if (dot > 0) el.append(Object.assign(document.createElement('span'), { className: 'tld', textContent: host.slice(dot) }));
+}
 
 for (const link of document.querySelectorAll('.abuse-link')) {
   link.href = `mailto:martin@balcar.me?subject=${encodeURIComponent(t('footer.abuseSubject', { host: location.host }))}`;

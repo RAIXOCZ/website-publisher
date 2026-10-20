@@ -7,7 +7,6 @@ const state = {
 
 const els = {
   name: $('#name'),
-  preview: $('#url-preview'),
   dropzone: $('#dropzone'),
   error: $('#error'),
   errorText: $('#error-text'),
@@ -24,23 +23,20 @@ async function init() {
   renderMySites();
 }
 
-/* ---------- name & URL preview ---------- */
+/* ---------- address bar ---------- */
 
 function siteUrl(name) {
   return state.config.urlTemplate.replace('{name}', name);
 }
 
+// The name input sits inside an address bar: <prefix>[name]<suffix>.
 function updatePreview() {
-  const name = slugify(els.name.value);
-  if (!name) {
-    els.preview.textContent = t('preview.prefix') + siteUrl(t('name.previewDefault'));
-    return;
-  }
-  const [before, after] = siteUrl('\u0000').split('\u0000');
-  els.preview.replaceChildren(t('preview.prefix'), before, Object.assign(document.createElement('b'), { textContent: name }), after);
+  const [prefix, suffix] = state.config.urlTemplate.split('{name}');
+  $('#url-prefix').textContent = prefix;
+  $('#url-suffix').textContent = suffix;
+  $('#how-live').textContent = siteUrl(t('how.example')).replace(/^https?:\/\//, '');
 }
 
-els.name.addEventListener('input', updatePreview);
 // After a name problem, pressing Enter retries with the files already chosen.
 els.name.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && state.pending) {
@@ -261,6 +257,7 @@ $('#again').addEventListener('click', () => {
 async function renderMySites() {
   const owned = loadOwned();
   const list = $('#my-list');
+  $('#my-count').textContent = owned.length;
   $('#my-empty').hidden = owned.length > 0;
   if (!owned.length) return list.replaceChildren();
 
@@ -278,6 +275,7 @@ async function renderMySites() {
       const row = $('#my-row').content.firstElementChild.cloneNode(true);
       applyI18n(row);
       row.dataset.name = name;
+      row.dataset.initial = name[0];
       $('.site-name', row).textContent = name;
       const url = info.url || siteUrl(name);
       $('.site-url', row).textContent = url;

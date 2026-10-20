@@ -7,7 +7,8 @@ test.describe('language detection', () => {
     await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('lang', 'cs');
     await expect(page.locator('h1')).toHaveText('Web online jedním přetažením.');
-    await expect(page.locator('.lang-button')).toContainText('Čeština');
+    await expect(page.locator('[data-set-lang=cs]')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('[data-set-lang=en]')).toHaveAttribute('aria-pressed', 'false');
   });
 
   test.describe('English browser', () => {
@@ -33,32 +34,21 @@ test.describe('language detection', () => {
   });
 });
 
-test('the language dropdown switches and remembers the language', async ({ page }) => {
+test('the CS/EN switch changes and remembers the language', async ({ page }) => {
   await page.goto('/');
-  const button = page.locator('.lang-button');
-  const menu = page.locator('.lang-menu');
+  await page.locator('[data-set-lang=cs]').click();
+  await expect(page.locator('h1')).toHaveText('Web online jedním přetažením.');
 
-  await button.click();
-  await expect(menu).toBeVisible();
-  await expect(button).toHaveAttribute('aria-expanded', 'true');
-  await page.keyboard.press('Escape');
-  await expect(menu).toBeHidden();
-
-  await button.click();
-  await page.locator('h1').click();
-  await expect(menu).toBeHidden();
-
-  await button.click();
-  await menu.locator('[data-set-lang=en]').click();
+  await page.locator('[data-set-lang=en]').click();
   await expect(page.locator('h1')).toHaveText('Your site online in one drop.');
-  await expect(button).toContainText('English');
+  await expect(page.locator('[data-set-lang=en]')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.tree:visible')).toContainText('my-site/');
 
   await page.goto('/docs');
   await expect(page.locator('[data-lang=en] h1')).toHaveText('Guide');
   await page.goto('/admin');
   await expect(page.locator('#login h2')).toHaveText('Admin login');
 
-  await page.locator('.lang-button').click();
   await page.locator('[data-set-lang=cs]').click();
   await expect(page.locator('#login h2')).toHaveText('Přihlášení do správy');
 });
@@ -81,7 +71,8 @@ test('header navigation links work', async ({ page }) => {
 
 test('"Přečíst návod" opens the guide with this server\'s details', async ({ page }) => {
   await page.goto('/');
-  await page.locator('.band a[href="/docs"]').click();
+  await expect(page.locator('#how-live')).toHaveText('localhost:4317/muj-web/');
+  await page.locator('.how a[href="/docs"]').click();
   await expect(page).toHaveURL('/docs');
   await expect(page.locator('[data-lang=cs] .url-example')).toHaveText('http://localhost:4317/nazev-webu/');
   await expect(page.locator('[data-lang=cs] .max-upload')).toHaveText('100 MB');
@@ -100,7 +91,3 @@ for (const path of ['/', '/docs', '/admin']) {
   });
 }
 
-test('"Nahlásit zneužití" button in the band is a mail link', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.locator('.band a.abuse-link')).toHaveAttribute('href', /^mailto:martin@balcar\.me/);
-});

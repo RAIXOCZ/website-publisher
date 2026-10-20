@@ -3,22 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="author" content="Martin Balcar">
   <title data-i18n="title.docs">Návod – Publikování webů</title>
   <link rel="icon" href="/_app/favicon.svg" type="image/svg+xml">
-  <link rel="preload" href="/_app/font/montserrat.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/_app/app.css">
 </head>
 <body>
-  <header class="site-header">
+  <header class="topbar">
     <div class="wrap">
-      <a class="brand" href="/" data-brand>freepages</a>
-      <div class="header-right">
-        <nav class="nav">
-          <a href="/" data-i18n="nav.publish">+ Zveřejnit</a>
-          <a href="/docs" aria-current="page" class="hide-sm" data-i18n="nav.docs">Návod</a>
-        </nav>
-        <div class="lang" data-lang-switch></div>
+      <div class="bar glass">
+        <a class="brand" href="/"><img class="logo" src="/_app/favicon.svg" alt=""><span data-brand>freepages</span></a>
+        <div class="bar-right">
+          <nav class="nav">
+            <a href="/" data-i18n="nav.publish">+ Zveřejnit</a>
+            <a href="/docs" aria-current="page" class="hide-sm" data-i18n="nav.docs">Návod</a>
+          </nav>
+          <div class="lang" data-lang-switch></div>
+        </div>
       </div>
     </div>
   </header>
@@ -26,18 +26,18 @@
   <main>
     <div class="wrap">
       <div class="page" data-lang="cs">
-        <div class="stack-section">
-          <p class="eyebrow">Nápověda</p>
+        <div class="doc-head">
+          <span class="tag glass">Nápověda</span>
           <h1>Návod</h1>
           <p class="lead">Jak zveřejnit statický web během pár sekund.</p>
         </div>
 
 
-      <section class="card prose">
+      <section class="prose glass">
         <h2>Jak zveřejnit web</h2>
         <ol>
           <li>Na <a href="/">hlavní stránce</a> přetáhněte složku s webem do vyznačeného pole, případně klikněte na <b>Vybrat složku</b>.</li>
-          <li>Název webu se doplní podle názvu složky. Chcete-li jiný, napište ho do pole <b>Název webu</b> ještě před nahráním.</li>
+          <li>Název webu se doplní podle názvu složky. Chcete-li jiný, napište ho do <b>adresního řádku</b> nad polem pro nahrání.</li>
           <li>Po dokončení nahrávání je web okamžitě online. Odkaz si můžete zkopírovat nebo rovnou otevřít.</li>
           <li>Zobrazí se <b>heslo k webu</b>. Uschovejte si ho, budete ho potřebovat pro aktualizaci nebo smazání.</li>
         </ol>
@@ -97,18 +97,18 @@
       </section>
       </div>
       <div class="page" data-lang="en" hidden>
-        <div class="stack-section">
-          <p class="eyebrow">Help</p>
+        <div class="doc-head">
+          <span class="tag glass">Help</span>
           <h1>Guide</h1>
           <p class="lead">How to publish a static website in a few seconds.</p>
         </div>
 
 
-      <section class="card prose">
+      <section class="prose glass">
         <h2>How to publish a site</h2>
         <ol>
           <li>On the <a href="/">home page</a>, drop your website folder onto the marked area, or click <b>Choose folder</b>.</li>
-          <li>The site name is taken from the folder name. To use a different one, type it into <b>Site name</b> before uploading.</li>
+          <li>The site name is taken from the folder name. To use a different one, type it into the <b>address bar</b> above the upload area.</li>
           <li>As soon as the upload finishes, the site is live. Copy the link or open it right away.</li>
           <li>You will see the <b>site password</b>. Keep it safe; you need it to update or delete the site.</li>
         </ol>
@@ -171,16 +171,10 @@
   </main>
 
   <footer class="site-footer">
-    <div class="blob blob-c" aria-hidden="true"></div>
-    <div class="blob blob-d" aria-hidden="true"></div>
     <div class="wrap">
-      <div>
-        <p class="strong" data-brand>freepages</p>
-        <p class="muted"><span data-i18n="footer.by">Vytvořil</span> <a href="https://martin-balcar.cz" target="_blank" rel="noopener">Martin Balcar</a></p>
-      </div>
-      <div class="right">
-        <p class="muted" data-i18n="footer.abuse">Nahlásit zneužití</p>
-        <p><a class="abuse-link" href="mailto:martin@balcar.me">martin@balcar.me</a></p>
+      <div class="bar glass">
+        <p><span data-i18n="footer.by">Vytvořil</span> <a href="https://martin-balcar.cz" target="_blank" rel="noopener">Martin Balcar</a></p>
+        <p><span data-i18n="footer.abuse">Nahlásit zneužití</span>: <a class="abuse-link" href="mailto:martin@balcar.me">martin@balcar.me</a></p>
       </div>
     </div>
   </footer>

@@ -13,11 +13,13 @@ test('home page works without logging in and does not link to admin', async ({ p
   await expect(page.locator('a[href="/admin"]')).toHaveCount(0);
 });
 
-test('site name input slugifies and updates the URL preview', async ({ page }) => {
+test('the name is typed into an address bar and slugified', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('#url-preview')).toContainText('/nazev-slozky/');
+  await expect(page.locator('#url-prefix')).toHaveText('http://localhost:4317/');
+  await expect(page.locator('#url-suffix')).toHaveText('/');
+  await page.locator('#url-prefix').click();
+  await expect(page.locator('#name')).toBeFocused();
   await page.locator('#name').fill('Můj Web');
-  await expect(page.locator('#url-preview')).toContainText('/muj-web/');
   await page.locator('#name').blur();
   await expect(page.locator('#name')).toHaveValue('muj-web');
 });
@@ -47,6 +49,8 @@ test('"Vybrat složku" publishes a folder and shows link and password', async ({
   const card = page.locator(`.site-card[data-name="${name}"]`);
   await expect(card).toBeVisible();
   await expect(card.locator('.chip')).toHaveText(['5 souborů', /B$/, 'aktualizováno právě teď']);
+  await expect(card).toHaveAttribute('data-initial', 'f');
+  await expect(page.locator('#my-count')).toHaveText('1');
 });
 
 test('clicking the drop zone opens the folder picker', async ({ page }) => {
