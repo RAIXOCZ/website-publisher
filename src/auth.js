@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const config = require('./config');
+const { langOf, t } = require('./i18n');
 
 const COOKIE = 'pub_session';
 
@@ -122,7 +123,7 @@ function checkPassword(password) {
 function sameOrigin(req, res, next) {
   if (req.method === 'GET' || req.method === 'HEAD') return next();
   if (req.headers['x-requested-with'] !== 'fetch') {
-    return res.status(403).json({ error: 'Chybí hlavička požadavku.' });
+    return res.status(403).json({ error: t(langOf(req), 'missingHeader') });
   }
   const origin = req.headers.origin;
   if (origin) {
@@ -132,14 +133,14 @@ function sameOrigin(req, res, next) {
     } catch {
       host = '';
     }
-    if (host !== req.headers.host) return res.status(403).json({ error: 'Požadavek z jiné domény byl odmítnut.' });
+    if (host !== req.headers.host) return res.status(403).json({ error: t(langOf(req), 'crossOrigin') });
   }
   next();
 }
 
 function requireAuth(req, res, next) {
   if (isAuthed(req)) return next();
-  res.status(401).json({ error: 'Nejprve se přihlaste.' });
+  res.status(401).json({ error: t(langOf(req), 'loginRequired') });
 }
 
 module.exports = {

@@ -4,6 +4,7 @@ const fsp = require('fs/promises');
 const path = require('path');
 const config = require('./config');
 const sites = require('./sites');
+const { langOf, t } = require('./i18n');
 
 // Sites served from the admin's own origin (PUBLIC_URL/<name>/) run in a
 // sandbox with an opaque origin, so their scripts cannot talk to the admin
@@ -16,8 +17,8 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 }
 
-function page(title, body) {
-  return `<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+function page(lang, title, body) {
+  return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escapeHtml(title)}</title><style>
 body{font:16px/1.5 system-ui,sans-serif;max-width:720px;margin:10vh auto;padding:0 16px;color:#1f2328;background:#fff}
 @media (prefers-color-scheme:dark){body{color:#e6edf3;background:#0d1117}a{color:#58a6ff}}
@@ -52,7 +53,8 @@ function send(res, file, sandboxed) {
   });
 }
 
-async function listing(res, dir, urlPath, siteName) {
+async function listing(req, res, dir, urlPath, siteName) {
+  const lang = langOf(req);
   const entries = (await fsp.readdir(dir, { withFileTypes: true }))
     .filter((e) => !e.name.startsWith('.'))
     .sort((a, b) => (b.isDirectory() - a.isDirectory()) || a.name.localeCompare(b.name));
@@ -64,17 +66,18 @@ async function listing(res, dir, urlPath, siteName) {
     .join('');
   const up = urlPath !== '/' ? '<li><a href="../">../</a></li>' : '';
   res.set('Cache-Control', 'no-cache');
-  res.type('html').send(page(`${siteName}${urlPath}`, `<h1>${escapeHtml(siteName)}<code>${escapeHtml(urlPath)}</code></h1>
-<p>Tato složka neobsahuje <code>index.html</code>, zde jsou její soubory:</p><ul>${up}${items}</ul>`));
+  res.type('html').send(page(lang, `${siteName}${urlPath}`, `<h1>${escapeHtml(siteName)}<code>${escapeHtml(urlPath)}</code></h1>
+<p>${t(lang, 'listingText')}</p><ul>${up}${items}</ul>`));
 }
 
-async function notFound(res, root, sandboxed) {
+async function notFound(req, res, root, sandboxed) {
   const custom = path.join(root, '404.html');
   if (await statOrNull(custom)) {
     res.status(404);
     return send(res, custom, sandboxed);
   }
-  res.status(404).type('html').send(page('Nenalezeno', '<h1>404 – Stránka nenalezena</h1>'));
+  const lang = langOf(req);
+  res.status(404).type('html').send(page(lang, t(lang, 'pageNotFoundTitle'), `<h1>${t(lang, 'pageNotFound')}</h1>`));
 }
 
 /**
@@ -85,24 +88,27 @@ async function notFound(res, root, sandboxed) {
  */
 async function serveSite(req, res, name, subPath, basePath) {
   const sandboxed = basePath !== '' && config.PATH_SANDBOX;
+  const lang = langOf(req);
+  const noSuchSite = (text = '') =>
+    res.status(404).type('html').send(page(lang, t(lang, 'pageNotFoundTitle'), `<h1>${t(lang, 'noSuchSite')}</h1>${text}`));
   if (!sites.NAME_RE.test(name)) {
-    return res.status(404).type('html').send(page('Nenalezeno', '<h1>404 – Web neexistuje</h1>'));
+    return noSuchSite();
   }
   const root = sites.siteDir(name);
   if (!(await statOrNull(root))) {
-    return res.status(404).type('html').send(page('Nenalezeno', `<h1>404 – Web neexistuje</h1><p>Na adrese <code>${escapeHtml(name)}</code> zatím nic není zveřejněno.</p>`));
+    return noSuchSite(`<p>${t(lang, 'noSuchSiteText', { name: escapeHtml(name) })}</p>`);
   }
 
   let decoded;
   try {
     decoded = decodeURIComponent(subPath);
   } catch {
-    return res.status(400).send('Neplatný požadavek');
+    return res.status(400).send(t(lang, 'badRequest'));
   }
-  if (decoded.includes('\0')) return res.status(400).send('Neplatný požadavek');
+  if (decoded.includes('\0')) return res.status(400).send(t(lang, 'badRequest'));
   const rel = path.posix.normalize('/' + decoded);
   const full = path.join(root, rel);
-  if (full !== root && !full.startsWith(root + path.sep)) return res.status(400).send('Neplatný požadavek');
+  if (full !== root && !full.startsWith(root + path.sep)) return res.status(400).send(t(lang, 'badRequest'));
 
   const st = await statOrNull(full);
   if (st && st.isDirectory()) {
@@ -112,14 +118,14 @@ async function serveSite(req, res, name, subPath, basePath) {
     }
     const index = path.join(full, 'index.html');
     if (await statOrNull(index)) return send(res, index, sandboxed);
-    return listing(res, full, rel.endsWith('/') ? rel : rel + '/', name);
+    return listing(req, res, full, rel.endsWith('/') ? rel : rel + '/', name);
   }
   if (st && st.isFile()) return send(res, full, sandboxed);
 
   // Clean URLs: /about -> /about.html
   if (!rel.endsWith('/') && (await statOrNull(full + '.html'))) return send(res, full + '.html', sandboxed);
 
-  return notFound(res, root, sandboxed);
+  return notFound(req, res, root, sandboxed);
 }
 
 module.exports = { serveSite, page, escapeHtml };

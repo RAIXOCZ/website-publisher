@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Publikování webů</title>
+  <title data-i18n="title.index">Publikování webů</title>
   <link rel="icon" href="/_app/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/_app/app.css">
 </head>
@@ -11,47 +11,53 @@
   <header class="topbar">
     <a class="brand" href="/"><span class="brand-mark">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-    </span>Publikování</a>
-    <nav class="nav">
-      <a class="btn btn-ghost" href="#my-sites">Moje weby</a>
-      <a class="btn btn-ghost" href="/docs">Návod</a>
-    </nav>
+    </span><span data-i18n="brand">Publikování</span></a>
+    <div class="topbar-right">
+      <nav class="nav">
+        <a class="btn btn-ghost hide-sm" href="#my-sites" data-i18n="nav.mySites">Moje weby</a>
+        <a class="btn btn-ghost" href="/docs" data-i18n="nav.docs">Návod</a>
+      </nav>
+      <div class="lang-switch" role="group" aria-label="Jazyk / Language">
+        <button type="button" data-set-lang="cs">CS</button>
+        <button type="button" data-set-lang="en">EN</button>
+      </div>
+    </div>
   </header>
 
   <main>
-    <h1>Zveřejnit web</h1>
-    <p class="lead">Přetáhněte sem složku s webem. Jakmile se nahraje, je hned online.</p>
+    <h1 data-i18n="index.h1">Zveřejnit web</h1>
+    <p class="lead" data-i18n="index.lead">Přetáhněte sem složku s webem. Jakmile se nahraje, je hned online.</p>
 
     <section class="card">
       <div class="name-row">
-        <label for="name">Název webu <span class="muted small">(nepovinné, jinak podle názvu složky)</span></label>
-        <input type="text" id="name" placeholder="muj-web" autocomplete="off" spellcheck="false" maxlength="63">
+        <label for="name"><span data-i18n="name.label">Název webu</span> <span class="muted small" data-i18n="name.hint">(nepovinné, jinak podle názvu složky)</span></label>
+        <input type="text" id="name" data-i18n-placeholder="name.placeholder" placeholder="muj-web" autocomplete="off" spellcheck="false" maxlength="63">
         <div class="url-preview" id="url-preview"></div>
       </div>
 
       <div class="alert" id="error" hidden>
         <span id="error-text"></span>
         <form class="row" id="conflict" hidden>
-          <input type="text" id="conflict-password" class="grow" placeholder="Heslo k webu" autocomplete="off" spellcheck="false">
-          <button class="btn btn-sm btn-danger" type="submit">Nahradit web</button>
-          <button class="btn btn-sm" type="button" id="cancel">Zrušit</button>
+          <input type="text" id="conflict-password" class="grow" data-i18n-placeholder="conflict.placeholder" placeholder="Heslo k webu" autocomplete="off" spellcheck="false">
+          <button class="btn btn-sm btn-danger" type="submit" data-i18n="conflict.replace">Nahradit web</button>
+          <button class="btn btn-sm" type="button" id="cancel" data-i18n="cancel">Zrušit</button>
         </form>
       </div>
 
-      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Vybrat složku ke zveřejnění">
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" data-i18n-aria="drop.aria" aria-label="Vybrat složku ke zveřejnění">
         <div class="icon">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>
         </div>
-        <p class="title">Přetáhněte sem složku s webem</p>
-        <p class="muted small">nebo soubor .zip &middot; musí obsahovat <code>index.html</code></p>
+        <p class="title" data-i18n="drop.title">Přetáhněte sem složku s webem</p>
+        <p class="muted small" data-i18n-html="drop.hint">nebo soubor .zip &middot; musí obsahovat <code>index.html</code></p>
         <div class="actions">
-          <button class="btn btn-primary" id="pick-folder" type="button">Vybrat složku</button>
-          <button class="btn" id="pick-zip" type="button">Nahrát .zip</button>
+          <button class="btn btn-primary" id="pick-folder" type="button" data-i18n="pick.folder">Vybrat složku</button>
+          <button class="btn" id="pick-zip" type="button" data-i18n="pick.zip">Nahrát .zip</button>
         </div>
       </div>
 
       <div class="progress" id="progress" hidden>
-        <p><b id="progress-title">Nahrávám…</b></p>
+        <p><b id="progress-title" data-i18n="progress.uploading">Nahrávám…</b></p>
         <div class="bar"><div id="progress-bar"></div></div>
         <div class="progress-label"><span id="progress-files"></span><span id="progress-pct"></span></div>
       </div>
@@ -59,46 +65,52 @@
       <div class="result" id="result" hidden>
         <p class="title">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
-          <span id="result-title">Web je online</span>
+          <span id="result-title" data-i18n="result.live">Web je online</span>
         </p>
         <div class="link">
           <a id="result-link" target="_blank" rel="noopener"></a>
-          <button class="btn btn-sm" id="copy">Kopírovat</button>
-          <a class="btn btn-sm btn-primary" id="open" target="_blank" rel="noopener">Otevřít</a>
+          <button class="btn btn-sm" id="copy" data-i18n="copy">Kopírovat</button>
+          <a class="btn btn-sm btn-primary" id="open" target="_blank" rel="noopener" data-i18n="open">Otevřít</a>
         </div>
         <div id="result-password" hidden>
-          <p class="pw-label">Heslo k webu</p>
+          <p class="pw-label" data-i18n="result.pwLabel">Heslo k webu</p>
           <div class="link">
             <code class="pw" id="result-password-value"></code>
-            <button class="btn btn-sm" id="copy-password">Kopírovat</button>
+            <button class="btn btn-sm" id="copy-password" data-i18n="copy">Kopírovat</button>
           </div>
-          <p class="note">Heslo je uložené v tomto prohlížeči (Moje weby). Bez něj web nepůjde aktualizovat ani smazat, proto si ho uschovejte.</p>
+          <p class="note" data-i18n="result.pwNote">Heslo je uložené v tomto prohlížeči (Moje weby). Bez něj web nepůjde aktualizovat ani smazat, proto si ho uschovejte.</p>
         </div>
         <p class="note" id="result-note"></p>
         <div class="row mt">
-          <button class="btn" id="again">Zveřejnit další</button>
+          <button class="btn" id="again" data-i18n="again">Zveřejnit další</button>
         </div>
       </div>
     </section>
 
     <section class="card" id="my-sites">
       <div class="section-head">
-        <h2>Moje weby</h2>
-        <button class="btn btn-sm" id="add-toggle">Přidat existující web</button>
+        <h2 data-i18n="my.title">Moje weby</h2>
+        <button class="btn btn-sm" id="add-toggle" data-i18n="my.add">Přidat existující web</button>
       </div>
-      <p class="muted small">Weby zveřejněné z tohoto prohlížeče. Hesla jsou uložená jen tady, na jiném zařízení je přidáte tlačítkem výše.</p>
+      <p class="muted small" data-i18n="my.intro">Weby zveřejněné z tohoto prohlížeče. Hesla jsou uložená jen tady, na jiném zařízení je přidáte tlačítkem výše.</p>
 
       <form class="add-form" id="add-form" hidden>
-        <input type="text" name="site" placeholder="Název webu" autocomplete="off" spellcheck="false" required>
-        <input type="text" name="password" placeholder="Heslo k webu" autocomplete="off" spellcheck="false" required>
-        <button class="btn btn-primary" type="submit">Přidat</button>
+        <input type="text" name="site" data-i18n-placeholder="my.namePlaceholder" placeholder="Název webu" autocomplete="off" spellcheck="false" required>
+        <input type="text" name="password" data-i18n-placeholder="my.pwPlaceholder" placeholder="Heslo k webu" autocomplete="off" spellcheck="false" required>
+        <button class="btn btn-primary" type="submit" data-i18n="my.addSubmit">Přidat</button>
         <div class="alert" hidden></div>
       </form>
 
       <div id="my-list"></div>
-      <div class="empty" id="my-empty" hidden>Zatím jste odsud nic nezveřejnili.</div>
+      <div class="empty" id="my-empty" hidden data-i18n="my.empty">Zatím jste odsud nic nezveřejnili.</div>
     </section>
   </main>
+
+  <footer class="footer">
+    <span><span data-i18n="footer.by">Vytvořil</span> <a href="https://martin-balcar.cz" target="_blank" rel="noopener">Martin Balcar</a></span>
+    <span aria-hidden="true">·</span>
+    <a class="abuse-link" href="mailto:martin@balcar.me" data-i18n="footer.abuse">Nahlásit zneužití</a>
+  </footer>
 
   <template id="my-row">
     <div class="site-row">
@@ -106,18 +118,19 @@
         <div class="site-name"></div>
         <a class="site-url" target="_blank" rel="noopener"></a>
         <div class="site-meta small muted"></div>
-        <div class="site-pw small" hidden>Heslo: <code></code></div>
+        <div class="site-pw small" hidden><span data-i18n="row.pwPrefix">Heslo:</span> <code></code></div>
       </div>
       <div class="site-actions">
-        <button class="btn btn-sm" data-action="copy">Kopírovat odkaz</button>
-        <button class="btn btn-sm" data-action="password">Heslo</button>
-        <button class="btn btn-sm" data-action="update">Aktualizovat</button>
-        <button class="btn btn-sm btn-danger" data-action="delete">Smazat</button>
-        <button class="btn btn-sm" data-action="forget" hidden>Odebrat ze seznamu</button>
+        <button class="btn btn-sm" data-action="copy" data-i18n="row.copyLink">Kopírovat odkaz</button>
+        <button class="btn btn-sm" data-action="password" data-i18n="row.password">Heslo</button>
+        <button class="btn btn-sm" data-action="update" data-i18n="row.update">Aktualizovat</button>
+        <button class="btn btn-sm btn-danger" data-action="delete" data-i18n="row.delete">Smazat</button>
+        <button class="btn btn-sm" data-action="forget" data-i18n="row.forget" hidden>Odebrat ze seznamu</button>
       </div>
     </div>
   </template>
 
+  <script src="/_app/i18n.js"></script>
   <script src="/_app/common.js"></script>
   <script src="/_app/index.js"></script>
 </body>

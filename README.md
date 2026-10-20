@@ -1,6 +1,6 @@
 # website-publisher
 
-Drop a folder, get a website. A small self-hosted static site publisher with a Czech UI:
+Drop a folder, get a website. A small self-hosted static site publisher with a Czech and English UI. The language follows the browser (Czech/Slovak → Czech, anything else → English), and visitors can switch with the CS/EN toggle; their choice is remembered.
 
 - **Upload page** (`/`): anyone can drag & drop a folder (or a `.zip`), no account needed. The site is live as soon as the upload finishes.
 - **Per-site passwords**: every new site gets a generated password. Replacing or deleting a site needs it. The browser remembers it in `localStorage`, and the upload page lists those sites under *Moje weby*. A site can be added on another device with its name and password.

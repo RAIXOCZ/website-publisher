@@ -33,11 +33,11 @@ function siteUrl(name) {
 function updatePreview() {
   const name = slugify(els.name.value);
   if (!name) {
-    els.preview.textContent = `Bude zveřejněno na ${siteUrl('nazev-slozky')}`;
+    els.preview.textContent = t('preview.prefix') + siteUrl(t('name.previewDefault'));
     return;
   }
   const [before, after] = siteUrl('\u0000').split('\u0000');
-  els.preview.replaceChildren('Bude zveřejněno na ', before, Object.assign(document.createElement('b'), { textContent: name }), after);
+  els.preview.replaceChildren(t('preview.prefix'), before, Object.assign(document.createElement('b'), { textContent: name }), after);
 }
 
 els.name.addEventListener('input', updatePreview);
@@ -161,7 +161,7 @@ async function start(files) {
   state.pending = { files, name };
   if (!name) {
     els.name.focus();
-    return showError('Zadejte název webu a stiskněte Enter.');
+    return showError(t('err.enterName'));
   }
 
   let check;
@@ -177,12 +177,7 @@ async function start(files) {
   if (check.exists) {
     const saved = ownedPassword(name);
     els.conflictPassword.value = saved || '';
-    return showError(
-      saved
-        ? `Web „${name}“ už existuje a je mezi vašimi weby. Chcete ho nahradit tímto nahráním?`
-        : `Web „${name}“ už existuje. Pokud je váš, zadejte jeho heslo. Jinak zvolte jiný název a stiskněte Enter.`,
-      { askPassword: true },
-    );
+    return showError(saved ? t('err.existsOwned', { name }) : t('err.existsAsk', { name }), { askPassword: true });
   }
   upload(files, name);
 }
@@ -203,11 +198,11 @@ $('#cancel').addEventListener('click', () => {
 async function upload(files, name, password = null) {
   const totalBytes = files.reduce((sum, f) => sum + f.file.size, 0);
   if (totalBytes > state.config.maxUploadMb * 1024 * 1024) {
-    return showError(`Nahrávaná data mají ${formatBytes(totalBytes)}, limit je ${state.config.maxUploadMb} MB.`);
+    return showError(t('err.tooBig', { size: formatBytes(totalBytes), limit: state.config.maxUploadMb }));
   }
 
   setStage('upload');
-  $('#progress-title').textContent = `Nahrávám ${name}…`;
+  $('#progress-title').textContent = t('progress.uploadingName', { name });
   $('#progress-files').textContent = `${filesLabel(files.length)} · ${formatBytes(totalBytes)}`;
   els.bar.style.width = '0%';
   $('#progress-pct').textContent = '0%';
@@ -220,7 +215,7 @@ async function upload(files, name, password = null) {
     onProgress: (p) => {
       const pct = Math.round(p * 100);
       els.bar.style.width = `${pct}%`;
-      $('#progress-pct').textContent = pct === 100 ? 'Zveřejňuji…' : `${pct}%`;
+      $('#progress-pct').textContent = pct === 100 ? t('progress.publishing') : `${pct}%`;
     },
   });
 
@@ -235,14 +230,14 @@ async function upload(files, name, password = null) {
   setStage('pick');
   if (data.exists) {
     state.pending = { files, name };
-    return showError(data.wrongPassword ? `${data.error} Zkuste to znovu, nebo zvolte jiný název.` : data.error, { askPassword: true });
+    return showError(data.wrongPassword ? data.error + t('err.tryAgain') : data.error, { askPassword: true });
   }
   showError(data.error);
 }
 
 function done(site) {
   setStage('done');
-  $('#result-title').textContent = site.replaced ? `Web ${site.name} byl aktualizován` : `Web ${site.name} je online`;
+  $('#result-title').textContent = t(site.replaced ? 'result.updated' : 'result.liveName', { name: site.name });
   $('#result-link').textContent = site.url;
   $('#result-link').href = site.url;
   $('#open').href = site.url;
@@ -250,11 +245,11 @@ function done(site) {
   $('#result-password-value').textContent = site.password || '';
   $('#result-note').textContent =
     `${filesLabel(site.files)}, ${formatBytes(site.bytes)}.` +
-    (site.hasIndex ? '' : ' V hlavní složce chybí index.html, návštěvníci uvidí seznam souborů.');
+    (site.hasIndex ? '' : t('result.noIndex'));
 }
 
 $('#copy').addEventListener('click', () => copy($('#result-link').href));
-$('#copy-password').addEventListener('click', () => copy($('#result-password-value').textContent, 'Heslo zkopírováno'));
+$('#copy-password').addEventListener('click', () => copy($('#result-password-value').textContent, t('toast.pwCopied')));
 $('#again').addEventListener('click', () => {
   els.name.value = '';
   updatePreview();
@@ -281,6 +276,7 @@ async function renderMySites() {
     ...owned.map(({ name, password }) => {
       const info = status[name] || { status: 'unknown' };
       const row = $('#my-row').content.firstElementChild.cloneNode(true);
+      applyI18n(row);
       row.dataset.name = name;
       $('.site-name', row).textContent = name;
       const url = info.url || siteUrl(name);
@@ -290,11 +286,11 @@ async function renderMySites() {
       const meta = $('.site-meta', row);
       const ok = info.status === 'ok' || info.status === 'unknown';
       if (info.status === 'ok') {
-        meta.textContent = `${filesLabel(info.files)} · ${formatBytes(info.bytes)} · aktualizováno ${timeAgo(info.updatedAt)}`;
+        meta.textContent = t('my.meta', { files: filesLabel(info.files), size: formatBytes(info.bytes), ago: timeAgo(info.updatedAt) });
       } else if (info.status === 'missing') {
-        meta.textContent = 'Web už neexistuje (byl smazán nebo přejmenován).';
+        meta.textContent = t('my.missing');
       } else if (info.status === 'wrong-password') {
-        meta.textContent = 'Uložené heslo už neplatí.';
+        meta.textContent = t('my.wrongPw');
       }
       if (!ok) row.classList.add('site-row-dim');
       for (const action of ['update', 'delete']) $(`[data-action="${action}"]`, row).hidden = !ok;
@@ -323,11 +319,11 @@ $('#my-list').addEventListener('click', async (e) => {
     return renderMySites();
   }
   if (action === 'delete') {
-    if (!confirm(`Smazat web „${name}“? Adresa ${url} přestane fungovat.`)) return;
+    if (!confirm(t('confirm.deleteOwn', { name, url }))) return;
     try {
       await api(`/sites/${encodeURIComponent(name)}/delete`, { method: 'POST', json: { password } });
       forgetSite(name);
-      toast(`Web ${name} byl smazán`);
+      toast(t('toast.deleted', { name }));
       renderMySites();
     } catch (err) {
       alert(err.message);
@@ -360,12 +356,12 @@ $('#add-form').addEventListener('submit', async (e) => {
     const { sites } = await api('/my-sites', { method: 'POST', json: { sites: [{ name, password }] } });
     const result = sites[0];
     if (result.status !== 'ok') {
-      throw new Error(result.status === 'missing' ? `Web „${name}“ neexistuje.` : 'Nesprávné heslo k webu.');
+      throw new Error(result.status === 'missing' ? t('err.siteMissing', { name }) : t('err.wrongSitePw'));
     }
     rememberSite(name, password);
     form.reset();
     form.hidden = true;
-    toast(`Web ${name} přidán`);
+    toast(t('toast.added', { name }));
     renderMySites();
   } catch (err) {
     error.textContent = err.message;
@@ -374,5 +370,5 @@ $('#add-form').addEventListener('submit', async (e) => {
 });
 
 init().catch((err) => {
-  document.querySelector('main').textContent = `Nepodařilo se načíst: ${err.message}`;
+  document.querySelector('main').textContent = t('err.load', { message: err.message });
 });

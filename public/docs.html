@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Návod – Publikování webů</title>
+  <title data-i18n="title.docs">Návod – Publikování webů</title>
   <link rel="icon" href="/_app/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/_app/app.css">
 </head>
@@ -11,80 +11,162 @@
   <header class="topbar">
     <a class="brand" href="/"><span class="brand-mark">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-    </span>Publikování</a>
-    <nav class="nav">
-      <a class="btn btn-primary" href="/">+ Zveřejnit</a>
-    </nav>
+    </span><span data-i18n="brand">Publikování</span></a>
+    <div class="topbar-right">
+      <nav class="nav">
+        <a class="btn btn-primary" href="/" data-i18n="nav.publish">+ Zveřejnit</a>
+      </nav>
+      <div class="lang-switch" role="group" aria-label="Jazyk / Language">
+        <button type="button" data-set-lang="cs">CS</button>
+        <button type="button" data-set-lang="en">EN</button>
+      </div>
+    </div>
   </header>
 
-  <main class="narrow">
-    <h1>Návod</h1>
-    <p class="lead">Jak zveřejnit statický web během pár sekund.</p>
+  <main>
+    <div data-lang="cs">
+      <h1>Návod</h1>
+      <p class="lead">Jak zveřejnit statický web během pár sekund.</p>
 
-    <section class="card docs">
-      <h2>Jak zveřejnit web</h2>
-      <ol>
-        <li>Na <a href="/">hlavní stránce</a> přetáhněte složku s webem do vyznačeného pole, případně klikněte na <b>Vybrat složku</b>.</li>
-        <li>Název webu se doplní podle názvu složky. Chcete-li jiný, napište ho do pole <b>Název webu</b> ještě před nahráním.</li>
-        <li>Po dokončení nahrávání je web okamžitě online. Odkaz si můžete zkopírovat nebo rovnou otevřít.</li>
-        <li>Zobrazí se <b>heslo k webu</b>. Uschovejte si ho, budete ho potřebovat pro aktualizaci nebo smazání.</li>
-      </ol>
-      <p>Nepotřebujete žádný účet ani přihlášení.</p>
-      <p>Web bude dostupný na adrese <code class="url-example">…</code></p>
+      <section class="card docs">
+        <h2>Jak zveřejnit web</h2>
+        <ol>
+          <li>Na <a href="/">hlavní stránce</a> přetáhněte složku s webem do vyznačeného pole, případně klikněte na <b>Vybrat složku</b>.</li>
+          <li>Název webu se doplní podle názvu složky. Chcete-li jiný, napište ho do pole <b>Název webu</b> ještě před nahráním.</li>
+          <li>Po dokončení nahrávání je web okamžitě online. Odkaz si můžete zkopírovat nebo rovnou otevřít.</li>
+          <li>Zobrazí se <b>heslo k webu</b>. Uschovejte si ho, budete ho potřebovat pro aktualizaci nebo smazání.</li>
+        </ol>
+        <p>Nepotřebujete žádný účet ani přihlášení.</p>
+        <p>Web bude dostupný na adrese <code class="url-example">…</code></p>
 
-      <h2>Co má složka obsahovat</h2>
-      <ul>
-        <li>Úvodní stránku <code>index.html</code> přímo ve složce.</li>
-        <li>Cokoli dalšího: CSS, JavaScript, obrázky, fonty, podsložky. Struktura zůstane zachovaná.</li>
-        <li>Fungují jen statické soubory. PHP, Node.js a databáze se nespouští.</li>
-      </ul>
-      <pre>muj-web/
+        <h2>Co má složka obsahovat</h2>
+        <ul>
+          <li>Úvodní stránku <code>index.html</code> přímo ve složce.</li>
+          <li>Cokoli dalšího: CSS, JavaScript, obrázky, fonty, podsložky. Struktura zůstane zachovaná.</li>
+          <li>Fungují jen statické soubory. PHP, Node.js a databáze se nespouští.</li>
+        </ul>
+        <pre>muj-web/
+  ├── index.html
+  ├── o-nas.html
+  ├── css/style.css
+  └── img/logo.png</pre>
+        <p>Pokud nahrajete složku, která obsahuje jen jednu další složku (třeba <code>muj-web/dist/…</code>), zveřejní se automaticky její obsah.</p>
+
+        <h2>Nahrání .zip souboru</h2>
+        <p>Místo složky můžete nahrát jeden soubor <code>.zip</code>. Po nahrání se rozbalí a zveřejní stejně jako složka. Hodí se pro velké weby nebo prohlížeče, které neumí nahrávat složky.</p>
+
+        <h2>Heslo k webu</h2>
+        <ul>
+          <li>Každý web dostane při prvním zveřejnění vlastní heslo, například <code>k7mq-2xpa-9fve</code>.</li>
+          <li>Bez hesla nikdo nemůže web nahradit ani smazat.</li>
+          <li>Heslo se uloží do vašeho prohlížeče a web najdete v sekci <a href="/#my-sites">Moje weby</a>.</li>
+          <li>Na jiném zařízení (nebo po vymazání dat prohlížeče) web přidáte tlačítkem <b>Přidat existující web</b>, kam zadáte název a heslo.</li>
+          <li>Pokud heslo ztratíte, požádejte správce serveru o nové.</li>
+        </ul>
+
+        <h2>Aktualizace webu</h2>
+        <p>V sekci <b>Moje weby</b> klikněte na <b>Aktualizovat</b> a vyberte složku s novou verzí. Nebo nahrajte složku se <b>stejným názvem</b> na hlavní stránce: aplikace se zeptá na heslo (pokud ho máte uložené, doplní ho sama). Výměna proběhne najednou, návštěvníci nikdy neuvidí napůl nahraný web.</p>
+
+        <h2>Smazání webu</h2>
+        <p>V sekci <b>Moje weby</b> klikněte na <b>Smazat</b>. Adresa webu tím přestane fungovat.</p>
+
+        <h2>Hezké adresy a chybová stránka</h2>
+        <ul>
+          <li>Adresa <code>/o-nas</code> zobrazí soubor <code>o-nas.html</code>, příponu psát nemusíte.</li>
+          <li>Když přidáte soubor <code>404.html</code>, zobrazí se u neexistujících stránek.</li>
+          <li>Složka bez <code>index.html</code> zobrazí seznam svých souborů.</li>
+        </ul>
+
+        <h2>Pravidla pro název</h2>
+        <ul>
+          <li>Malá písmena bez diakritiky, číslice a pomlčky, nejvýše 63 znaků.</li>
+          <li>Velká písmena, mezery a háčky se převedou automaticky (<code>Můj Web</code> → <code>muj-web</code>).</li>
+          <li>Některé názvy jsou rezervované, například <code>admin</code>, <code>api</code>, <code>docs</code> nebo <code>www</code>.</li>
+        </ul>
+
+        <h2>Limity</h2>
+        <ul>
+          <li>Největší velikost jednoho nahrání: <b class="max-upload">…</b></li>
+          <li>Soubory systému jako <code>.DS_Store</code>, <code>Thumbs.db</code> nebo <code>__MACOSX</code> se přeskočí.</li>
+        </ul>
+      </section>
+    </div>
+    <div data-lang="en" hidden>
+      <h1>Guide</h1>
+      <p class="lead">How to publish a static website in a few seconds.</p>
+
+      <section class="card docs">
+        <h2>How to publish a site</h2>
+        <ol>
+          <li>On the <a href="/">home page</a>, drop your website folder onto the marked area, or click <b>Choose folder</b>.</li>
+          <li>The site name is taken from the folder name. To use a different one, type it into <b>Site name</b> before uploading.</li>
+          <li>As soon as the upload finishes, the site is live. Copy the link or open it right away.</li>
+          <li>You will see the <b>site password</b>. Keep it safe; you need it to update or delete the site.</li>
+        </ol>
+        <p>No account or login is needed.</p>
+        <p>Your site will be available at <code class="url-example">…</code></p>
+
+        <h2>What the folder should contain</h2>
+        <ul>
+          <li>A start page <code>index.html</code> directly in the folder.</li>
+          <li>Anything else: CSS, JavaScript, images, fonts, subfolders. The structure is kept as it is.</li>
+          <li>Only static files work. PHP, Node.js and databases are not run.</li>
+        </ul>
+        <pre>my-site/
 ├── index.html
-├── o-nas.html
+├── about.html
 ├── css/style.css
 └── img/logo.png</pre>
-      <p>Pokud nahrajete složku, která obsahuje jen jednu další složku (třeba <code>muj-web/dist/…</code>), zveřejní se automaticky její obsah.</p>
+        <p>If you upload a folder that only contains one other folder (for example <code>my-site/dist/…</code>), its contents are published automatically.</p>
 
-      <h2>Nahrání .zip souboru</h2>
-      <p>Místo složky můžete nahrát jeden soubor <code>.zip</code>. Po nahrání se rozbalí a zveřejní stejně jako složka. Hodí se pro velké weby nebo prohlížeče, které neumí nahrávat složky.</p>
+        <h2>Uploading a .zip file</h2>
+        <p>Instead of a folder you can upload a single <code>.zip</code> file. It is extracted and published just like a folder. Handy for large sites or browsers that cannot upload folders.</p>
 
-      <h2>Heslo k webu</h2>
-      <ul>
-        <li>Každý web dostane při prvním zveřejnění vlastní heslo, například <code>k7mq-2xpa-9fve</code>.</li>
-        <li>Bez hesla nikdo nemůže web nahradit ani smazat.</li>
-        <li>Heslo se uloží do vašeho prohlížeče a web najdete v sekci <a href="/#my-sites">Moje weby</a>.</li>
-        <li>Na jiném zařízení (nebo po vymazání dat prohlížeče) web přidáte tlačítkem <b>Přidat existující web</b>, kam zadáte název a heslo.</li>
-        <li>Pokud heslo ztratíte, požádejte správce serveru o nové.</li>
-      </ul>
+        <h2>Site password</h2>
+        <ul>
+          <li>Every site gets its own password when it is first published, for example <code>k7mq-2xpa-9fve</code>.</li>
+          <li>Without the password nobody can replace or delete the site.</li>
+          <li>The password is saved in your browser and the site appears under <a href="/#my-sites">My sites</a>.</li>
+          <li>On another device (or after clearing browser data), add the site with <b>Add existing site</b> by entering its name and password.</li>
+          <li>If you lose the password, ask the server administrator for a new one.</li>
+        </ul>
 
-      <h2>Aktualizace webu</h2>
-      <p>V sekci <b>Moje weby</b> klikněte na <b>Aktualizovat</b> a vyberte složku s novou verzí. Nebo nahrajte složku se <b>stejným názvem</b> na hlavní stránce: aplikace se zeptá na heslo (pokud ho máte uložené, doplní ho sama). Výměna proběhne najednou, návštěvníci nikdy neuvidí napůl nahraný web.</p>
+        <h2>Updating a site</h2>
+        <p>Under <b>My sites</b>, click <b>Update</b> and choose the folder with the new version. Or upload a folder with the <b>same name</b> on the home page: the app asks for the password (and fills it in if it is saved). The switch happens at once, so visitors never see a half-uploaded site.</p>
 
-      <h2>Smazání webu</h2>
-      <p>V sekci <b>Moje weby</b> klikněte na <b>Smazat</b>. Adresa webu tím přestane fungovat.</p>
+        <h2>Deleting a site</h2>
+        <p>Under <b>My sites</b>, click <b>Delete</b>. The site's address stops working.</p>
 
-      <h2>Hezké adresy a chybová stránka</h2>
-      <ul>
-        <li>Adresa <code>/o-nas</code> zobrazí soubor <code>o-nas.html</code>, příponu psát nemusíte.</li>
-        <li>Když přidáte soubor <code>404.html</code>, zobrazí se u neexistujících stránek.</li>
-        <li>Složka bez <code>index.html</code> zobrazí seznam svých souborů.</li>
-      </ul>
+        <h2>Clean URLs and error page</h2>
+        <ul>
+          <li>The address <code>/about</code> serves <code>about.html</code>; you don't have to type the extension.</li>
+          <li>Add a <code>404.html</code> file and it is shown for pages that don't exist.</li>
+          <li>A folder without <code>index.html</code> shows a list of its files.</li>
+        </ul>
 
-      <h2>Pravidla pro název</h2>
-      <ul>
-        <li>Malá písmena bez diakritiky, číslice a pomlčky, nejvýše 63 znaků.</li>
-        <li>Velká písmena, mezery a háčky se převedou automaticky (<code>Můj Web</code> → <code>muj-web</code>).</li>
-        <li>Některé názvy jsou rezervované, například <code>admin</code>, <code>api</code>, <code>docs</code> nebo <code>www</code>.</li>
-      </ul>
+        <h2>Name rules</h2>
+        <ul>
+          <li>Lowercase letters without accents, numbers and dashes, at most 63 characters.</li>
+          <li>Capitals, spaces and accents are converted automatically (<code>My Site</code> → <code>my-site</code>).</li>
+          <li>Some names are reserved, for example <code>admin</code>, <code>api</code>, <code>docs</code> or <code>www</code>.</li>
+        </ul>
 
-      <h2>Limity</h2>
-      <ul>
-        <li>Největší velikost jednoho nahrání: <b class="max-upload">…</b></li>
-        <li>Soubory systému jako <code>.DS_Store</code>, <code>Thumbs.db</code> nebo <code>__MACOSX</code> se přeskočí.</li>
-      </ul>
-    </section>
+        <h2>Limits</h2>
+        <ul>
+          <li>Maximum size of one upload: <b class="max-upload">…</b></li>
+          <li>System files such as <code>.DS_Store</code>, <code>Thumbs.db</code> or <code>__MACOSX</code> are skipped.</li>
+        </ul>
+      </section>
+    </div>
   </main>
 
+  <footer class="footer">
+    <span><span data-i18n="footer.by">Vytvořil</span> <a href="https://martin-balcar.cz" target="_blank" rel="noopener">Martin Balcar</a></span>
+    <span aria-hidden="true">·</span>
+    <a class="abuse-link" href="mailto:martin@balcar.me" data-i18n="footer.abuse">Nahlásit zneužití</a>
+  </footer>
+
+  <script src="/_app/i18n.js"></script>
   <script src="/_app/common.js"></script>
   <script src="/_app/docs.js"></script>
 </body>

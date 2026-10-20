@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
-  <title>Správa webů</title>
+  <title data-i18n="title.admin">Správa webů</title>
   <link rel="icon" href="/_app/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/_app/app.css">
 </head>
@@ -12,46 +12,52 @@
   <header class="topbar">
     <a class="brand" href="/"><span class="brand-mark">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-    </span>Publikování <span class="muted hide-sm">správa</span></a>
-    <nav class="nav" id="nav" hidden>
-      <a class="btn btn-primary" href="/">+ Zveřejnit</a>
-      <button class="btn btn-ghost" id="logout">Odhlásit</button>
-    </nav>
+    </span><span data-i18n="brand">Publikování</span> <span class="muted hide-sm" data-i18n="brand.admin">správa</span></a>
+    <div class="topbar-right">
+      <nav class="nav" id="nav" hidden>
+        <a class="btn btn-primary" href="/" data-i18n="nav.publish">+ Zveřejnit</a>
+        <button class="btn btn-ghost" id="logout" data-i18n="nav.logout">Odhlásit</button>
+      </nav>
+      <div class="lang-switch" role="group" aria-label="Jazyk / Language">
+        <button type="button" data-set-lang="cs">CS</button>
+        <button type="button" data-set-lang="en">EN</button>
+      </div>
+    </div>
   </header>
 
   <main>
     <section class="login card" id="login" hidden>
-      <h2>Přihlášení do správy</h2>
+      <h2 data-i18n="admin.loginTitle">Přihlášení do správy</h2>
       <form>
-        <input type="password" name="password" placeholder="Heslo" autocomplete="current-password" required autofocus>
+        <input type="password" name="password" data-i18n-placeholder="admin.passwordPlaceholder" placeholder="Heslo" autocomplete="current-password" required autofocus>
         <div class="alert" hidden></div>
-        <button class="btn btn-primary" type="submit">Přihlásit</button>
+        <button class="btn btn-primary" type="submit" data-i18n="admin.login">Přihlásit</button>
       </form>
     </section>
 
     <div id="panel" hidden>
-      <h1>Weby</h1>
-      <p class="lead">Všechny zveřejněné weby. Jako správce můžete kterýkoli web nahradit, přejmenovat, smazat nebo mu vygenerovat nové heslo.</p>
+      <h1 data-i18n="admin.h1">Weby</h1>
+      <p class="lead" data-i18n="admin.lead">Všechny zveřejněné weby. Jako správce můžete kterýkoli web nahradit, přejmenovat, smazat nebo mu vygenerovat nové heslo.</p>
 
       <section class="card">
         <div class="toolbar">
-          <input type="text" id="filter" placeholder="Hledat weby…" autocomplete="off">
+          <input type="text" id="filter" data-i18n-placeholder="admin.filter" placeholder="Hledat weby…" autocomplete="off">
           <span class="stats" id="stats"></span>
         </div>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Web</th>
-                <th class="hide-sm">Soubory</th>
-                <th class="hide-sm">Velikost</th>
-                <th>Aktualizováno</th>
+                <th data-i18n="admin.thSite">Web</th>
+                <th class="hide-sm" data-i18n="admin.thFiles">Soubory</th>
+                <th class="hide-sm" data-i18n="admin.thSize">Velikost</th>
+                <th data-i18n="admin.thUpdated">Aktualizováno</th>
                 <th></th>
               </tr>
             </thead>
             <tbody id="rows"></tbody>
           </table>
-          <div class="empty" id="empty" hidden>
+          <div class="empty" id="empty" hidden data-i18n-html="admin.empty">
             Zatím tu nejsou žádné weby. <a href="/">Zveřejněte první →</a>
           </div>
         </div>
@@ -59,25 +65,32 @@
     </div>
   </main>
 
+  <footer class="footer">
+    <span><span data-i18n="footer.by">Vytvořil</span> <a href="https://martin-balcar.cz" target="_blank" rel="noopener">Martin Balcar</a></span>
+    <span aria-hidden="true">·</span>
+    <a class="abuse-link" href="mailto:martin@balcar.me" data-i18n="footer.abuse">Nahlásit zneužití</a>
+  </footer>
+
   <template id="row">
     <tr>
       <td>
-        <div class="site-name"><span></span> <span class="badge" data-nopw hidden>bez hesla</span></div>
+        <div class="site-name"><span></span> <span class="badge" data-nopw data-i18n="admin.noPw" hidden>bez hesla</span></div>
         <a class="site-url" target="_blank" rel="noopener"></a>
       </td>
       <td class="num hide-sm" data-files></td>
       <td class="num hide-sm" data-size></td>
       <td class="num" data-updated></td>
       <td class="actions">
-        <button class="btn btn-sm" data-action="copy">Kopírovat odkaz</button>
-        <button class="btn btn-sm" data-action="replace">Nahradit</button>
-        <button class="btn btn-sm" data-action="rename">Přejmenovat</button>
-        <button class="btn btn-sm" data-action="password">Nové heslo</button>
-        <button class="btn btn-sm btn-danger" data-action="delete">Smazat</button>
+        <button class="btn btn-sm" data-action="copy" data-i18n="row.copyLink">Kopírovat odkaz</button>
+        <button class="btn btn-sm" data-action="replace" data-i18n="row.replace">Nahradit</button>
+        <button class="btn btn-sm" data-action="rename" data-i18n="row.rename">Přejmenovat</button>
+        <button class="btn btn-sm" data-action="password" data-i18n="row.newPw">Nové heslo</button>
+        <button class="btn btn-sm btn-danger" data-action="delete" data-i18n="row.delete">Smazat</button>
       </td>
     </tr>
   </template>
 
+  <script src="/_app/i18n.js"></script>
   <script src="/_app/common.js"></script>
   <script src="/_app/admin.js"></script>
 </body>

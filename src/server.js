@@ -6,6 +6,7 @@ const config = require('./config');
 const auth = require('./auth');
 const sites = require('./sites');
 const { serveSite, page } = require('./serve');
+const { langOf, t } = require('./i18n');
 
 const app = express();
 app.disable('x-powered-by');
@@ -25,7 +26,7 @@ if (config.SITE_DOMAIN) {
     }
     if (!host.endsWith(suffix)) return next();
     const name = host.slice(0, -suffix.length);
-    if (req.method !== 'GET' && req.method !== 'HEAD') return res.status(405).send('Metoda není povolena');
+    if (req.method !== 'GET' && req.method !== 'HEAD') return res.status(405).send(t(langOf(req), 'methodNotAllowed'));
     serveSite(req, res, name, req.path, '').catch(next);
   });
 }
@@ -61,13 +62,14 @@ api.get('/config', (req, res) => {
 });
 
 const json = express.json({ limit: '100kb' });
-const TOO_MANY = { error: 'Příliš mnoho pokusů. Zkuste to znovu za 15 minut.' };
+// JSON error in the requester's language.
+const fail = (req, res, status, key, params) => res.status(status).json({ error: t(langOf(req), key, params) });
 
 api.post('/login', json, (req, res) => {
-  if (auth.tooManyAttempts(req)) return res.status(429).json(TOO_MANY);
+  if (auth.tooManyAttempts(req)) return fail(req, res, 429, 'tooManyAttempts');
   if (!auth.checkPassword(req.body?.password)) {
     auth.recordFailure(req);
-    return res.status(401).json({ error: 'Nesprávné heslo.' });
+    return fail(req, res, 401, 'wrongPassword');
   }
   auth.setSession(res);
   res.json({ ok: true });
@@ -81,17 +83,20 @@ api.post('/logout', (req, res) => {
 api.get('/check-name', async (req, res) => {
   const name = sites.slugify(req.query.name);
   const error = sites.validateName(name);
-  res.json({ name, error, exists: !error && (await sites.exists(name)), url: name ? sites.siteUrl(name) : null });
+  res.json({
+    name,
+    error: error && t(langOf(req), error, { name }),
+    exists: !error && (await sites.exists(name)),
+    url: name ? sites.siteUrl(name) : null,
+  });
 });
 
 // Anyone may publish a new site; replacing one needs its password (or the admin).
 api.post('/sites', async (req, res) => {
   const isAdmin = auth.isAuthed(req);
   if (!isAdmin) {
-    if (auth.tooManyAttempts(req)) return res.status(429).json(TOO_MANY);
-    if (!auth.publishAllowed(req)) {
-      return res.status(429).json({ error: 'Příliš mnoho nahrávání z vaší adresy. Zkuste to znovu později.' });
-    }
+    if (auth.tooManyAttempts(req)) return fail(req, res, 429, 'tooManyAttempts');
+    if (!auth.publishAllowed(req)) return fail(req, res, 429, 'tooManyUploads');
   }
   const result = await sites.handleUpload(req, { isAdmin, onWrongPassword: () => auth.recordFailure(req) });
   console.log(`published ${result.name} (${result.files} files, ${result.bytes} bytes)${result.replaced ? ' [replaced]' : ''}${isAdmin ? ' [admin]' : ''}`);
@@ -100,7 +105,7 @@ api.post('/sites', async (req, res) => {
 
 // The browser's own list of sites: checks which saved passwords are still valid.
 api.post('/my-sites', json, async (req, res) => {
-  if (auth.tooManyAttempts(req)) return res.status(429).json(TOO_MANY);
+  if (auth.tooManyAttempts(req)) return fail(req, res, 429, 'tooManyAttempts');
   const entries = Array.isArray(req.body?.sites) ? req.body.sites.slice(0, 500) : [];
   const out = [];
   for (const entry of entries) {
@@ -121,10 +126,10 @@ api.post('/my-sites', json, async (req, res) => {
 // Owner (with the site's password) or admin.
 async function authorizeSite(req, res, next) {
   if (auth.isAuthed(req)) return next();
-  if (auth.tooManyAttempts(req)) return res.status(429).json(TOO_MANY);
+  if (auth.tooManyAttempts(req)) return fail(req, res, 429, 'tooManyAttempts');
   if (await sites.checkSitePassword(req.params.name, req.body?.password)) return next();
   auth.recordFailure(req);
-  res.status(403).json({ error: 'Nesprávné heslo k webu.' });
+  fail(req, res, 403, 'wrongSitePassword');
 }
 
 api.post('/sites/:name/delete', json, authorizeSite, async (req, res) => {
@@ -150,7 +155,7 @@ api.post('/sites/:name/reset-password', auth.requireAuth, async (req, res) => {
   res.json({ name: req.params.name, password });
 });
 
-api.use((req, res) => res.status(404).json({ error: 'Nenalezeno' }));
+api.use((req, res) => fail(req, res, 404, 'notFound'));
 app.use('/api', api);
 
 // 3. <PUBLIC_URL>/<name>/... → site (or redirect to its subdomain).
@@ -158,7 +163,7 @@ app.use((req, res, next) => {
   const match = /^\/([^/]+)(\/.*)?$/.exec(req.path);
   if (!match) return next();
   const [, name, rest = ''] = match;
-  if (req.method !== 'GET' && req.method !== 'HEAD') return res.status(405).send('Metoda není povolena');
+  if (req.method !== 'GET' && req.method !== 'HEAD') return res.status(405).send(t(langOf(req), 'methodNotAllowed'));
   if (config.SITE_DOMAIN && sites.NAME_RE.test(name)) {
     const query = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
     return res.redirect(301, sites.siteUrl(name) + (rest || '/').slice(1) + query);
@@ -166,17 +171,20 @@ app.use((req, res, next) => {
   serveSite(req, res, name, rest, `/${name}`).catch(next);
 });
 
-app.use((req, res) => res.status(404).type('html').send(page('Nenalezeno', '<h1>404 – Stránka nenalezena</h1>')));
+app.use((req, res) => {
+  const lang = langOf(req);
+  res.status(404).type('html').send(page(lang, t(lang, 'pageNotFoundTitle'), `<h1>${t(lang, 'pageNotFound')}</h1>`));
+});
 
 // Errors: user-facing messages for expected problems, a generic one otherwise.
 app.use((err, req, res, _next) => {
   if (res.headersSent) return res.end();
   if (err instanceof sites.UserError) {
-    return res.status(err.status).json({ error: err.message, ...err.extra });
+    return res.status(err.status).json({ error: t(langOf(req), err.key, err.params), ...err.extra });
   }
-  if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'Neplatný JSON.' });
+  if (err.type === 'entity.parse.failed') return fail(req, res, 400, 'invalidJson');
   console.error(err);
-  res.status(500).json({ error: 'Na serveru se něco pokazilo.' });
+  fail(req, res, 500, 'serverError');
 });
 
 sites.init().then(() => {

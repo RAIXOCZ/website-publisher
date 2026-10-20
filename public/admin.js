@@ -2,12 +2,6 @@
 
 let allSites = [];
 
-function sitesLabel(n) {
-  if (n === 1) return '1 web';
-  if (n >= 2 && n <= 4) return `${n} weby`;
-  return `${n} webů`;
-}
-
 async function init() {
   const config = await api('/config');
   $('#login').hidden = config.authed;
@@ -33,6 +27,7 @@ function render() {
   rows.replaceChildren(
     ...sites.map((site) => {
       const row = $('#row').content.firstElementChild.cloneNode(true);
+      applyI18n(row);
       row.dataset.name = site.name;
       $('.site-name span', row).textContent = site.name;
       $('[data-nopw]', row).hidden = site.hasPassword;
@@ -41,7 +36,7 @@ function render() {
       $('[data-files]', row).textContent = site.files ?? '–';
       $('[data-size]', row).textContent = formatBytes(site.bytes);
       $('[data-updated]', row).textContent = timeAgo(site.updatedAt);
-      $('[data-updated]', row).title = site.updatedAt ? new Date(site.updatedAt).toLocaleString('cs-CZ') : '';
+      $('[data-updated]', row).title = site.updatedAt ? new Date(site.updatedAt).toLocaleString(LANG) : '';
       return row;
     }),
   );
@@ -59,10 +54,10 @@ $('#rows').addEventListener('click', async (e) => {
     if (button.dataset.action === 'copy') {
       copy(site.url);
     } else if (button.dataset.action === 'rename') {
-      const next = prompt(`Nový název pro „${name}“:`, name);
+      const next = prompt(t('admin.renamePrompt', { name }), name);
       if (!next || slugify(next) === name) return;
       const result = await api(`/sites/${encodeURIComponent(name)}/rename`, { method: 'POST', json: { name: next } });
-      toast(`Přejmenováno na ${result.name}`);
+      toast(t('admin.renamed', { name: result.name }));
       await load();
     } else if (button.dataset.action === 'replace') {
       const files = cleanFiles(await pickFiles());
@@ -75,19 +70,19 @@ $('#rows').addEventListener('click', async (e) => {
         onProgress: (p) => (button.textContent = `${Math.round(p * 100)} %`),
       });
       button.disabled = false;
-      button.textContent = 'Nahradit';
+      button.textContent = t('row.replace');
       if (status < 200 || status >= 300) throw new Error(data.error);
-      toast(`Web ${name} byl nahrazen`);
+      toast(t('admin.replaced', { name }));
       await load();
     } else if (button.dataset.action === 'password') {
-      if (!confirm(`Vygenerovat pro „${name}“ nové heslo? Staré heslo přestane platit.`)) return;
+      if (!confirm(t('admin.resetConfirm', { name }))) return;
       const result = await api(`/sites/${encodeURIComponent(name)}/reset-password`, { method: 'POST' });
-      prompt(`Nové heslo pro „${name}“ (předejte ho majiteli webu):`, result.password);
+      prompt(t('admin.resetPrompt', { name }), result.password);
       await load();
     } else if (button.dataset.action === 'delete') {
-      if (!confirm(`Smazat „${name}“? Web ${site.url} bude trvale odstraněn.`)) return;
+      if (!confirm(t('admin.deleteConfirm', { name, url: site.url }))) return;
       await api(`/sites/${encodeURIComponent(name)}/delete`, { method: 'POST' });
-      toast(`Smazáno: ${name}`);
+      toast(t('admin.deleted', { name }));
       await load();
     }
   } catch (err) {
@@ -100,5 +95,5 @@ $('#logout').addEventListener('click', logout);
 setupLogin($('#login form'), init);
 
 init().catch((err) => {
-  document.querySelector('main').textContent = `Nepodařilo se načíst: ${err.message}`;
+  document.querySelector('main').textContent = t('err.load', { message: err.message });
 });

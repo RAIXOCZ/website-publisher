@@ -3,7 +3,7 @@
 // Small helpers shared by the upload page and the admin panel.
 
 async function api(path, options = {}) {
-  const opts = { credentials: 'same-origin', ...options, headers: { 'X-Requested-With': 'fetch', ...(options.headers || {}) } };
+  const opts = { credentials: 'same-origin', ...options, headers: { 'X-Requested-With': 'fetch', 'X-Lang': LANG, ...(options.headers || {}) } };
   if (opts.json !== undefined) {
     opts.body = JSON.stringify(opts.json);
     opts.headers['Content-Type'] = 'application/json';
@@ -17,7 +17,7 @@ async function api(path, options = {}) {
     /* empty body */
   }
   if (!res.ok) {
-    const err = new Error(data.error || `Požadavek selhal (${res.status})`);
+    const err = new Error(data.error || t('request.failed', { status: res.status }));
     err.status = res.status;
     err.data = data;
     throw err;
@@ -43,12 +43,12 @@ function formatBytes(n) {
 function timeAgo(iso) {
   if (!iso) return '–';
   const s = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (s < 60) return 'právě teď';
-  if (s < 3600) return `před ${Math.floor(s / 60)} min`;
-  if (s < 86400) return `před ${Math.floor(s / 3600)} h`;
-  if (s < 86400 * 2) return 'včera';
-  if (s < 86400 * 30) return `před ${Math.floor(s / 86400)} dny`;
-  return new Date(iso).toLocaleDateString('cs-CZ');
+  if (s < 60) return t('time.now');
+  if (s < 3600) return t('time.minutes', { n: Math.floor(s / 60) });
+  if (s < 86400) return t('time.hours', { n: Math.floor(s / 3600) });
+  if (s < 86400 * 2) return t('time.yesterday');
+  if (s < 86400 * 30) return t('time.days', { n: Math.floor(s / 86400) });
+  return new Date(iso).toLocaleDateString(LANG);
 }
 
 function slugify(input) {
@@ -63,11 +63,18 @@ function slugify(input) {
     .replace(/-+$/, '');
 }
 
-// Czech plural: 1 soubor, 2–4 soubory, 5+ souborů.
+// Czech plurals: 1 soubor, 2–4 soubory, 5+ souborů.
+function plural(n, cs, en) {
+  if (LANG === 'en') return `${n} ${n === 1 ? en[0] : en[1]}`;
+  return `${n} ${n === 1 ? cs[0] : n >= 2 && n <= 4 ? cs[1] : cs[2]}`;
+}
+
 function filesLabel(n) {
-  if (n === 1) return '1 soubor';
-  if (n >= 2 && n <= 4) return `${n} soubory`;
-  return `${n} souborů`;
+  return plural(n, ['soubor', 'soubory', 'souborů'], ['file', 'files']);
+}
+
+function sitesLabel(n) {
+  return plural(n, ['web', 'weby', 'webů'], ['site', 'sites']);
 }
 
 let toastTimer;
@@ -84,12 +91,12 @@ function toast(message) {
   toastTimer = setTimeout(() => (el.hidden = true), 2200);
 }
 
-async function copy(text, message = 'Odkaz zkopírován') {
+async function copy(text, message = t('toast.linkCopied')) {
   try {
     await navigator.clipboard.writeText(text);
     toast(message);
   } catch {
-    prompt('Zkopírujte odkaz:', text);
+    prompt(t('prompt.copy'), text);
   }
 }
 
@@ -192,6 +199,7 @@ function uploadSite({ files, name, overwrite = false, password = '', onProgress 
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/api/sites');
     xhr.setRequestHeader('X-Requested-With', 'fetch');
+    xhr.setRequestHeader('X-Lang', LANG);
     xhr.upload.addEventListener('progress', (e) => {
       if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total);
     });
@@ -203,12 +211,12 @@ function uploadSite({ files, name, overwrite = false, password = '', onProgress 
         /* not JSON */
       }
       if (!data.error && (xhr.status < 200 || xhr.status >= 300)) {
-        data.error = xhr.status === 413 ? 'Nahrávaná data jsou pro server příliš velká.' : `Nahrávání selhalo (HTTP ${xhr.status}).`;
+        data.error = xhr.status === 413 ? t('upload.tooLarge') : t('upload.failedHttp', { status: xhr.status });
       }
       resolve({ status: xhr.status, data });
     });
     xhr.addEventListener('error', () =>
-      resolve({ status: 0, data: { error: 'Nahrávání selhalo – zkontrolujte připojení a zkuste to znovu.' } }),
+      resolve({ status: 0, data: { error: t('upload.network') } }),
     );
     xhr.send(form);
   });

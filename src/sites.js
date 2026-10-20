@@ -17,11 +17,15 @@ const RESERVED = new Set([
 // Files that operating systems sprinkle into folders and nobody wants published.
 const JUNK = new Set(['.ds_store', 'thumbs.db', 'desktop.ini', '__macosx', '.git']);
 
+// An expected problem to report to the user. `key` refers to a message in
+// i18n.js and is translated when the response is sent.
 class UserError extends Error {
-  constructor(message, status = 400, extra = {}) {
-    super(message);
+  constructor(key, status = 400, extra = {}, params = {}) {
+    super(key);
+    this.key = key;
     this.status = status;
     this.extra = extra;
+    this.params = params;
   }
 }
 
@@ -45,10 +49,10 @@ function slugify(input) {
 }
 
 function validateName(name) {
-  if (!name) return 'Zvolte prosím název.';
-  if (!NAME_RE.test(name)) return 'Použijte malá písmena bez diakritiky, číslice a pomlčky (max. 63 znaků).';
+  if (!name) return 'nameMissing';
+  if (!NAME_RE.test(name)) return 'nameInvalid';
   if (RESERVED.has(name) || `${name}.${config.SITE_DOMAIN}` === config.APP_HOSTNAME) {
-    return `Název „${name}“ je rezervovaný, zvolte prosím jiný.`;
+    return 'nameReserved';
   }
   return null;
 }
@@ -102,7 +106,7 @@ function cleanPath(raw) {
   const out = [];
   for (const part of parts) {
     if (part === '' || part === '.') continue;
-    if (part === '..' || part.includes('\0')) throw new UserError(`Neplatná cesta k souboru: ${raw}`);
+    if (part === '..' || part.includes('\0')) throw new UserError('invalidPath', 400, {}, { path: raw });
     if (JUNK.has(part.toLowerCase()) || part.startsWith('._')) return null;
     out.push(part);
   }
@@ -117,12 +121,12 @@ class Budget {
   }
 
   addFile() {
-    if (++this.files > config.MAX_FILES) throw new UserError(`Příliš mnoho souborů (limit ${config.MAX_FILES}).`, 413);
+    if (++this.files > config.MAX_FILES) throw new UserError('tooManyFiles', 413, {}, { limit: config.MAX_FILES });
   }
 
   addBytes(n) {
     this.bytes += n;
-    if (this.bytes > this.maxBytes) throw new UserError(`Nahrávaná data jsou příliš velká (limit ${config.MAX_UPLOAD_MB} MB).`, 413);
+    if (this.bytes > this.maxBytes) throw new UserError('tooLarge', 413, {}, { limit: config.MAX_UPLOAD_MB });
   }
 }
 
@@ -144,7 +148,7 @@ function counter(budget) {
 async function writeFile(root, segments, source, budget) {
   budget.addFile();
   const target = path.join(root, ...segments);
-  if (!target.startsWith(root + path.sep)) throw new UserError('Neplatná cesta k souboru.');
+  if (!target.startsWith(root + path.sep)) throw new UserError('invalidPath', 400, {}, { path: segments.join('/') });
   await fsp.mkdir(path.dirname(target), { recursive: true });
   await pipeline(source, counter(budget), fs.createWriteStream(target));
 }
@@ -160,7 +164,7 @@ async function extractZip(zipFile, root, budget) {
   try {
     zip = await openZip(zipFile);
   } catch {
-    throw new UserError('Soubor .zip se nepodařilo přečíst.');
+    throw new UserError('zipUnreadable');
   }
   try {
     await new Promise((resolve, reject) => {
@@ -182,7 +186,7 @@ async function extractZip(zipFile, root, budget) {
     });
   } catch (err) {
     if (err instanceof UserError) throw err;
-    throw new UserError(`Soubor .zip se nepodařilo rozbalit: ${err.message}`);
+    throw new UserError('zipFailed', 400, {}, { reason: err.message });
   } finally {
     zip.close();
   }
@@ -246,7 +250,7 @@ async function checkSitePassword(name, password) {
 }
 
 async function resetPassword(name) {
-  if (validateName(name) || !(await exists(name))) throw new UserError('Web nebyl nalezen.', 404);
+  if (validateName(name) || !(await exists(name))) throw new UserError('siteNotFound', 404);
   const password = generatePassword();
   const meta = (await readMeta(name)) || { name };
   await writeMeta(name, { ...meta, ...passwordFields(password) });
@@ -321,7 +325,7 @@ async function handleUpload(req, { isAdmin, onWrongPassword }) {
           limits: { files: config.MAX_FILES, fileSize: config.MAX_UPLOAD_MB * 1024 * 1024, fields: config.MAX_FILES + 10 },
         });
       } catch {
-        return reject(new UserError('Očekávalo se nahrání souborů.'));
+        return reject(new UserError('expectedUpload'));
       }
       const writes = [];
       let pendingPath = null;
@@ -352,17 +356,17 @@ async function handleUpload(req, { isAdmin, onWrongPassword }) {
         }
         if (!segments || failed) return stream.resume();
         uploaded.push(segments);
-        stream.on('limit', () => fail(new UserError(`Nahrávaná data jsou příliš velká (limit ${config.MAX_UPLOAD_MB} MB).`, 413)));
+        stream.on('limit', () => fail(new UserError('tooLarge', 413, {}, { limit: config.MAX_UPLOAD_MB })));
         writes.push(writeFile(raw, segments, stream, budget).catch(fail));
       });
-      bb.on('filesLimit', () => fail(new UserError(`Příliš mnoho souborů (limit ${config.MAX_FILES}).`, 413)));
-      bb.on('error', (err) => fail(new UserError(`Nahrávání selhalo: ${err.message}`)));
+      bb.on('filesLimit', () => fail(new UserError('tooManyFiles', 413, {}, { limit: config.MAX_FILES })));
+      bb.on('error', (err) => fail(new UserError('uploadFailed', 400, {}, { reason: err.message })));
       bb.on('close', () => Promise.all(writes).then(() => !failed && resolve(), fail));
-      req.on('aborted', () => fail(new UserError('Nahrávání bylo přerušeno.')));
+      req.on('aborted', () => fail(new UserError('uploadAborted')));
       req.pipe(bb);
     });
 
-    if (!uploaded.length) throw new UserError('Nepřišly žádné soubory. Nahrajte složku, která obsahuje alespoň index.html.');
+    if (!uploaded.length) throw new UserError('noFiles');
 
     let content = raw;
     let fallbackName = uploaded[0].length > 1 ? uploaded[0][0] : '';
@@ -376,19 +380,19 @@ async function handleUpload(req, { isAdmin, onWrongPassword }) {
     const { dir, wrapper } = await unwrapSingleFolder(content);
     const name = slugify(fields.name || fallbackName || wrapper) || `site-${crypto.randomBytes(3).toString('hex')}`;
     const invalid = validateName(name);
-    if (invalid) throw new UserError(invalid);
-    if ((await fsp.readdir(dir)).length === 0) throw new UserError('Nahraná data neobsahují žádné soubory ke zveřejnění.');
+    if (invalid) throw new UserError(invalid, 400, {}, { name });
+    if ((await fsp.readdir(dir)).length === 0) throw new UserError('emptyUpload');
 
-    if (busy.has(name)) throw new UserError('Tento web se právě zveřejňuje, zkuste to za chvíli znovu.', 409);
+    if (busy.has(name)) throw new UserError('busy', 409);
     busy.add(name);
     try {
       let password = null;
       let extraMeta = {};
       if (await exists(name)) {
-        if (!fields.overwrite) throw new UserError(`Web „${name}“ už existuje.`, 409, { exists: true, name });
+        if (!fields.overwrite) throw new UserError('siteExists', 409, { exists: true, name }, { name });
         if (!isAdmin && !(await checkSitePassword(name, fields.password))) {
           onWrongPassword?.();
-          throw new UserError(`Nesprávné heslo k webu „${name}“.`, 403, { exists: true, name, wrongPassword: true });
+          throw new UserError('wrongSitePasswordNamed', 403, { exists: true, name, wrongPassword: true }, { name });
         }
       } else {
         password = generatePassword();
@@ -407,7 +411,7 @@ async function handleUpload(req, { isAdmin, onWrongPassword }) {
 }
 
 async function remove(name) {
-  if (validateName(name) || !(await exists(name))) throw new UserError('Web nebyl nalezen.', 404);
+  if (validateName(name) || !(await exists(name))) throw new UserError('siteNotFound', 404);
   const trash = path.join(config.TMP_DIR, `del-${crypto.randomUUID()}`);
   await fsp.rename(siteDir(name), trash);
   await fsp.rm(path.join(config.META_DIR, `${name}.json`), { force: true });
@@ -417,10 +421,10 @@ async function remove(name) {
 async function rename(from, to) {
   to = slugify(to);
   const invalid = validateName(to);
-  if (invalid) throw new UserError(invalid);
-  if (validateName(from) || !(await exists(from))) throw new UserError('Web nebyl nalezen.', 404);
+  if (invalid) throw new UserError(invalid, 400, {}, { name: to });
+  if (validateName(from) || !(await exists(from))) throw new UserError('siteNotFound', 404);
   if (from === to) return { name: to, url: siteUrl(to) };
-  if (await exists(to)) throw new UserError(`Web „${to}“ už existuje.`, 409);
+  if (await exists(to)) throw new UserError('siteExists', 409, {}, { name: to });
   await fsp.rename(siteDir(from), siteDir(to));
   const meta = (await readMeta(from)) || {};
   await writeMeta(to, { ...meta, name: to, updatedAt: new Date().toISOString() });
