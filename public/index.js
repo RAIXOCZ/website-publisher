@@ -39,7 +39,7 @@ function updatePreview() {
 
 // After a name problem, pressing Enter retries with the files already chosen.
 els.name.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && state.staged.length) {
+  if (e.key === 'Enter' && state.files.length) {
     e.preventDefault();
     start(stagedFiles());
   }
@@ -85,27 +85,32 @@ els.dropzone.addEventListener('dragleave', () => {
     els.dropzone.classList.remove('dragging');
   }
 });
-els.dropzone.addEventListener('drop', async (e) => {
+els.dropzone.addEventListener('drop', (e) => {
   e.preventDefault();
   dragDepth = 0;
   els.dropzone.classList.remove('dragging');
+  stageDataTransfer(e.dataTransfer);
+});
+
+// Adds whatever was dropped from the computer, into folder `dest` ('' = root).
+async function stageDataTransfer(dataTransfer, dest = '') {
   // Entries must be grabbed synchronously, before any await.
-  const entries = [...e.dataTransfer.items]
+  const entries = [...dataTransfer.items]
     .filter((item) => item.kind === 'file')
     .map((item) => (item.webkitGetAsEntry ? item.webkitGetAsEntry() : null));
-  if (!entries.length || !entries.every(Boolean)) return stageFiles([...e.dataTransfer.files]);
+  if (!entries.length || !entries.every(Boolean)) return stageFiles([...dataTransfer.files], dest);
   const loose = [];
   for (const entry of entries) {
     if (entry.isDirectory) {
       const files = [];
       await walk(entry, '', files);
-      stageFolder(entry.name, files);
+      stageFolder(entry.name, files, dest);
     } else {
       loose.push(await new Promise((resolve, reject) => entry.file(resolve, reject)));
     }
   }
-  if (loose.length) stageFiles(loose);
-});
+  if (loose.length) stageFiles(loose, dest);
+}
 
 function readAllEntries(reader) {
   return new Promise((resolve, reject) => {
@@ -133,88 +138,248 @@ async function walk(entry, prefix, out) {
 
 /* ---------- publishing ---------- */
 
-/* ---------- staging: collect folders and files before publishing ---------- */
+/* ---------- staging: the site's file tree, built before publishing ---------- */
 
-state.staged = []; // [{ kind: 'folder' | 'file', label, files: [{ path, file }] }]
+state.files = []; // [{ path, file }] exactly as the site will be published
+state.collapsed = new Set(); // folder paths shown collapsed
+state.dragging = null; // { path, kind } while a tree row is being dragged
 
 function randomName() {
   const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
   return [...crypto.getRandomValues(new Uint8Array(6))].map((b) => alphabet[b % alphabet.length]).join('');
 }
 
-// A folder's files arrive as "folder/…". The first folder becomes the site
-// root; folders added later keep their name as a subfolder (e.g. img/).
-function stageFolder(label, files) {
-  const asRoot = state.staged.length === 0;
-  const mapped = files.map(({ path, file }) => ({ path: asRoot ? path.split('/').slice(1).join('/') : path, file }));
-  addStaged({ kind: 'folder', label, root: asRoot, files: cleanFiles(mapped) });
+const joinPath = (dir, name) => (dir ? `${dir}/${name}` : name);
+
+// Adds files; a file at an existing path replaces the old one.
+function putFiles(list) {
+  list = cleanFiles(list);
+  if (!list.length) return;
+  const incoming = new Set(list.map((f) => f.path));
+  state.files = state.files.filter((f) => !incoming.has(f.path)).concat(list);
+  els.error.hidden = true;
+  renderStaged();
+}
+
+function prefillName(fallback) {
+  if (!slugify(els.name.value)) els.name.value = slugify(fallback) || randomName();
+}
+
+// A folder's files arrive as "folder/…". Into an empty tree the folder's
+// contents become the site root; otherwise the folder is added as a subfolder.
+function stageFolder(label, files, dest = '') {
+  const asRoot = state.files.length === 0 && !dest;
+  if (asRoot) prefillName(label);
+  putFiles(files.map(({ path, file }) => ({ path: joinPath(dest, asRoot ? path.split('/').slice(1).join('/') : path), file })));
 }
 
 function stageFolderSelection(files) {
+  if (files.length) stageFolder(files[0].path.split('/')[0], files);
+}
+
+function stageFiles(files, dest = '') {
   if (!files.length) return;
-  stageFolder(files[0].path.split('/')[0], files);
-}
-
-function stageFiles(files) {
-  for (const file of files) addStaged({ kind: 'file', label: file.name, files: cleanFiles([{ path: file.name, file }]) });
-}
-
-function addStaged(item) {
-  if (!item.files.length) return;
-  els.error.hidden = true;
-  state.staged.push(item);
-  if (!slugify(els.name.value)) {
-    const first = state.staged[0];
-    const isZip = first.kind === 'file' && /\.zip$/i.test(first.label);
-    els.name.value = (first.kind === 'folder' || isZip ? slugify(first.label) : '') || randomName();
-  }
-  renderStaged();
+  if (state.files.length === 0) prefillName(files.length === 1 && /\.zip$/i.test(files[0].name) ? files[0].name : '');
+  putFiles(files.map((file) => ({ path: joinPath(dest, file.name), file })));
 }
 
 function stagedFiles() {
-  return state.staged.flatMap((item) => item.files);
+  return state.files;
+}
+
+function buildTree(files) {
+  const root = { name: '', path: '', dirs: new Map(), files: [], count: 0, size: 0 };
+  for (const { path, file } of files) {
+    const parts = path.split('/');
+    let node = root;
+    node.count++;
+    node.size += file.size;
+    for (const part of parts.slice(0, -1)) {
+      if (!node.dirs.has(part)) {
+        node.dirs.set(part, { name: part, path: joinPath(node.path, part), dirs: new Map(), files: [], count: 0, size: 0 });
+      }
+      node = node.dirs.get(part);
+      node.count++;
+      node.size += file.size;
+    }
+    node.files.push({ name: parts.at(-1), path, size: file.size });
+  }
+  return root;
+}
+
+function allFolders(node, out = []) {
+  for (const dir of node.dirs.values()) {
+    out.push(dir.path);
+    allFolders(dir, out);
+  }
+  return out;
 }
 
 const ICONS = {
-  folder: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
-  file: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>',
+  dir: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+  file: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>',
+  move: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>',
+  chevron: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
 };
 
-function renderStaged() {
-  const items = state.staged;
-  $('#staged').hidden = items.length === 0;
-  els.dropzone.classList.toggle('compact', items.length > 0);
-  $('#drop-title').textContent = t(items.length ? 'drop.titleMore' : 'drop.title');
-  $('#staged-list').replaceChildren(
-    ...items.map((item, index) => {
-      const li = document.createElement('li');
-      li.className = 'staged-item';
-      const size = item.files.reduce((sum, f) => sum + f.file.size, 0);
-      const name = item.kind === 'folder' ? `${item.label}/` : item.label;
-      const where = item.kind === 'folder' && !item.root ? ` · ${t('staged.asSubfolder', { name: item.label })}` : '';
-      li.innerHTML = `<span class="staged-icon">${ICONS[item.kind]}</span><div class="grow"><b></b><span></span></div>`;
-      $('b', li).textContent = name;
-      $('span:not(.staged-icon)', li).textContent =
-        (item.kind === 'folder' ? `${filesLabel(item.files.length)} · ` : '') + formatBytes(size) + where;
-      const remove = Object.assign(document.createElement('button'), { type: 'button', className: 'btn btn-sm btn-quiet', textContent: '×' });
-      remove.setAttribute('aria-label', t('staged.remove', { name }));
-      remove.dataset.index = index;
-      li.append(remove);
-      return li;
-    }),
-  );
-  const files = stagedFiles();
-  $('#staged-summary').textContent = `${filesLabel(files.length)} · ${formatBytes(files.reduce((sum, f) => sum + f.file.size, 0))}`;
+function treeRow({ kind, path, name, meta, depth }) {
+  const li = document.createElement('li');
+  li.className = `tree-row tree-${kind}`;
+  li.dataset.path = path;
+  li.dataset.kind = kind;
+  li.style.setProperty('--depth', depth);
+  if (kind !== 'root') li.draggable = true;
+  const collapsed = kind === 'dir' && state.collapsed.has(path);
+  li.innerHTML =
+    (kind === 'dir'
+      ? `<button type="button" class="twisty" data-act="toggle" aria-expanded="${!collapsed}">${ICONS.chevron}</button>`
+      : '<span class="twisty-space"></span>') +
+    `<span class="tree-icon">${ICONS[kind === 'file' ? 'file' : 'dir']}</span><span class="tree-name"></span><span class="tree-meta"></span>` +
+    (kind === 'root'
+      ? ''
+      : `<span class="tree-actions"><button type="button" class="tree-btn" data-act="move">${ICONS.move}</button><button type="button" class="tree-btn tree-remove" data-act="remove">×</button></span>`);
+  $('.tree-name', li).textContent = name;
+  $('.tree-meta', li).textContent = meta;
+  if (kind !== 'root') {
+    $('[data-act=move]', li).setAttribute('aria-label', t('tree.move', { name }));
+    $('[data-act=move]', li).title = t('tree.move', { name });
+    $('[data-act=remove]', li).setAttribute('aria-label', t('staged.remove', { name }));
+  }
+  return li;
 }
 
-$('#staged-list').addEventListener('click', (e) => {
-  const button = e.target.closest('button[data-index]');
-  if (!button) return;
-  state.staged.splice(Number(button.dataset.index), 1);
+function renderStaged() {
+  const files = state.files;
+  $('#staged').hidden = files.length === 0;
+  els.dropzone.classList.toggle('compact', files.length > 0);
+  $('#drop-title').textContent = t(files.length ? 'drop.titleMore' : 'drop.title');
+  const totalSize = files.reduce((sum, f) => sum + f.file.size, 0);
+  $('#staged-summary').textContent = `${filesLabel(files.length)} · ${formatBytes(totalSize)}`;
+
+  const tree = buildTree(files);
+  const rows = [treeRow({ kind: 'root', path: '', name: t('tree.root'), meta: '', depth: 0 })];
+  const walkNode = (node, depth) => {
+    const dirs = [...node.dirs.values()].sort((a, b) => a.name.localeCompare(b.name));
+    const leaves = [...node.files].sort((a, b) => (b.name === 'index.html') - (a.name === 'index.html') || a.name.localeCompare(b.name));
+    for (const dir of dirs) {
+      if (!state.seenDirs?.has(dir.path)) {
+        (state.seenDirs ??= new Set()).add(dir.path);
+        if (dir.count > 20) state.collapsed.add(dir.path); // big folders start collapsed
+      }
+      rows.push(treeRow({ kind: 'dir', path: dir.path, name: `${dir.name}/`, meta: `${filesLabel(dir.count)} · ${formatBytes(dir.size)}`, depth }));
+      if (!state.collapsed.has(dir.path)) walkNode(dir, depth + 1);
+    }
+    for (const leaf of leaves) rows.push(treeRow({ kind: 'file', path: leaf.path, name: leaf.name, meta: formatBytes(leaf.size), depth }));
+  };
+  walkNode(tree, 1);
+  $('#staged-list').replaceChildren(...rows);
+  state.tree = tree;
+}
+
+const parentOf = (path) => (path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '');
+
+// Moves a file or a whole folder into folder `dest` ('' = root).
+function moveEntry(path, kind, dest) {
+  const target = joinPath(dest, path.split('/').pop());
+  if (target === path) return;
+  if (kind === 'dir' && (dest === path || dest.startsWith(`${path}/`))) return;
+  const inside = (p) => (kind === 'dir' ? p.startsWith(`${path}/`) : p === path);
+  const moved = state.files.filter((f) => inside(f.path)).map((f) => ({ path: target + f.path.slice(path.length), file: f.file }));
+  const movedPaths = new Set(moved.map((f) => f.path));
+  state.files = state.files.filter((f) => !inside(f.path) && !movedPaths.has(f.path)).concat(moved);
+  if (kind === 'dir' && state.collapsed.delete(path)) state.collapsed.add(target);
   renderStaged();
+}
+
+function removeEntry(path, kind) {
+  state.files = state.files.filter((f) => (kind === 'dir' ? !f.path.startsWith(`${path}/`) : f.path !== path));
+  renderStaged();
+}
+
+// "Move to…" for touch screens: a folder picker in place of the button.
+function showMoveMenu(row) {
+  const { path, kind } = row.dataset;
+  const select = document.createElement('select');
+  select.className = 'tree-move';
+  select.setAttribute('aria-label', t('tree.move', { name: path }));
+  const targets = ['', ...allFolders(state.tree)].filter(
+    (dest) => dest !== parentOf(path) && !(kind === 'dir' && (dest === path || dest.startsWith(`${path}/`))),
+  );
+  select.append(new Option(t('tree.moveTo'), '', true, true));
+  select.options[0].disabled = true;
+  for (const dest of targets) select.append(new Option(dest ? `${dest}/` : t('tree.root'), dest || '/'));
+  select.addEventListener('change', () => moveEntry(path, kind, select.value === '/' ? '' : select.value));
+  select.addEventListener('blur', () => renderStaged());
+  $('.tree-actions', row).replaceChildren(select);
+  select.focus();
+}
+
+const treeList = $('#staged-list');
+treeList.addEventListener('click', (e) => {
+  const button = e.target.closest('button[data-act]');
+  if (!button) return;
+  const row = button.closest('.tree-row');
+  const { path, kind } = row.dataset;
+  if (button.dataset.act === 'toggle') {
+    if (!state.collapsed.delete(path)) state.collapsed.add(path);
+    renderStaged();
+  } else if (button.dataset.act === 'remove') {
+    removeEntry(path, kind);
+  } else if (button.dataset.act === 'move') {
+    showMoveMenu(row);
+  }
 });
+
+// Drag rows onto folders to move them; drop files from the computer onto a folder to add them there.
+const dropFolderOf = (row) => (row.dataset.kind === 'file' ? parentOf(row.dataset.path) : row.dataset.path);
+function clearDropTarget() {
+  for (const el of treeList.querySelectorAll('.drop-target')) el.classList.remove('drop-target');
+}
+treeList.addEventListener('dragstart', (e) => {
+  const row = e.target.closest('.tree-row');
+  if (!row || row.dataset.kind === 'root') return;
+  state.dragging = { path: row.dataset.path, kind: row.dataset.kind };
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', row.dataset.path);
+  row.classList.add('dragging');
+});
+treeList.addEventListener('dragend', () => {
+  state.dragging = null;
+  clearDropTarget();
+  for (const el of treeList.querySelectorAll('.dragging')) el.classList.remove('dragging');
+});
+treeList.addEventListener('dragover', (e) => {
+  const row = e.target.closest('.tree-row');
+  if (!row) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = state.dragging ? 'move' : 'copy';
+  const folder = dropFolderOf(row);
+  clearDropTarget();
+  const target = treeList.querySelector(`.tree-row[data-path="${CSS.escape(folder)}"]:not(.tree-file)`);
+  target?.classList.add('drop-target');
+});
+treeList.addEventListener('dragleave', (e) => {
+  if (!treeList.contains(e.relatedTarget)) clearDropTarget();
+});
+treeList.addEventListener('drop', (e) => {
+  const row = e.target.closest('.tree-row');
+  if (!row) return;
+  e.preventDefault();
+  e.stopPropagation();
+  clearDropTarget();
+  const dest = dropFolderOf(row);
+  if (state.dragging) {
+    const { path, kind } = state.dragging;
+    state.dragging = null;
+    moveEntry(path, kind, dest);
+  } else {
+    stageDataTransfer(e.dataTransfer, dest);
+  }
+});
+
 $('#clear-staged').addEventListener('click', () => {
-  state.staged = [];
+  state.files = [];
+  state.collapsed.clear();
   renderStaged();
 });
 $('#publish').addEventListener('click', () => start(stagedFiles()));
@@ -228,7 +393,7 @@ function showError(message, { askPassword = false } = {}) {
 
 function setStage(stage) {
   els.dropzone.hidden = stage !== 'pick';
-  $('#staged').hidden = stage !== 'pick' || state.staged.length === 0;
+  $('#staged').hidden = stage !== 'pick' || state.files.length === 0;
   els.progress.hidden = stage !== 'upload';
   els.result.hidden = stage !== 'done';
   els.name.disabled = stage === 'upload';
@@ -308,7 +473,8 @@ async function upload(files, name, password = null) {
 
   if (status >= 200 && status < 300) {
     state.pending = null;
-    state.staged = [];
+    state.files = [];
+    state.collapsed.clear();
     renderStaged();
     if (data.password) rememberSite(data.name, data.password);
     else if (password) rememberSite(data.name, password);

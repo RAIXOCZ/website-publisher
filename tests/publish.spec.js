@@ -83,7 +83,7 @@ test('dropping a .zip file onto the drop zone publishes it', async ({ page, requ
     return dt;
   }, zip);
   await page.dispatchEvent('#dropzone', 'drop', { dataTransfer });
-  await expect(page.locator('.staged-item')).toHaveText(/dropped\.zip/);
+  await expect(page.locator('.tree-file')).toHaveText(/dropped\.zip/);
   await page.locator('#publish').click();
   await expect(page.locator('#result-title')).toHaveText(`Web ${name} je online`);
   expect(await (await request.get(`/${name}/`)).text()).toContain('Zipped site');
@@ -285,15 +285,22 @@ test.describe('Moje weby', () => {
   });
 });
 
-test.describe('staging before publishing', () => {
-  test('choosing a folder only adds it to the list and prefills the name', async ({ page, request }) => {
+test.describe('file tree before publishing', () => {
+  const row = (page, path) => page.locator(`.tree-row[data-path="${path}"]`);
+
+  test('choosing a folder shows all its content and prefills the name', async ({ page, request }) => {
     await page.goto('/');
     await pick(page, page.locator('#pick-folder'), FIXTURES.site);
     await expect(page.locator('#result')).toBeHidden();
     await expect(page.locator('#name')).toHaveValue('sample-site');
-    await expect(page.locator('.staged-item')).toHaveCount(1);
-    await expect(page.locator('.staged-item').first()).toContainText('sample-site/');
-    await expect(page.locator('.staged-item').first()).toContainText('5 souborů');
+    await expect(page.locator('.tree-root')).toContainText('Kořen webu');
+    for (const path of ['index.html', 'about.html', '404.html', 'css', 'css/style.css', 'files', 'files/readme.txt']) {
+      await expect(row(page, path)).toBeVisible();
+    }
+    await expect(row(page, 'css')).toContainText('1 soubor');
+    // Folders first, then files with index.html on top.
+    const order = await page.locator('.tree-row').evaluateAll((rows) => rows.map((r) => r.dataset.path));
+    expect(order).toEqual(['', 'css', 'css/style.css', 'files', 'files/readme.txt', 'index.html', '404.html', 'about.html']);
     await expect(page.locator('#drop-title')).toHaveText('Přetáhněte sem další složku nebo soubory');
     await expect(page.locator('#staged-summary')).toContainText('5 souborů');
     expect((await request.get('/sample-site/')).status()).toBe(404);
@@ -309,7 +316,7 @@ test.describe('staging before publishing', () => {
   test('loose files get a random 6-character name', async ({ page }) => {
     await page.goto('/');
     await pick(page, page.locator('#pick-files'), [`${FIXTURES.site}/index.html`, `${FIXTURES.site}/about.html`]);
-    await expect(page.locator('.staged-item')).toHaveCount(2);
+    await expect(page.locator('.tree-file')).toHaveCount(2);
     await expect(page.locator('#name')).toHaveValue(/^[a-z0-9]{6}$/);
   });
 
@@ -321,36 +328,102 @@ test.describe('staging before publishing', () => {
     await expect(page.locator('#result-title')).toHaveText(/^Web [a-z0-9]{6} je online$/);
   });
 
-  test('more folders and files can be added, removed and cleared', async ({ page }) => {
+  test('added files join the tree, a second folder becomes a subfolder', async ({ page }) => {
     await page.goto('/');
     await pick(page, page.locator('#pick-folder'), FIXTURES.site);
-    await pick(page, page.locator('#pick-folder'), FIXTURES.siteV2);
     await pick(page, page.locator('#pick-files'), FIXTURES.zip);
-    const items = page.locator('.staged-item');
-    await expect(items).toHaveCount(3);
-    await expect(items.nth(1)).toContainText('jako podsložka sample-site-v2/');
-
-    await items.nth(2).getByRole('button', { name: 'Odebrat zipped-site.zip' }).click();
-    await expect(items).toHaveCount(2);
-    await page.locator('#clear-staged').click();
-    await expect(page.locator('#staged')).toBeHidden();
-    await expect(page.locator('#drop-title')).toHaveText('Přetáhněte sem složku s webem');
+    await pick(page, page.locator('#pick-folder'), FIXTURES.siteV2);
+    await expect(row(page, 'zipped-site.zip')).toBeVisible();
+    await expect(row(page, 'sample-site-v2')).toBeVisible();
+    await expect(row(page, 'sample-site-v2/index.html')).toBeVisible();
+    await expect(page.locator('#staged-summary')).toContainText('7 souborů');
   });
 
-  test('the first folder is the site root, later folders become subfolders and files go to the root', async ({ page, request }) => {
-    const name = unique('combined');
+  test('a file with the same path replaces the old one', async ({ page }) => {
+    await page.goto('/');
+    await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+    await pick(page, page.locator('#pick-files'), `${FIXTURES.siteV2}/index.html`);
+    await expect(page.locator('.tree-row[data-path="index.html"]')).toHaveCount(1);
+    await expect(page.locator('#staged-summary')).toContainText('5 souborů');
+  });
+
+  test('files and folders can be moved by dragging onto a folder', async ({ page, request }) => {
+    const name = unique('drag');
     await page.goto('/');
     await page.locator('#name').fill(name);
     await pick(page, page.locator('#pick-folder'), FIXTURES.site);
-    await pick(page, page.locator('#pick-folder'), FIXTURES.siteV2);
-    await pick(page, page.locator('#pick-files'), FIXTURES.zip);
+    await row(page, 'about.html').dragTo(row(page, 'css'));
+    await expect(row(page, 'css/about.html')).toBeVisible();
+    await expect(row(page, 'about.html')).toHaveCount(0);
+
+    await row(page, 'files').dragTo(row(page, 'css'));
+    await expect(row(page, 'css/files/readme.txt')).toBeVisible();
+
+    await row(page, 'css/style.css').dragTo(page.locator('.tree-root'));
+    await expect(row(page, 'style.css')).toBeVisible();
+
     await page.locator('#publish').click();
     await expect(page.locator('#result-title')).toHaveText(`Web ${name} je online`);
-    await expect(page.locator('#staged')).toBeHidden();
+    expect(await (await request.get(`/${name}/css/about`)).text()).toContain('About page');
+    expect(await (await request.get(`/${name}/css/files/readme.txt`)).text()).toContain('Just a text file');
+    expect(await (await request.get(`/${name}/style.css`)).text()).toContain('rebeccapurple');
+  });
 
-    expect(await (await request.get(`/${name}/`)).text()).toContain('Sample site');
-    expect(await (await request.get(`/${name}/sample-site-v2/`)).text()).toContain('Version 2');
-    expect((await request.get(`/${name}/zipped-site.zip`)).status()).toBe(200);
+  test('a folder cannot be moved into itself', async ({ page }) => {
+    await page.goto('/');
+    await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+    await row(page, 'files').dragTo(row(page, 'files/readme.txt'));
+    await expect(row(page, 'files/readme.txt')).toBeVisible();
+    await expect(row(page, 'files/files/readme.txt')).toHaveCount(0);
+  });
+
+  test('"Přesunout do…" moves an item without dragging', async ({ page }) => {
+    await page.goto('/');
+    await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+    await row(page, 'about.html').hover();
+    await row(page, 'about.html').getByRole('button', { name: 'Přesunout about.html' }).click();
+    const select = row(page, 'about.html').locator('select');
+    await expect(select.locator('option')).toHaveText(['Přesunout do…', 'css/', 'files/']);
+    await select.selectOption('files');
+    await expect(row(page, 'files/about.html')).toBeVisible();
+
+    await row(page, 'files/about.html').hover();
+    await row(page, 'files/about.html').getByRole('button', { name: 'Přesunout about.html' }).click();
+    await row(page, 'files/about.html').locator('select').selectOption('/');
+    await expect(row(page, 'about.html')).toBeVisible();
+  });
+
+  test('files dropped from the computer onto a folder are added into it', async ({ page }) => {
+    await page.goto('/');
+    await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+    const dataTransfer = await page.evaluateHandle(() => {
+      const dt = new DataTransfer();
+      dt.items.add(new File(['img'], 'logo.png', { type: 'image/png' }));
+      return dt;
+    });
+    await page.dispatchEvent('.tree-row[data-path="css"]', 'drop', { dataTransfer });
+    await expect(row(page, 'css/logo.png')).toBeVisible();
+  });
+
+  test('items can be removed, folders collapsed and the list cleared', async ({ page }) => {
+    await page.goto('/');
+    await pick(page, page.locator('#pick-folder'), FIXTURES.site);
+    await row(page, 'about.html').hover();
+    await row(page, 'about.html').getByRole('button', { name: 'Odebrat about.html' }).click();
+    await expect(row(page, 'about.html')).toHaveCount(0);
+    await row(page, 'files').hover();
+    await row(page, 'files').getByRole('button', { name: 'Odebrat files/' }).click();
+    await expect(row(page, 'files/readme.txt')).toHaveCount(0);
+    await expect(page.locator('#staged-summary')).toContainText('3 soubory');
+
+    await row(page, 'css').locator('.twisty').click();
+    await expect(row(page, 'css/style.css')).toHaveCount(0);
+    await row(page, 'css').locator('.twisty').click();
+    await expect(row(page, 'css/style.css')).toBeVisible();
+
+    await page.locator('#clear-staged').click();
+    await expect(page.locator('#staged')).toBeHidden();
+    await expect(page.locator('#drop-title')).toHaveText('Přetáhněte sem složku s webem');
   });
 
   test('pressing Enter in the name field publishes the staged files', async ({ page }) => {

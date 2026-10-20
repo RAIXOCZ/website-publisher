@@ -8,6 +8,10 @@ const LANGS = ['cs', 'en'];
 
 const I18N = {
   cs: {
+    'tree.root': 'Kořen webu',
+    'tree.move': 'Přesunout {name}',
+    'tree.moveTo': 'Přesunout do…',
+    'tree.hint': 'Soubory a složky přesunete přetažením na jinou složku.',
     'conflict.asNew': 'Zveřejnit jako nový web',
     'result.renamed': 'Název „{requested}“ už byl obsazený, proto web dostal adresu {name}.',
     'title.terms': 'Podmínky použití – Freepages',
@@ -48,7 +52,6 @@ const I18N = {
     publish: 'Zveřejnit web',
     'staged.clear': 'Vyprázdnit',
     'staged.remove': 'Odebrat {name}',
-    'staged.asSubfolder': 'jako podsložka {name}/',
     'progress.uploading': 'Nahrávám…',
     'progress.uploadingName': 'Nahrávám {name}…',
     'progress.publishing': 'Zveřejňuji…',
@@ -124,6 +127,10 @@ const I18N = {
   },
 
   en: {
+    'tree.root': 'Site root',
+    'tree.move': 'Move {name}',
+    'tree.moveTo': 'Move to…',
+    'tree.hint': 'Drag files and folders onto another folder to move them.',
     'conflict.asNew': 'Publish as a new site',
     'result.renamed': 'The name "{requested}" was taken, so your site got the address {name}.',
     'title.terms': 'Terms of use – Freepages',
@@ -164,7 +171,6 @@ const I18N = {
     publish: 'Publish site',
     'staged.clear': 'Clear',
     'staged.remove': 'Remove {name}',
-    'staged.asSubfolder': 'as subfolder {name}/',
     'progress.uploading': 'Uploading…',
     'progress.uploadingName': 'Uploading {name}…',
     'progress.publishing': 'Publishing…',
