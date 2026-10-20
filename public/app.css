@@ -213,7 +213,6 @@ h3 { font-size: 20px; line-height: 1.25; font-weight: 650; }
   color: #fff;
   border-color: transparent;
   background: #0d9488;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 8px 20px -8px rgba(13, 148, 136, 0.7);
 }
 .btn-primary:hover { background: #0f766e; border-color: transparent; }
 .btn-danger { color: var(--danger); }
