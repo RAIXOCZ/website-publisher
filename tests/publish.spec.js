@@ -132,28 +132,42 @@ test('"Zrušit" dismisses the replace prompt', async ({ page }) => {
   await expect(page.locator('#error')).toBeHidden();
 });
 
-test('a stranger cannot replace a site without its password', async ({ page, browser, request }) => {
-  const name = unique('owned');
+test('someone else using a taken name gets the name with a random suffix', async ({ page, browser, request }) => {
+  const name = unique('taken');
   await page.goto('/');
-  const password = await publishViaUi(page, name);
+  await publishViaUi(page, name);
 
   const stranger = await (await browser.newContext({ locale: 'cs-CZ' })).newPage();
   await stranger.goto('/');
   await stranger.locator('#name').fill(name);
   await pick(stranger, stranger.locator('#pick-folder'), FIXTURES.siteV2);
-  await expect(stranger.locator('#error-text')).toContainText('Pokud je váš, zadejte jeho heslo');
-  await expect(stranger.locator('#conflict-password')).toHaveValue('');
+  await expect(stranger.locator('#result')).toBeVisible();
+  await expect(stranger.locator('#conflict')).toBeHidden();
 
-  await stranger.locator('#conflict-password').fill('wrong-pass-word');
-  await stranger.locator('#conflict button[type=submit]').click();
-  await expect(stranger.locator('#error-text')).toContainText('Nesprávné heslo');
+  const link = await stranger.locator('#result-link').getAttribute('href');
+  const newName = new URL(link).pathname.split('/')[1];
+  expect(newName).toMatch(new RegExp(`^${name}-[a-z0-9]{3}$`));
+  await expect(stranger.locator('#result-note')).toContainText(`Název „${name}“ už byl obsazený, proto web dostal adresu ${newName}.`);
+  await expect(stranger.locator('#name')).toHaveValue(newName);
+  await expect(stranger.locator(`.site-card[data-name="${newName}"]`)).toBeVisible();
+
   expect(await (await request.get(`/${name}/`)).text()).toContain('Sample site');
-
-  await stranger.locator('#conflict-password').fill(password);
-  await stranger.locator('#conflict button[type=submit]').click();
-  await expect(stranger.locator('#result-title')).toHaveText(`Web ${name} byl aktualizován`);
-  expect(await (await request.get(`/${name}/`)).text()).toContain('Version 2');
+  expect(await (await request.get(`/${newName}/`)).text()).toContain('Version 2');
   await stranger.context().close();
+});
+
+test('"Zveřejnit jako nový web" publishes your own taken name with a suffix', async ({ page, request }) => {
+  const name = unique('copy');
+  await page.goto('/');
+  await publishViaUi(page, name);
+  await page.locator('#again').click();
+  await page.locator('#name').fill(name);
+  await pick(page, page.locator('#pick-folder'), FIXTURES.siteV2);
+  await expect(page.locator('#conflict')).toBeVisible();
+  await page.locator('#as-new').click();
+  await expect(page.locator('#result-title')).toHaveText(new RegExp(`^Web ${name}-[a-z0-9]{3} je online$`));
+  expect(await (await request.get(`/${name}/`)).text()).toContain('Sample site');
+  await expect(page.locator('.site-card')).toHaveCount(2);
 });
 
 test('the API refuses to replace or delete a site without the right password', async ({ request }) => {
@@ -162,8 +176,10 @@ test('the API refuses to replace or delete a site without the right password', a
   expect(created.status).toBe(200);
   expect(created.body.password).toMatch(PASSWORD_RE);
 
-  const noOverwrite = await publishViaApi(request, name);
-  expect(noOverwrite.status).toBe(409);
+  const second = await publishViaApi(request, name);
+  expect(second.status).toBe(200);
+  expect(second.body.name).toMatch(new RegExp(`^${name}-[a-z0-9]{3}$`));
+  expect(second.body.requestedName).toBe(name);
 
   const wrong = await publishViaApi(request, name, '<h1>evil</h1>', { overwrite: '1', password: 'nope' });
   expect(wrong.status).toBe(403);

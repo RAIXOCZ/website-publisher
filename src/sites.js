@@ -218,6 +218,18 @@ async function stats(dir) {
 }
 
 const busy = new Set();
+const SUFFIX_ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789';
+
+// `name` if it is free, otherwise `name-xyz` with a random 3-character suffix.
+async function freeName(name) {
+  if (!busy.has(name) && !(await exists(name))) return name;
+  const base = name.slice(0, 59).replace(/-+$/, '');
+  for (;;) {
+    const suffix = [...crypto.randomBytes(3)].map((b) => SUFFIX_ALPHABET[b % SUFFIX_ALPHABET.length]).join('');
+    const candidate = `${base}-${suffix}`;
+    if (!validateName(candidate) && !busy.has(candidate) && !(await exists(candidate))) return candidate;
+  }
+}
 
 /* ---------- per-site passwords ---------- */
 
@@ -378,18 +390,20 @@ async function handleUpload(req, { isAdmin, onWrongPassword }) {
     }
 
     const { dir, wrapper } = await unwrapSingleFolder(content);
-    const name = slugify(fields.name || fallbackName || wrapper) || `site-${crypto.randomBytes(3).toString('hex')}`;
-    const invalid = validateName(name);
-    if (invalid) throw new UserError(invalid, 400, {}, { name });
+    const requested = slugify(fields.name || fallbackName || wrapper) || `site-${crypto.randomBytes(3).toString('hex')}`;
+    const invalid = validateName(requested);
+    if (invalid) throw new UserError(invalid, 400, {}, { name: requested });
     if ((await fsp.readdir(dir)).length === 0) throw new UserError('emptyUpload');
 
+    // A taken name is only replaced on request; otherwise the site gets a
+    // free variant of it, e.g. muj-web-k3x.
+    const name = fields.overwrite ? requested : await freeName(requested);
     if (busy.has(name)) throw new UserError('busy', 409);
     busy.add(name);
     try {
       let password = null;
       let extraMeta = {};
       if (await exists(name)) {
-        if (!fields.overwrite) throw new UserError('siteExists', 409, { exists: true, name }, { name });
         if (!isAdmin && !(await checkSitePassword(name, fields.password))) {
           onWrongPassword?.();
           throw new UserError('wrongSitePasswordNamed', 403, { exists: true, name, wrongPassword: true }, { name });
@@ -401,6 +415,7 @@ async function handleUpload(req, { isAdmin, onWrongPassword }) {
       const result = await publish(name, dir, extraMeta);
       result.hasIndex = fs.existsSync(path.join(siteDir(name), 'index.html'));
       if (password) result.password = password;
+      if (name !== requested) result.requestedName = requested;
       return result;
     } finally {
       busy.delete(name);

@@ -8,6 +8,8 @@ const LANGS = ['cs', 'en'];
 
 const I18N = {
   cs: {
+    'conflict.asNew': 'Zveřejnit jako nový web',
+    'result.renamed': 'Název „{requested}“ už byl obsazený, proto web dostal adresu {name}.',
     'title.terms': 'Podmínky použití – Freepages',
     'title.privacy': 'Zásady ochrany osobních údajů – Freepages',
     'footer.terms': 'Podmínky',
@@ -56,7 +58,6 @@ const I18N = {
     again: 'Zveřejnit další',
     'err.enterName': 'Zadejte název webu a stiskněte Enter.',
     'err.existsOwned': 'Web „{name}“ už existuje a je mezi vašimi weby. Chcete ho nahradit tímto nahráním?',
-    'err.existsAsk': 'Web „{name}“ už existuje. Pokud je váš, zadejte jeho heslo. Jinak zvolte jiný název a stiskněte Enter.',
     'err.tryAgain': ' Zkuste to znovu, nebo zvolte jiný název.',
     'err.tooBig': 'Nahrávaná data mají {size}, limit je {limit} MB.',
     'err.load': 'Nepodařilo se načíst: {message}',
@@ -119,6 +120,8 @@ const I18N = {
   },
 
   en: {
+    'conflict.asNew': 'Publish as a new site',
+    'result.renamed': 'The name "{requested}" was taken, so your site got the address {name}.',
     'title.terms': 'Terms of use – Freepages',
     'title.privacy': 'Privacy policy – Freepages',
     'footer.terms': 'Terms',
@@ -167,7 +170,6 @@ const I18N = {
     again: 'Publish another',
     'err.enterName': 'Type a name for your site and press Enter.',
     'err.existsOwned': 'Site "{name}" already exists and is one of your sites. Replace it with this upload?',
-    'err.existsAsk': 'Site "{name}" already exists. If it is yours, enter its password. Otherwise choose another name and press Enter.',
     'err.tryAgain': ' Try again or choose another name.',
     'err.tooBig': 'This upload is {size}, the limit is {limit} MB.',
     'err.load': 'Could not load: {message}',

@@ -173,10 +173,12 @@ async function start(files) {
     els.name.focus();
     return showError(check.error);
   }
-  if (check.exists) {
-    const saved = ownedPassword(name);
-    els.conflictPassword.value = saved || '';
-    return showError(saved ? t('err.existsOwned', { name }) : t('err.existsAsk', { name }), { askPassword: true });
+  // Your own site (password saved here): ask whether to replace it.
+  // Anyone else's: publish right away; the server adds a suffix (name-k3x).
+  const saved = check.exists && ownedPassword(name);
+  if (saved) {
+    els.conflictPassword.value = saved;
+    return showError(t('err.existsOwned', { name }), { askPassword: true });
   }
   upload(files, name);
 }
@@ -188,6 +190,11 @@ els.conflict.addEventListener('submit', (e) => {
   if (!files || !password) return els.conflictPassword.focus();
   els.error.hidden = true;
   upload(files, name, password);
+});
+$('#as-new').addEventListener('click', () => {
+  const { files, name } = state.pending || {};
+  els.error.hidden = true;
+  if (files) upload(files, name);
 });
 $('#cancel').addEventListener('click', () => {
   state.pending = null;
@@ -242,7 +249,9 @@ function done(site) {
   $('#open').href = site.url;
   $('#result-password').hidden = !site.password;
   $('#result-password-value').textContent = site.password || '';
+  if (site.requestedName) els.name.value = site.name;
   $('#result-note').textContent =
+    (site.requestedName ? t('result.renamed', { requested: site.requestedName, name: site.name }) + ' ' : '') +
     `${filesLabel(site.files)}, ${formatBytes(site.bytes)}.` +
     (site.hasIndex ? '' : t('result.noIndex'));
 }
