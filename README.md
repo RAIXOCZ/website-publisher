@@ -8,11 +8,16 @@ Drop a folder, get a website. A small self-hosted static site publisher with a C
 - Each site gets its own subdomain, e.g. `https://<name>.freepages.dev/`, or without `SITE_DOMAIN` a path, `PUBLIC_URL/<name>/`.
 - Everything is stored in one Docker volume (`/data`). There is no database.
 
-## Quick start (Docker Compose)
+## Quick start
+
+There are two compose files:
+
+- `docker-compose.yml` is for **Dokploy**. It publishes no ports; Dokploy's Traefik reaches the container over `dokploy-network`. See [Deploying on Dokploy](#deploying-on-dokploy).
+- `docker-compose.local.yml` is for plain Docker. It publishes port `HOST_PORT` (default 3000):
 
 ```bash
 cp .env.example .env        # set ADMIN_PASSWORD (and PUBLIC_URL / SITE_DOMAIN)
-docker compose up -d --build
+docker compose -f docker-compose.local.yml up -d --build
 ```
 
 Open http://localhost:3000, log in with the password and drop a folder.
@@ -58,18 +63,18 @@ Path-style links (`freepages.dev/<name>/`) redirect to the subdomain. To use ano
 
 Without `SITE_DOMAIN` everything runs on a single hostname and sites live at `PUBLIC_URL/<name>/`. Then you only need the one tunnel hostname, but sites run sandboxed (see Security).
 
-### Running cloudflared next to the app (plain Compose)
+### Running cloudflared next to the app (without Dokploy)
 
 ```bash
 # .env: TUNNEL_TOKEN=... (from the Zero Trust dashboard)
-docker compose --profile tunnel up -d --build
+docker compose -f docker-compose.local.yml --profile tunnel up -d --build
 ```
 
 Point the tunnel's public hostnames at `http://publisher:3000`.
 
 ## Deploying on Dokploy
 
-1. Create a **Compose** service from this repo and set **Compose Path** to `./docker-compose.dokploy.yml`.
+1. Create a **Compose** service from this repo. Keep the default **Compose Path** (`./docker-compose.yml`). No host port is published, so it can't clash with other apps.
 2. In **Environment** set `ADMIN_PASSWORD`, `PUBLIC_URL=https://freepages.dev`, `SITE_DOMAIN=freepages.dev`.
 3. Deploy. Routing is done by the Traefik labels in the compose file, not the Domains tab, because they include the wildcard rule:
    ```
