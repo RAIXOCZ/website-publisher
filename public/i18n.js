@@ -8,6 +8,24 @@ const LANGS = ['cs', 'en'];
 
 const I18N = {
   cs: {
+    'hero.eyebrow': 'Statický hosting zdarma',
+    'hero.title': 'Web online jedním přetažením.',
+    'hero.subtitle': 'Bez registrace, bez serveru.',
+    'hero.text': 'Přetáhněte složku s webem a během pár sekund běží na vlastní adrese s HTTPS. Každý web dostane heslo, takže ho nikdo jiný nepřepíše.',
+    'chip.subdomain': 'Vlastní subdoména',
+    'chip.https': 'HTTPS',
+    'chip.password': 'Heslo ke každému webu',
+    'chip.zip': 'Složka nebo .zip',
+    'my.eyebrow': 'Moje weby',
+    'my.heading': 'Weby z tohoto prohlížeče',
+    'band.eyebrow': 'Jak to funguje',
+    'band.title': 'Složka s index.html stačí.',
+    'band.text': 'HTML, CSS, JavaScript, obrázky i podsložky se zveřejní tak, jak jsou. Hezké adresy bez .html a vlastní stránka 404 fungují samy.',
+    'band.docs': 'Přečíst návod',
+    'docs.eyebrow': 'Návod',
+    'admin.eyebrow': 'Správa',
+    'lang.label': 'Jazyk',
+    'chip.updated': 'aktualizováno {ago}',
     'title.index': 'Publikování webů',
     'title.admin': 'Správa webů',
     'title.docs': 'Návod – Publikování webů',
@@ -59,12 +77,11 @@ const I18N = {
 
     'my.title': 'Moje weby',
     'my.add': 'Přidat existující web',
-    'my.intro': 'Weby zveřejněné z tohoto prohlížeče. Hesla jsou uložená jen tady, na jiném zařízení je přidáte tlačítkem výše.',
+    'my.intro': 'Hesla jsou uložená jen v tomto prohlížeči. Na jiném zařízení web přidáte jeho názvem a heslem.',
     'my.namePlaceholder': 'Název webu',
     'my.pwPlaceholder': 'Heslo k webu',
     'my.addSubmit': 'Přidat',
     'my.empty': 'Zatím jste odsud nic nezveřejnili.',
-    'my.meta': '{files} · {size} · aktualizováno {ago}',
     'my.missing': 'Web už neexistuje (byl smazán nebo přejmenován).',
     'my.wrongPw': 'Uložené heslo už neplatí.',
     'row.copyLink': 'Kopírovat odkaz',
@@ -115,6 +132,24 @@ const I18N = {
   },
 
   en: {
+    'hero.eyebrow': 'Free static hosting',
+    'hero.title': 'Your site online in one drop.',
+    'hero.subtitle': 'No sign-up, no server.',
+    'hero.text': 'Drop your website folder and within seconds it runs on its own address with HTTPS. Every site gets a password, so nobody else can overwrite it.',
+    'chip.subdomain': 'Own subdomain',
+    'chip.https': 'HTTPS',
+    'chip.password': 'A password for every site',
+    'chip.zip': 'Folder or .zip',
+    'my.eyebrow': 'My sites',
+    'my.heading': 'Sites from this browser',
+    'band.eyebrow': 'How it works',
+    'band.title': 'A folder with index.html is all you need.',
+    'band.text': 'HTML, CSS, JavaScript, images and subfolders are published as they are. Clean URLs without .html and a custom 404 page just work.',
+    'band.docs': 'Read the guide',
+    'docs.eyebrow': 'Guide',
+    'admin.eyebrow': 'Admin',
+    'lang.label': 'Language',
+    'chip.updated': 'updated {ago}',
     'title.index': 'Publish a website',
     'title.admin': 'Site admin',
     'title.docs': 'Guide – Publish a website',
@@ -166,12 +201,11 @@ const I18N = {
 
     'my.title': 'My sites',
     'my.add': 'Add existing site',
-    'my.intro': 'Sites published from this browser. Passwords are stored only here; on another device add them with the button above.',
+    'my.intro': 'Passwords are stored only in this browser. On another device, add a site with its name and password.',
     'my.namePlaceholder': 'Site name',
     'my.pwPlaceholder': 'Site password',
     'my.addSubmit': 'Add',
     'my.empty': 'You have not published anything from here yet.',
-    'my.meta': '{files} · {size} · updated {ago}',
     'my.missing': 'This site no longer exists (deleted or renamed).',
     'my.wrongPw': 'The saved password is no longer valid.',
     'row.copyLink': 'Copy link',
@@ -266,11 +300,41 @@ function applyI18n(root = document) {
 
 applyI18n();
 
-for (const button of document.querySelectorAll('[data-set-lang]')) {
-  button.classList.toggle('active', button.dataset.setLang === LANG);
-  button.setAttribute('aria-pressed', String(button.dataset.setLang === LANG));
-  button.addEventListener('click', () => button.dataset.setLang !== LANG && setLang(button.dataset.setLang));
+// Flag dropdown, like on martin-balcar.cz.
+const LANG_INFO = { cs: { label: 'Čeština', flag: '/_app/flags/cs.svg' }, en: { label: 'English', flag: '/_app/flags/en.svg' } };
+const CHEVRON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 9l-7 7-7-7"/></svg>';
+
+for (const holder of document.querySelectorAll('[data-lang-switch]')) {
+  const current = LANG_INFO[LANG];
+  holder.innerHTML = `
+    <button class="lang-button" type="button" aria-haspopup="true" aria-expanded="false" aria-label="${t('lang.label')}">
+      <img src="${current.flag}" alt="" width="20" height="15"><span>${current.label}</span>${CHEVRON}
+    </button>
+    <div class="lang-menu" role="menu" hidden>
+      ${LANGS.filter((l) => l !== LANG)
+        .map((l) => `<button type="button" role="menuitem" data-set-lang="${l}"><img src="${LANG_INFO[l].flag}" alt="" width="24" height="16">${LANG_INFO[l].label}</button>`)
+        .join('')}
+    </div>`;
+  const button = holder.querySelector('.lang-button');
+  const menu = holder.querySelector('.lang-menu');
+  const close = () => {
+    menu.hidden = true;
+    button.setAttribute('aria-expanded', 'false');
+  };
+  button.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menu.hidden = !menu.hidden;
+    button.setAttribute('aria-expanded', String(!menu.hidden));
+  });
+  document.addEventListener('click', close);
+  document.addEventListener('keydown', (e) => e.key === 'Escape' && close());
+  for (const item of menu.querySelectorAll('[data-set-lang]')) {
+    item.addEventListener('click', () => setLang(item.dataset.setLang));
+  }
 }
+
+// The brand is simply the domain this runs on.
+for (const el of document.querySelectorAll('[data-brand]')) el.textContent = location.hostname.replace(/^www\./, '');
 
 for (const link of document.querySelectorAll('.abuse-link')) {
   link.href = `mailto:martin@balcar.me?subject=${encodeURIComponent(t('footer.abuseSubject', { host: location.host }))}`;

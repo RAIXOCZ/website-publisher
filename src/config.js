@@ -41,10 +41,14 @@ module.exports = {
   SITE_DOMAIN,
   // Publishing is open to everyone; this caps uploads per IP address.
   PUBLISH_PER_HOUR: int(process.env.PUBLISH_PER_HOUR, 60),
+  // Wrong admin/site passwords allowed per IP per 15 minutes.
+  MAX_FAILED_ATTEMPTS: int(process.env.MAX_FAILED_ATTEMPTS, 10),
   PATH_SANDBOX: bool(process.env.PATH_SANDBOX, true),
   // Cloudflare rejects request bodies over 100 MB on Free/Pro plans.
   MAX_UPLOAD_MB: int(process.env.MAX_UPLOAD_MB, 100),
   MAX_FILES: int(process.env.MAX_FILES, 20000),
   SESSION_DAYS: int(process.env.SESSION_DAYS, 30),
   SESSION_SECRET: process.env.SESSION_SECRET || '',
+  // Sent as a Report-Abuse header with every response, including published sites.
+  ABUSE_EMAIL: 'martin@balcar.me',
 };

@@ -3,32 +3,37 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="Martin Balcar">
   <title data-i18n="title.docs">Návod – Publikování webů</title>
   <link rel="icon" href="/_app/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="/_app/font/montserrat.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/_app/app.css">
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="/"><span class="brand-mark">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-    </span><span data-i18n="brand">Publikování</span></a>
-    <div class="topbar-right">
-      <nav class="nav">
-        <a class="btn btn-primary" href="/" data-i18n="nav.publish">+ Zveřejnit</a>
-      </nav>
-      <div class="lang-switch" role="group" aria-label="Jazyk / Language">
-        <button type="button" data-set-lang="cs">CS</button>
-        <button type="button" data-set-lang="en">EN</button>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="/" data-brand>freepages</a>
+      <div class="header-right">
+        <nav class="nav">
+          <a href="/" data-i18n="nav.publish">+ Zveřejnit</a>
+          <a href="/docs" aria-current="page" class="hide-sm" data-i18n="nav.docs">Návod</a>
+        </nav>
+        <div class="lang" data-lang-switch></div>
       </div>
     </div>
   </header>
 
   <main>
-    <div data-lang="cs">
-      <h1>Návod</h1>
-      <p class="lead">Jak zveřejnit statický web během pár sekund.</p>
+    <div class="wrap">
+      <div class="page" data-lang="cs">
+        <div class="stack-section">
+          <p class="eyebrow">Nápověda</p>
+          <h1>Návod</h1>
+          <p class="lead">Jak zveřejnit statický web během pár sekund.</p>
+        </div>
 
-      <section class="card docs">
+
+      <section class="card prose">
         <h2>Jak zveřejnit web</h2>
         <ol>
           <li>Na <a href="/">hlavní stránce</a> přetáhněte složku s webem do vyznačeného pole, případně klikněte na <b>Vybrat složku</b>.</li>
@@ -90,12 +95,16 @@
           <li>Soubory systému jako <code>.DS_Store</code>, <code>Thumbs.db</code> nebo <code>__MACOSX</code> se přeskočí.</li>
         </ul>
       </section>
-    </div>
-    <div data-lang="en" hidden>
-      <h1>Guide</h1>
-      <p class="lead">How to publish a static website in a few seconds.</p>
+      </div>
+      <div class="page" data-lang="en" hidden>
+        <div class="stack-section">
+          <p class="eyebrow">Help</p>
+          <h1>Guide</h1>
+          <p class="lead">How to publish a static website in a few seconds.</p>
+        </div>
 
-      <section class="card docs">
+
+      <section class="card prose">
         <h2>How to publish a site</h2>
         <ol>
           <li>On the <a href="/">home page</a>, drop your website folder onto the marked area, or click <b>Choose folder</b>.</li>
@@ -157,13 +166,23 @@
           <li>System files such as <code>.DS_Store</code>, <code>Thumbs.db</code> or <code>__MACOSX</code> are skipped.</li>
         </ul>
       </section>
+      </div>
     </div>
   </main>
 
-  <footer class="footer">
-    <span><span data-i18n="footer.by">Vytvořil</span> <a href="https://martin-balcar.cz" target="_blank" rel="noopener">Martin Balcar</a></span>
-    <span aria-hidden="true">·</span>
-    <a class="abuse-link" href="mailto:martin@balcar.me" data-i18n="footer.abuse">Nahlásit zneužití</a>
+  <footer class="site-footer">
+    <div class="blob blob-c" aria-hidden="true"></div>
+    <div class="blob blob-d" aria-hidden="true"></div>
+    <div class="wrap">
+      <div>
+        <p class="strong" data-brand>freepages</p>
+        <p class="muted"><span data-i18n="footer.by">Vytvořil</span> <a href="https://martin-balcar.cz" target="_blank" rel="noopener">Martin Balcar</a></p>
+      </div>
+      <div class="right">
+        <p class="muted" data-i18n="footer.abuse">Nahlásit zneužití</p>
+        <p><a class="abuse-link" href="mailto:martin@balcar.me">martin@balcar.me</a></p>
+      </div>
+    </div>
   </footer>
 
   <script src="/_app/i18n.js"></script>

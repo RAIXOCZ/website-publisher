@@ -122,7 +122,8 @@ function setupLogin(form, onSuccess) {
   });
 }
 
-async function logout() {
+async function logout(e) {
+  e?.preventDefault();
   await api('/logout', { method: 'POST' });
   location.reload();
 }

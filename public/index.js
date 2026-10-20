@@ -283,16 +283,16 @@ async function renderMySites() {
       $('.site-url', row).textContent = url;
       $('.site-url', row).href = url;
       $('.site-pw code', row).textContent = password;
-      const meta = $('.site-meta', row);
       const ok = info.status === 'ok' || info.status === 'unknown';
       if (info.status === 'ok') {
-        meta.textContent = t('my.meta', { files: filesLabel(info.files), size: formatBytes(info.bytes), ago: timeAgo(info.updatedAt) });
-      } else if (info.status === 'missing') {
-        meta.textContent = t('my.missing');
-      } else if (info.status === 'wrong-password') {
-        meta.textContent = t('my.wrongPw');
+        const chips = [filesLabel(info.files), formatBytes(info.bytes), t('chip.updated', { ago: timeAgo(info.updatedAt) })];
+        $('.site-meta', row).replaceChildren(...chips.map((text) => Object.assign(document.createElement('span'), { className: 'chip', textContent: text })));
       }
-      if (!ok) row.classList.add('site-row-dim');
+      if (info.status === 'missing' || info.status === 'wrong-password') {
+        $('.site-status', row).textContent = t(info.status === 'missing' ? 'my.missing' : 'my.wrongPw');
+        $('.site-status', row).hidden = false;
+      }
+      if (!ok) row.classList.add('dim');
       for (const action of ['update', 'delete']) $(`[data-action="${action}"]`, row).hidden = !ok;
       $('[data-action="forget"]', row).hidden = ok;
       return row;
@@ -303,7 +303,7 @@ async function renderMySites() {
 $('#my-list').addEventListener('click', async (e) => {
   const button = e.target.closest('button[data-action]');
   if (!button) return;
-  const row = button.closest('.site-row');
+  const row = button.closest('.site-card');
   const name = row.dataset.name;
   const password = ownedPassword(name);
   const url = $('.site-url', row).href;

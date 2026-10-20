@@ -76,7 +76,7 @@ function clearSession(res) {
   res.setHeader('Set-Cookie', `${COOKIE}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`);
 }
 
-// Simple in-memory brute-force protection: 10 failures per IP per 15 minutes.
+// Simple in-memory brute-force protection: MAX_FAILED_ATTEMPTS per IP per 15 minutes.
 const failures = new Map();
 const WINDOW = 15 * 60 * 1000;
 
@@ -87,7 +87,7 @@ function clientIp(req) {
 function tooManyAttempts(req) {
   const entry = failures.get(clientIp(req));
   if (!entry || entry.until < Date.now()) return false;
-  return entry.count >= 10;
+  return entry.count >= config.MAX_FAILED_ATTEMPTS;
 }
 
 function recordFailure(req) {

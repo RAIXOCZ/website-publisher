@@ -12,6 +12,11 @@ const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', true);
 
+app.use((req, res, next) => {
+  res.set('Report-Abuse', config.ABUSE_EMAIL);
+  next();
+});
+
 const hostOf = (req) => (req.headers.host || '').toLowerCase().replace(/:\d+$/, '');
 
 // 1. <name>.<SITE_DOMAIN> → that site, and nothing else on that host.
@@ -43,7 +48,7 @@ const securityHeaders = (req, res, next) => {
 };
 
 const publicDir = path.join(__dirname, '..', 'public');
-app.use('/_app', securityHeaders, express.static(publicDir, { index: false, maxAge: '1h' }));
+app.use('/_app', securityHeaders, express.static(publicDir, { index: false, maxAge: 0 }));
 app.get('/', securityHeaders, (req, res) => res.sendFile(path.join(publicDir, 'index.html')));
 app.get(['/admin', '/admin/'], securityHeaders, (req, res) => res.sendFile(path.join(publicDir, 'admin.html')));
 app.get(['/docs', '/docs/'], securityHeaders, (req, res) => res.sendFile(path.join(publicDir, 'docs.html')));
