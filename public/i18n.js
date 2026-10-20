@@ -10,7 +10,6 @@ const I18N = {
   cs: {
     'hero.title1': 'Web online',
     'hero.title2': 'jedním přetažením.',
-    'name.inline': 'název je nepovinný',
     'how.title': 'Složka s index.html stačí.',
     'how.text': 'HTML, CSS, JavaScript, obrázky i podsložky se zveřejní tak, jak jsou. Adresy bez .html a vlastní stránka 404 fungují samy.',
     'how.docs': 'Přečíst návod',
@@ -117,7 +116,6 @@ const I18N = {
   en: {
     'hero.title1': 'Your site online',
     'hero.title2': 'in one drop.',
-    'name.inline': 'the name is optional',
     'how.title': 'A folder with index.html is all you need.',
     'how.text': 'HTML, CSS, JavaScript, images and subfolders are published as they are. Clean URLs without .html and a custom 404 page just work.',
     'how.docs': 'Read the guide',

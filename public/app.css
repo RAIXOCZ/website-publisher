@@ -280,7 +280,6 @@ input:focus { border-color: var(--teal-2); box-shadow: 0 0 0 4px var(--ring); }
 }
 .address input::placeholder { color: var(--violet); opacity: 0.45; }
 .address input:focus { box-shadow: none; border-color: var(--violet); background: var(--violet-soft); }
-.address .hint { margin-left: auto; padding-left: 12px; font: 500 12px var(--body); color: var(--faint); white-space: nowrap; }
 
 .panel { padding: 22px; border-radius: var(--r-lg); display: flex; flex-direction: column; gap: 16px; }
 
@@ -522,7 +521,6 @@ td .site-url { font: 12px var(--mono); color: var(--muted); }
   .brand { font-size: 17px; }
   .address { font-size: 14px; padding-left: 12px; }
   .address input { font-size: 14px; }
-  .address .hint { display: none; }
   .panel { padding: 14px; }
   .add-form { grid-template-columns: 1fr; }
   .how { padding: 18px; }
