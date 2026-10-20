@@ -67,7 +67,6 @@ code { font: .9em ui-monospace, SFMono-Regular, Menlo, monospace; }
 .nav { display: flex; gap: 6px; align-items: center; }
 
 main { max-width: 960px; margin: 0 auto; padding: 0 16px 64px; }
-.narrow { max-width: 640px; margin: 0 auto; }
 
 h1 { font-size: 28px; line-height: 1.2; margin: 24px 0 6px; letter-spacing: -.01em; }
 h2 { font-size: 17px; margin: 0 0 12px; }
