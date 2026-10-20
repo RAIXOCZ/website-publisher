@@ -130,6 +130,8 @@ function checkPassword(password) {
 // answer), and a present Origin must match the host being talked to.
 function sameOrigin(req, res, next) {
   if (req.method === 'GET' || req.method === 'HEAD') return next();
+  // API tokens (curl) carry no cookies, so cross-site forgery does not apply.
+  if (/^Bearer /.test(req.headers.authorization || '')) return next();
   if (req.headers['x-requested-with'] !== 'fetch') {
     return res.status(403).json({ error: t(langOf(req), 'missingHeader') });
   }
@@ -159,6 +161,7 @@ module.exports = {
   tooManyAttempts,
   recordFailure,
   publishAllowed,
+  clientIp,
   sameOrigin,
   requireAuth,
 };

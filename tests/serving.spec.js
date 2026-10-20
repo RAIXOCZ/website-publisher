@@ -1,7 +1,7 @@
 // @ts-check
 const http = require('http');
 const { test, expect } = require('@playwright/test');
-const { FIXTURES, unique, pick, pickAndPublish, publishViaApi } = require('./helpers');
+const { FIXTURES, unique, pickAndPublish, signIn, apiToken, publishViaApi } = require('./helpers');
 
 test.describe('path-style sites (localhost:4317/<name>/)', () => {
   let name;
@@ -9,7 +9,7 @@ test.describe('path-style sites (localhost:4317/<name>/)', () => {
   test.beforeAll(async ({ request }) => {
     name = unique('serve');
     const res = await request.post('/api/sites', {
-      headers: { 'X-Requested-With': 'fetch' },
+      headers: { Authorization: `Bearer ${await apiToken()}` },
       multipart: {
         name,
         p: 'site/index.html',
@@ -48,6 +48,7 @@ test.describe('path-style sites (localhost:4317/<name>/)', () => {
 test.describe('site features', () => {
   test('clean URLs, custom 404 page and folder listings', async ({ page, request }) => {
     const name = unique('features');
+    await signIn(page);
     await page.goto('/');
     await page.locator('#name').fill(name);
     await pickAndPublish(page, page.locator('#pick-folder'), FIXTURES.site);
@@ -63,8 +64,10 @@ test.describe('site features', () => {
     const listing = await request.get(`/${name}/files/`);
     expect(await listing.text()).toContain('readme.txt');
 
-    const traversal = await request.get(`/${name}/..%2f..%2fmeta/${name}.json`);
-    expect(traversal.status()).not.toBe(200);
+    for (const target of ['freepages.db', '.session-secret']) {
+      const traversal = await request.get(`/${name}/..%2f..%2f${target}`);
+      expect(traversal.status()).not.toBe(200);
+    }
   });
 });
 
@@ -84,12 +87,16 @@ function get(path, host, { method = 'GET', headers = {}, body } = {}) {
 
 test.describe('subdomain sites (<name>.pub.test)', () => {
   let name;
+  let previewUrl;
 
   test.beforeAll(async ({ playwright }) => {
     name = unique('sub');
     const api = await playwright.request.newContext({ baseURL: 'http://127.0.0.1:4318', extraHTTPHeaders: { Host: 'pub.test' } });
-    const { status } = await publishViaApi(api, name, '<h1>Subdomain site</h1>');
+    const target = { baseURL: 'http://127.0.0.1:4318', extraHTTPHeaders: { Host: 'pub.test' } };
+    const { status } = await publishViaApi(api, name, '<h1>Subdomain site</h1>', {}, target);
     expect(status).toBe(200);
+    const preview = await publishViaApi(api, name, '<h1>Sub preview</h1>', { preview: '1' }, target);
+    previewUrl = preview.body.preview.url;
     await api.dispose();
   });
 
@@ -99,6 +106,13 @@ test.describe('subdomain sites (<name>.pub.test)', () => {
     expect(res.body).toContain('Subdomain site');
     expect(res.headers['report-abuse']).toBe('martin@balcar.me');
     expect(res.headers['content-security-policy']).toBeUndefined();
+  });
+
+  test('previews get their own preview-xxxxxx subdomain', async () => {
+    const host = new URL(previewUrl).host;
+    expect(host).toMatch(/^preview-[a-z0-9]{6}\.pub\.test$/);
+    expect((await get('/', host)).body).toContain('Sub preview');
+    expect((await get('/', 'preview-zzzzzz.pub.test')).status).toBe(404);
   });
 
   test('path URLs redirect to the subdomain', async () => {

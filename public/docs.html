@@ -16,6 +16,7 @@
           <nav class="nav">
             <a href="/" data-i18n="nav.publish">+ Zveřejnit</a>
             <a href="/docs" aria-current="page" class="hide-sm" data-i18n="nav.docs">Návod</a>
+            <a href="/ucet" data-i18n="nav.account">Účet</a>
           </nav>
           <div class="lang" data-lang-switch></div>
         </div>
@@ -35,12 +36,13 @@
       <section class="prose glass">
         <h2>Jak zveřejnit web</h2>
         <ol>
-          <li>Na <a href="/">hlavní stránce</a> přetáhněte složku s webem do vyznačeného pole, případně klikněte na <b>Přidat složku</b>. Další složky nebo soubory můžete přidat stejně; první složka tvoří kořen webu, další se přidají jako podsložky. Ve stromu souborů pak můžete soubory a složky přetažením přesunout jinam nebo odebrat.</li>
+          <li>Na <a href="/">hlavní stránce</a> přetáhněte složku s webem do vyznačeného pole, případně klikněte na <b>Přidat složku</b>. První složka tvoří kořen webu.</li>
+          <li>Ve stromu souborů můžete web upravit: přidat další soubory nebo složky, vytvořit <b>novou složku</b>, soubory a složky přesouvat přetažením, přejmenovat (dvojklikem) nebo odebrat. Další možnosti, třeba nahrazení souboru nebo celé složky, najdete pod tlačítkem <b>⋯</b> u každé položky.</li>
           <li>Název webu se doplní podle názvu první složky (bez složky se vygeneruje náhodný kód). Chcete-li jiný, napište ho do <b>adresního řádku</b> nad polem pro nahrání.</li>
-          <li>Klikněte na <b>Zveřejnit web</b>. Po dokončení nahrávání je web okamžitě online. Odkaz si můžete zkopírovat nebo rovnou otevřít.</li>
-          <li>Zobrazí se <b>heslo k webu</b>. Uschovejte si ho, budete ho potřebovat pro aktualizaci nebo smazání.</li>
+          <li>Tlačítkem <b>Náhled</b> si web můžete nejdřív prohlédnout na dočasné adrese <code>preview-…</code>. Náhled po 5 minutách vyprší.</li>
+          <li>Vyplňte e-mail, jméno a příjmení a klikněte na <b>Poslat potvrzení</b>. Na e-mail vám přijde odkaz; po jeho otevření a potvrzení je web online a zároveň vznikne váš účet. Odkaz platí 24 hodin.</li>
         </ol>
-        <p>Nepotřebujete žádný účet ani přihlášení.</p>
+        <p>Pokud už účet máte a jste přihlášení, web se zveřejní hned bez potvrzování.</p>
         <p>Web bude dostupný na adrese <code class="url-example">…</code></p>
 
         <h2>Co má složka obsahovat</h2>
@@ -60,20 +62,33 @@
         <h2>Nahrání .zip souboru</h2>
         <p>Místo složky můžete nahrát jeden soubor <code>.zip</code>. Po nahrání se rozbalí a zveřejní stejně jako složka. Hodí se pro velké weby nebo prohlížeče, které neumí nahrávat složky.</p>
 
-        <h2>Heslo k webu</h2>
+        <h2>Účet a přihlášení</h2>
         <ul>
-          <li>Každý web dostane při prvním zveřejnění vlastní heslo, například <code>k7mq-2xpa-9fve</code>.</li>
-          <li>Bez hesla nikdo nemůže web nahradit ani smazat.</li>
-          <li>Heslo se uloží do vašeho prohlížeče a web najdete v sekci <a href="/#my-sites">Moje weby</a>.</li>
-          <li>Na jiném zařízení (nebo po vymazání dat prohlížeče) web přidáte tlačítkem <b>Přidat existující web</b>, kam zadáte název a heslo.</li>
-          <li>Pokud heslo ztratíte, požádejte správce serveru o nové.</li>
+          <li>Účet nemá heslo. Přihlásíte se na stránce <a href="/ucet">Účet</a> odkazem, který vám pošleme e-mailem.</li>
+          <li>V účtu najdete své weby, osobní údaje, API tokeny a historii aktivit.</li>
         </ul>
 
-        <h2>Aktualizace webu</h2>
-        <p>V sekci <b>Moje weby</b> klikněte na <b>Aktualizovat</b> a vyberte složku s novou verzí. Nebo nahrajte složku se <b>stejným názvem</b> na hlavní stránce: pokud máte web uložený v sekci Moje weby, aplikace se zeptá, jestli ho chcete nahradit. Výměna proběhne najednou, návštěvníci nikdy neuvidí napůl nahraný web.</p>
+        <h2>Úprava webu</h2>
+        <p>V sekci <a href="/#my-sites">Moje weby</a> klikněte u webu na <b>Upravit</b>. Jeho soubory se otevřou ve stromu: můžete nahradit jednotlivé soubory, nahradit obsah složky nebo celý web jinou složkou, přidat soubory a složky, přesouvat a mazat. Změny si můžete prohlédnout v <b>náhledu</b> a pak klikněte na <b>Uložit změny</b>. Výměna proběhne najednou, návštěvníci nikdy neuvidí napůl nahraný web.</p>
 
-        <h2>Smazání webu</h2>
-        <p>V sekci <b>Moje weby</b> klikněte na <b>Smazat</b>. Adresa webu tím přestane fungovat.</p>
+        <h2>Smazání webu a účtu</h2>
+        <p>Web smažete tlačítkem <b>Smazat</b> u webu, účet na stránce <a href="/ucet">Účet</a> (smazání potvrdíte odkazem v e-mailu). Smazané weby okamžitě přestanou být veřejné. Data ještě 90 dní uchováváme kvůli řešení případného zneužití a poté je trvale smažeme; pokud chcete smazání hned, napište na <a href="mailto:martin@balcar.me">martin@balcar.me</a>.</p>
+
+        <h2>Příkazová řádka (curl)</h2>
+        <p>Na stránce <a href="/ucet">Účet</a> si vytvořte <b>API token</b>. S ním můžete zveřejňovat a aktualizovat weby například ze skriptu nebo CI:</p>
+        <pre><span class="muted"># zveřejnění nebo aktualizace webu ze .zip souboru</span>
+curl -H "Authorization: Bearer $FREEPAGES_TOKEN" \
+     -F name=muj-web -F overwrite=1 -F f=@web.zip \
+     <span class="api-example">…</span></pre>
+        <ul>
+          <li><code>name</code> – název webu. Bez <code>overwrite=1</code> dostane web při obsazeném názvu příponu, s ním nahradí váš existující web.</li>
+          <li><code>f</code> – soubory. Jeden <code>.zip</code> se rozbalí; více souborů pošlete jako dvojice <code>-F p=cesta/soubor.html -F f=@soubor.html</code> (cesta <code>p</code> vždy před souborem).</li>
+          <li><code>preview=1</code> – místo zveřejnění vytvoří 5minutový náhled; adresa je v odpovědi.</li>
+          <li>Odpověď je JSON s adresou webu (<code>url</code>). Chyby vrací <code>{"error": "…"}</code> s HTTP kódem 4xx.</li>
+        </ul>
+
+        <h2>Weby s heslem</h2>
+        <p>Z IP adres, které povolí správce, lze zveřejňovat bez účtu. Takový web dostane heslo (například <code>k7mq-2xpa-9fve</code>), které se uloží do prohlížeče; bez něj web nejde nahradit ani smazat. Na jiném zařízení ho přidáte tlačítkem <b>Přidat web s heslem</b>.</p>
 
         <h2>Hezké adresy a chybová stránka</h2>
         <ul>
@@ -87,7 +102,7 @@
           <li>Malá písmena bez diakritiky, číslice a pomlčky, nejvýše 63 znaků.</li>
           <li>Velká písmena, mezery a háčky se převedou automaticky (<code>Můj Web</code> → <code>muj-web</code>).</li>
           <li>Pokud je název už obsazený, přidá se k němu pomlčka a tři náhodné znaky, například <code>muj-web-k3x</code>.</li>
-          <li>Některé názvy jsou rezervované, například <code>admin</code>, <code>api</code>, <code>docs</code> nebo <code>www</code>.</li>
+          <li>Některé názvy jsou rezervované, například <code>admin</code>, <code>api</code>, <code>docs</code> nebo <code>www</code>, a názvy začínající <code>preview-</code>.</li>
         </ul>
 
         <h2>Limity</h2>
@@ -107,13 +122,14 @@
       <section class="prose glass">
         <h2>How to publish a site</h2>
         <ol>
-          <li>On the <a href="/">home page</a>, drop your website folder onto the marked area, or click <b>Add folder</b>. You can add more folders or files the same way; the first folder becomes the site root and later ones are added as subfolders. In the file tree you can then drag files and folders to move them, or remove them.</li>
-          <li>The site name is taken from the first folder's name (without a folder, a random code is generated). To use a different one, type it into the <b>address bar</b> above the upload area.</li>
-          <li>Click <b>Publish site</b>. As soon as the upload finishes, the site is live. Copy the link or open it right away.</li>
-          <li>You will see the <b>site password</b>. Keep it safe; you need it to update or delete the site.</li>
+          <li>On the <a href="/">home page</a>, drag your site's folder into the marked area, or click <b>Add folder</b>. The first folder becomes the root of the site.</li>
+          <li>In the file tree you can adjust the site: add more files or folders, create a <b>new folder</b>, move files and folders by dragging, rename them (double-click) or remove them. More options, such as replacing a file or a whole folder, are under the <b>⋯</b> button of each item.</li>
+          <li>The site name is filled in from the first folder's name (without a folder, a random code is generated). If you want a different one, type it into the <b>address bar</b> above the upload area.</li>
+          <li>Click <b>Preview</b> to look at the site first at a temporary <code>preview-…</code> address. The preview expires after 5 minutes.</li>
+          <li>Enter your e-mail, first and last name and click <b>Send confirmation</b>. You will get a link by e-mail; once you open and confirm it, the site is online and your account is created. The link is valid for 24 hours.</li>
         </ol>
-        <p>No account or login is needed.</p>
-        <p>Your site will be available at <code class="url-example">…</code></p>
+        <p>If you already have an account and are signed in, the site is published right away without confirmation.</p>
+        <p>The site will be available at <code class="url-example">…</code></p>
 
         <h2>What the folder should contain</h2>
         <ul>
@@ -132,20 +148,33 @@
         <h2>Uploading a .zip file</h2>
         <p>Instead of a folder you can upload a single <code>.zip</code> file. It is extracted and published just like a folder. Handy for large sites or browsers that cannot upload folders.</p>
 
-        <h2>Site password</h2>
+        <h2>Account and signing in</h2>
         <ul>
-          <li>Every site gets its own password when it is first published, for example <code>k7mq-2xpa-9fve</code>.</li>
-          <li>Without the password nobody can replace or delete the site.</li>
-          <li>The password is saved in your browser and the site appears under <a href="/#my-sites">My sites</a>.</li>
-          <li>On another device (or after clearing browser data), add the site with <b>Add existing site</b> by entering its name and password.</li>
-          <li>If you lose the password, ask the server administrator for a new one.</li>
+          <li>Accounts have no password. Sign in on the <a href="/ucet">Account</a> page with a link we send you by e-mail.</li>
+          <li>Your account shows your sites, personal details, API tokens and activity history.</li>
         </ul>
 
-        <h2>Updating a site</h2>
-        <p>Under <b>My sites</b>, click <b>Update</b> and choose the folder with the new version. Or upload a folder with the <b>same name</b> on the home page: if the site is saved under My sites, the app asks whether to replace it. The switch happens at once, so visitors never see a half-uploaded site.</p>
+        <h2>Editing a site</h2>
+        <p>Under <a href="/#my-sites">My sites</a>, click <b>Edit</b>. The site's files open in the tree: you can replace single files, replace a folder's contents or the whole site with another folder, add files and folders, move and remove them. Check the changes in a <b>preview</b>, then click <b>Save changes</b>. The switch happens at once, so visitors never see a half-uploaded site.</p>
 
-        <h2>Deleting a site</h2>
-        <p>Under <b>My sites</b>, click <b>Delete</b>. The site's address stops working.</p>
+        <h2>Deleting a site or account</h2>
+        <p>Delete a site with its <b>Delete</b> button, and your account on the <a href="/ucet">Account</a> page (you confirm with a link sent by e-mail). Deleted sites stop being public immediately. We keep the data for 90 more days to deal with possible abuse and then delete it permanently; to have it deleted right away, write to <a href="mailto:martin@balcar.me">martin@balcar.me</a>.</p>
+
+        <h2>Command line (curl)</h2>
+        <p>Create an <b>API token</b> on the <a href="/ucet">Account</a> page. With it you can publish and update sites, e.g. from a script or CI:</p>
+        <pre><span class="muted"># publish or update a site from a .zip file</span>
+curl -H "Authorization: Bearer $FREEPAGES_TOKEN" \
+     -F name=my-site -F overwrite=1 -F f=@site.zip \
+     <span class="api-example">…</span></pre>
+        <ul>
+          <li><code>name</code> – the site name. Without <code>overwrite=1</code> a taken name gets a suffix; with it, your existing site is replaced.</li>
+          <li><code>f</code> – files. A single <code>.zip</code> is extracted; send several files as pairs <code>-F p=path/file.html -F f=@file.html</code> (the path <code>p</code> always before the file).</li>
+          <li><code>preview=1</code> – creates a 5-minute preview instead of publishing; its address is in the response.</li>
+          <li>The response is JSON with the site's address (<code>url</code>). Errors return <code>{"error": "…"}</code> with a 4xx HTTP status.</li>
+        </ul>
+
+        <h2>Password sites</h2>
+        <p>From IP addresses allowed by the administrator, sites can be published without an account. Such a site gets a password (for example <code>k7mq-2xpa-9fve</code>), saved in your browser; without it the site cannot be replaced or deleted. On another device, add it with <b>Add a password site</b>.</p>
 
         <h2>Clean URLs and error page</h2>
         <ul>
@@ -159,7 +188,7 @@
           <li>Lowercase letters without accents, numbers and dashes, at most 63 characters.</li>
           <li>Capitals, spaces and accents are converted automatically (<code>My Site</code> → <code>my-site</code>).</li>
           <li>If the name is already taken, a dash and three random characters are added, for example <code>my-site-k3x</code>.</li>
-          <li>Some names are reserved, for example <code>admin</code>, <code>api</code>, <code>docs</code> or <code>www</code>.</li>
+          <li>Some names are reserved, for example <code>admin</code>, <code>api</code>, <code>docs</code> or <code>www</code>, and names starting with <code>preview-</code>.</li>
         </ul>
 
         <h2>Limits</h2>

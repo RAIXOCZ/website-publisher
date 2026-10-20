@@ -37,13 +37,20 @@
 
       <div class="section" id="panel" hidden>
         <div class="doc-head">
-          <h1 data-i18n="admin.h1">Weby</h1>
-          <p class="lead" data-i18n="admin.lead">Všechny zveřejněné weby. Jako správce můžete kterýkoli web nahradit, přejmenovat, smazat nebo mu vygenerovat nové heslo.</p>
+          <h1 data-i18n="admin.h1">Správa</h1>
+          <p class="lead" data-i18n="admin.lead">Weby, uživatelé a jejich historie včetně IP adres. Smazané položky zůstávají uložené po dobu uchování, pokud je nesmažete trvale.</p>
         </div>
 
-        <section class="table-panel glass">
+        <div class="tabs" role="tablist">
+          <button type="button" role="tab" data-tab="sites" aria-selected="true"><span data-i18n="admin.tabSites">Weby</span> <span class="count" id="count-sites">0</span></button>
+          <button type="button" role="tab" data-tab="users" aria-selected="false"><span data-i18n="admin.tabUsers">Uživatelé</span> <span class="count" id="count-users">0</span></button>
+          <button type="button" role="tab" data-tab="whitelist" aria-selected="false"><span data-i18n="admin.tabWhitelist">IP whitelist</span> <span class="count" id="count-whitelist">0</span></button>
+        </div>
+
+        <section class="table-panel glass" data-panel="sites">
           <div class="toolbar">
-            <input type="text" id="filter" data-i18n-placeholder="admin.filter" placeholder="Hledat weby…" autocomplete="off">
+            <input type="text" class="filter" data-for="sites" data-i18n-placeholder="admin.filter" placeholder="Hledat…" autocomplete="off">
+            <label class="check"><input type="checkbox" id="show-deleted-sites"> <span data-i18n="admin.showDeleted">Zobrazit smazané</span></label>
             <span class="stats" id="stats"></span>
           </div>
           <div class="table-wrap">
@@ -51,20 +58,72 @@
               <thead>
                 <tr>
                   <th data-i18n="admin.thSite">Web</th>
-                  <th class="hide-sm" data-i18n="admin.thFiles">Soubory</th>
+                  <th data-i18n="admin.thOwner">Vlastník</th>
                   <th class="hide-sm" data-i18n="admin.thSize">Velikost</th>
                   <th data-i18n="admin.thUpdated">Aktualizováno</th>
                   <th></th>
                 </tr>
               </thead>
-              <tbody id="rows"></tbody>
+              <tbody id="site-rows"></tbody>
             </table>
-            <div class="empty" id="empty" hidden data-i18n-html="admin.empty">
-              Zatím tu nejsou žádné weby. <a href="/">Zveřejněte první →</a>
-            </div>
+            <div class="empty" id="sites-empty" hidden data-i18n="admin.emptySites">Žádné weby.</div>
+          </div>
+        </section>
+
+        <section class="table-panel glass" data-panel="users" hidden>
+          <div class="toolbar">
+            <input type="text" class="filter" data-for="users" data-i18n-placeholder="admin.filter" placeholder="Hledat…" autocomplete="off">
+            <label class="check"><input type="checkbox" id="show-deleted-users"> <span data-i18n="admin.showDeleted">Zobrazit smazané</span></label>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th data-i18n="admin.thUser">Uživatel</th>
+                  <th data-i18n="admin.thCreated">Registrace</th>
+                  <th class="hide-sm" data-i18n="admin.thSites">Weby</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="user-rows"></tbody>
+            </table>
+            <div class="empty" id="users-empty" hidden data-i18n="admin.emptyUsers">Žádní uživatelé.</div>
+          </div>
+        </section>
+
+        <section class="table-panel glass" data-panel="whitelist" hidden>
+          <p class="muted" data-i18n="admin.whitelistText">Z těchto IP adres lze zveřejňovat bez účtu a e-mailu. Weby pak chrání heslo (jako dřív).</p>
+          <form class="row" id="whitelist-form">
+            <input type="text" name="ip" class="grow" data-i18n-placeholder="admin.ipPlaceholder" placeholder="IP adresa" required autocomplete="off" spellcheck="false">
+            <input type="text" name="note" class="grow" data-i18n-placeholder="admin.notePlaceholder" placeholder="Poznámka" autocomplete="off">
+            <button class="btn btn-primary" type="submit" data-i18n="admin.ipAdd">Přidat</button>
+          </form>
+          <p class="muted small" id="your-ip"></p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th data-i18n="audit.ip">IP adresa</th><th data-i18n="admin.thNote">Poznámka</th><th data-i18n="admin.thAdded">Přidáno</th><th></th></tr></thead>
+              <tbody id="whitelist-rows"></tbody>
+            </table>
+            <div class="empty" id="whitelist-empty" hidden data-i18n="admin.emptyWhitelist">Žádné adresy. Adresy z proměnné IP_WHITELIST se zde nezobrazují.</div>
           </div>
         </section>
       </div>
+
+      <dialog class="dialog glass" id="audit-dialog">
+        <div class="dialog-head">
+          <div>
+            <h2 id="audit-title"></h2>
+            <p class="muted small" id="audit-sub"></p>
+          </div>
+          <button class="btn btn-sm" id="audit-close" data-i18n="close">Zavřít</button>
+        </div>
+        <div class="table-wrap">
+          <table class="audit">
+            <thead><tr><th data-i18n="audit.when">Kdy</th><th data-i18n="audit.what">Událost</th><th data-i18n="audit.site">Web</th><th data-i18n="audit.ip">IP adresa</th><th data-i18n="audit.detail">Podrobnosti</th></tr></thead>
+            <tbody id="audit-rows"></tbody>
+          </table>
+        </div>
+      </dialog>
     </div>
   </main>
 
@@ -77,24 +136,6 @@
     </div>
   </footer>
 
-  <template id="row">
-    <tr>
-      <td>
-        <div class="site-name"><span></span> <span class="chip" data-nopw data-i18n="admin.noPw" hidden>bez hesla</span></div>
-        <a class="site-url" target="_blank" rel="noopener"></a>
-      </td>
-      <td class="num hide-sm" data-files></td>
-      <td class="num hide-sm" data-size></td>
-      <td class="num" data-updated></td>
-      <td class="actions">
-        <button class="btn btn-sm" data-action="copy" data-i18n="row.copyLink">Kopírovat odkaz</button>
-        <button class="btn btn-sm" data-action="replace" data-i18n="row.replace">Nahradit</button>
-        <button class="btn btn-sm" data-action="rename" data-i18n="row.rename">Přejmenovat</button>
-        <button class="btn btn-sm" data-action="password" data-i18n="row.newPw">Nové heslo</button>
-        <button class="btn btn-sm btn-danger" data-action="delete" data-i18n="row.delete">Smazat</button>
-      </td>
-    </tr>
-  </template>
 
   <script src="/_app/i18n.js"></script>
   <script src="/_app/common.js"></script>

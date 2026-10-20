@@ -16,6 +16,7 @@
           <nav class="nav">
             <a href="/" data-i18n="nav.publish">+ Zveřejnit</a>
             <a href="/docs" class="hide-sm" data-i18n="nav.docs">Návod</a>
+            <a href="/ucet" data-i18n="nav.account">Účet</a>
           </nav>
           <div class="lang" data-lang-switch></div>
         </div>
@@ -34,72 +35,97 @@
         <section class="prose glass">
           <h2>1. Správce</h2>
           <p>Správcem osobních údajů je Martin Balcar, fyzická osoba podnikající, zapsaná v živnostenském rejstříku, IČO 21753580, s místem podnikání Starkoč 112, 547 01 Studnice (dále jen „správce“). Kontakt: <a href="mailto:martin@balcar.me">martin@balcar.me</a>.</p>
-          <p>Služba Freepages funguje bez registrace a bez uživatelských účtů. Nepoužíváme analytické ani reklamní nástroje a nesledujeme vás.</p>
+          <p>Nepoužíváme analytické ani reklamní nástroje a nesledujeme vaše chování na webech ani napříč weby.</p>
 
           <h2>2. Jaké údaje zpracováváme</h2>
 
+          <h3>Účet: e-mail, jméno a příjmení</h3>
+          <ul>
+            <li>Ke zveřejnění webu je potřeba účet. Při prvním zveřejnění zadáte e-mailovou adresu, jméno a příjmení; účet vznikne, jakmile e-mail potvrdíte odkazem, který vám pošleme. Spolu s účtem uložíme datum jeho vytvoření a IP adresu, ze které byl vytvořen.</li>
+            <li>E-mail používáme k ověření, že adresa patří vám, k přihlašování (jednorázovými odkazy), k potvrzení smazání účtu a ke sdělením týkajícím se vašich webů (například o jejich odstranění). Obchodní sdělení neposíláme.</li>
+            <li>Jméno a příjmení se zobrazují jen vám ve vašem účtu a správci služby; nikde je nezveřejňujeme. Slouží k tomu, aby správce mohl při řešení zneužití nebo nahlášení nezákonného obsahu zjistit, kdo web zveřejnil.</li>
+            <li>Účel a právní základ: e-mail zpracováváme k poskytování služby a správě účtu na základě plnění smlouvy, tedy <a href="/podminky">podmínek použití</a> (čl. 6 odst. 1 písm. b) GDPR). Jméno a příjmení zpracováváme výhradně k řešení zneužití služby a oznámení o nezákonném obsahu na základě oprávněného zájmu správce (čl. 6 odst. 1 písm. f) GDPR) a k jiným účelům je nepoužíváme. Uvedení těchto údajů je podmínkou zveřejnění webu; bez nich web zveřejnit nelze.</li>
+            <li>Pokud někdo zadá e-mailovou adresu při přihlášení nebo zveřejnění, pošleme na ni odkaz nebo upozornění i tehdy, když k ní účet neexistuje nebo ji zadal někdo jiný. Adresu příjemce, druh e-mailu, čas a IP adresu, ze které požadavek přišel, uchováváme v historii aktivit 90 dní (oprávněný zájem na prevenci zneužití, čl. 6 odst. 1 písm. f) GDPR).</li>
+          </ul>
+
+          <h3>Historie aktivit a IP adresy</h3>
+          <ul>
+            <li>Ukládáme záznamy o činnostech: vytvoření účtu, potvrzení e-mailu, přihlášení, zveřejnění, úpravu, přejmenování a smazání webu, vytvoření náhledu, vytvoření a zrušení API tokenu, změnu jména, odeslané e-maily (komu a jakého druhu) a smazání účtu. Každý záznam obsahuje čas, IP adresu, ze které byla činnost provedena, a dotčený web. Některé záznamy (vytvoření účtu, potvrzení e-mailu, nahrání, zveřejnění a úprava webu, odeslané e-maily) obsahují také e-mailovou adresu, záznamy o zveřejnění a úpravě webu počet souborů a velikost a záznam o potvrzení e-mailu IP adresu, ze které byly soubory nahrány.</li>
+            <li>Svou historii (bez e-mailových adres a bez IP adres správce u jeho zásahů) vidíte ve svém účtu. Úplnou historii vidí správce služby.</li>
+            <li>Účel: bezpečnost služby, odhalování a řešení zneužití (například phishingu nebo malwaru) a ochrana právních nároků. Právní základ: oprávněný zájem správce (čl. 6 odst. 1 písm. f) GDPR). Proti tomuto zpracování můžete vznést námitku (viz bod 4).</li>
+            <li>Záznamy uchováváme nejdéle 12 měsíců od jejich vzniku. Záznamy o smazaném webu smažeme 90 dní po smazání webu a všechny záznamy smazaného účtu 90 dní po smazání účtu. Záznamy, které k žádnému účtu ani webu nepatří (například o nepotvrzeném nahrání nebo e-mailu na adresu bez účtu), uchováváme 90 dní od jejich vzniku.</li>
+          </ul>
+
           <h3>IP adresa a technické údaje o požadavku</h3>
           <ul>
-            <li>Veškerý provoz služby i zveřejněných webů, včetně nahrávaných souborů a hesel, prochází v rámci šifrovaného spojení přes síť společnosti Cloudflare. Cloudflare přitom zpracovává vaši IP adresu, technické údaje o požadavku (čas, adresu stránky, typ prohlížeče) i obsah přenášených dat, aby je mohl doručit a chránit službu před útoky. Údaje uchovává podle svých <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">zásad ochrany osobních údajů</a>.</li>
-            <li>Aplikace služby vaši IP adresu do provozních záznamů (logů) neukládá. Krátkodobě ji drží jen v operační paměti, aby omezila počet nahrání z jedné adresy (nejvýše 60 za hodinu) a počet chybně zadaných hesel. Tyto údaje se mažou nejpozději hodinu po posledním nahrání nebo chybném pokusu a také při každém restartu serveru.</li>
-            <li>Bez zpracování IP adresy nelze službu technicky poskytnout.</li>
+            <li>Veškerý provoz služby i zveřejněných webů, včetně nahrávaných souborů a přihlašovacích údajů, prochází v rámci šifrovaného spojení přes síť společnosti Cloudflare. Cloudflare přitom zpracovává vaši IP adresu, technické údaje o požadavku (čas, adresu stránky, typ prohlížeče) i obsah přenášených dat, aby je mohl doručit a chránit službu před útoky. Jako zpracovatel s nimi nakládá podle smlouvy o zpracování; v rozsahu, v jakém je podle svých podmínek samostatným správcem (například u údajů o bezpečnostních hrozbách), se řídí svými <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">zásadami ochrany osobních údajů</a>.</li>
+            <li>Kromě historie aktivit (viz výše) aplikace IP adresy do provozních záznamů (logů) neukládá. Krátkodobě drží v operační paměti IP adresy a e-mailové adresy příjemců, aby omezila počet nahrání, e-mailů a chybně zadaných hesel; tyto údaje se mažou zhruba hodinu po posledním pokusu a při každém restartu serveru.</li>
             <li>Účel: provoz služby, její bezpečnost a ochrana před zneužitím. Právní základ: oprávněný zájem správce (čl. 6 odst. 1 písm. f) GDPR).</li>
           </ul>
 
           <h3>Obsah nahraných webů</h3>
           <ul>
-            <li>Soubory, které nahrajete, ukládáme na server a zveřejňujeme na adrese webu. Jsou veřejně přístupné komukoli.</li>
-            <li>Uchováváme je, dokud web nesmažete vy nebo správce, případně dokud služba nebude ukončena. Smazáním webu se soubory ze serveru odstraní; pokud server vytváří zálohy, mohou v nich soubory přetrvat do jejich přepsání.</li>
-            <li>Účel: poskytnutí služby. Právní základ: plnění smlouvy, tedy <a href="/podminky">podmínek použití</a> (čl. 6 odst. 1 písm. b) GDPR). Nahrání webu je dobrovolné.</li>
+            <li>Soubory, které nahrajete, ukládáme na server a po potvrzení e-mailu zveřejňujeme na adrese webu. Zveřejněné weby jsou veřejně přístupné komukoli.</li>
+            <li>Nahrané soubory, jejichž zveřejnění nepotvrdíte do 24 hodin, smažeme. Zadané jméno a příjmení smažeme nejpozději 24 hodin po vypršení odkazu. E-mailová adresa a IP adresa zůstávají v historii aktivit (záznam o nahrání a o odeslaném e-mailu) 90 dní od nahrání.</li>
+            <li>Náhledy (adresy preview-…) přestanou fungovat po 5 minutách a jejich soubory smažeme nejpozději minutu poté.</li>
+            <li>Zveřejněné weby uchováváme, dokud je nesmažete vy nebo správce. Smazaný web přestane být veřejný okamžitě; jeho soubory a údaje o něm uchováváme ještě 90 dní kvůli řešení případného zneužití (právní základ: oprávněný zájem správce, čl. 6 odst. 1 písm. f) GDPR) a poté je trvale smažeme.</li>
+            <li>Účel: poskytnutí služby. Právní základ: plnění smlouvy (čl. 6 odst. 1 písm. b) GDPR). Nahrání webu je dobrovolné.</li>
             <li>Doporučujeme do nahraných webů nevkládat osobní údaje, které nemusí být veřejné (svoje ani cizí), protože weby jsou veřejné. Podrobnosti najdete v <a href="/podminky">podmínkách použití</a>.</li>
-            <li>Pokud web obsahuje osobní údaje jiných lidí, odpovídá za jejich zveřejnění ten, kdo web nahrál. Správce je v takovém případě pouze ukládá jako poskytovatel hostingu a vyřizuje oznámení o nich na základě oprávněného zájmu (čl. 6 odst. 1 písm. f) GDPR). Totéž platí pro případné analytické nebo jiné nástroje vložené do nahraného webu.</li>
+            <li>Pokud web obsahuje osobní údaje jiných lidí, odpovídá za jejich zveřejnění ten, kdo web nahrál. Správce tyto údaje ukládá a zpřístupňuje jako poskytovatel hostingu, předem obsah nekontroluje a oznámení o nich vyřizuje bez zbytečného odkladu (oprávněný zájem, čl. 6 odst. 1 písm. f) GDPR, a povinnosti podle nařízení o digitálních službách). Totéž platí pro případné analytické nebo jiné nástroje vložené do nahraného webu. Pokud web podle vás neoprávněně zveřejňuje vaše osobní údaje, napište na <a href="mailto:martin@balcar.me">martin@balcar.me</a>.</li>
           </ul>
 
-          <h3>Údaje o webu a heslo</h3>
+          <h3>Údaje o webu, API tokeny a hesla</h3>
           <ul>
-            <li>Ke každému webu ukládáme jeho název, datum vytvoření a poslední změny, počet souborů, velikost a otisk (hash) hesla. Samotné heslo neukládáme.</li>
-            <li>Neukládáme, kdo web nahrál, ani jeho IP adresu.</li>
-            <li>Údaje uchováváme po dobu existence webu. Právní základ: plnění smlouvy (čl. 6 odst. 1 písm. b) GDPR).</li>
+            <li>Ke každému webu ukládáme jeho název, účet, ke kterému patří, datum vytvoření a poslední změny, počet souborů a velikost.</li>
+            <li>API tokeny a přihlašovací odkazy ukládáme jen jako otisk (hash), u tokenů navíc jejich název, prvních 10 znaků (prefix), datum vytvoření a posledního použití.</li>
+            <li>Weby zveřejněné bez účtu z povolených IP adres chrání heslo; ukládáme jen jeho otisk (hash), nikoli heslo samotné.</li>
+            <li>IP adresy, ze kterých lze zveřejňovat bez účtu, ukládáme se poznámkou správce po dobu, kdy povolení trvá.</li>
+            <li>Právní základ: plnění smlouvy (čl. 6 odst. 1 písm. b) GDPR).</li>
           </ul>
 
-          <h3>Úložiště ve vašem prohlížeči</h3>
+          <h3>Cookies a úložiště ve vašem prohlížeči</h3>
           <ul>
-            <li>Seznam vašich webů (název a heslo) a zvolený jazyk se ukládají do lokálního úložiště (localStorage) ve vašem prohlížeči. Na náš server se tato data neukládají. Když stránku otevřete, prohlížeč názvy a hesla odešle na server jen k ověření, že weby stále existují a hesla platí. Server si je nikam neuloží.</li>
-            <li>Seznam se uloží automaticky po zveřejnění webu. Hesla jsou v prohlížeči uložena nešifrovaně, proto na sdíleném počítači seznam po použití smažte.</li>
-            <li>Web ze seznamu odeberete tlačítkem „Odebrat ze seznamu“ (web tím nesmažete), všechna data pak vymazáním dat stránek v prohlížeči.</li>
-          </ul>
-
-          <h3>Cookies</h3>
-          <ul>
-            <li>Služba sama návštěvníkům nenastavuje žádné cookies (nahrané weby mohou používat vlastní, viz výše). Jedinou cookie je přihlašovací cookie správce služby (platná 30 dní), kterou běžní uživatelé nikdy nedostanou.</li>
+            <li>Po přihlášení nebo potvrzení zveřejnění webu nastavíme přihlašovací cookie (fp_user) platnou 30 dní, podle které služba pozná váš účet. Správce služby má vlastní přihlašovací cookie. Jiné cookies služba nenastavuje (nahrané weby mohou používat vlastní).</li>
+            <li>Do lokálního úložiště (localStorage) prohlížeče ukládáme zvolený jazyk. Pokud zaškrtnete volbu „Zapamatovat si mé údaje“, uložíme tam také zadaný e-mail, jméno a příjmení, abyste je nemuseli vyplňovat znovu; po zrušení volby a dalším odeslání je smažeme. U webů s heslem (zveřejněných z povolených IP adres) ukládáme jejich názvy a hesla; prohlížeč je posílá na server jen k ověření, že weby existují a hesla platí. Tato data na serveru neukládáme a smažete je vymazáním dat stránek v prohlížeči.</li>
             <li>Cloudflare může z bezpečnostních důvodů nastavit technické cookies (například __cf_bm nebo cf_clearance) k odlišení lidí od automatizovaných útoků.</li>
-            <li>Lokální úložiště i tyto cookies jsou nezbytné pro funkce, o které jste sami požádali, a proto k nim není potřeba souhlas.</li>
+            <li>Tyto cookies a lokální úložiště jsou nezbytné pro funkce, o které jste sami požádali (§ 89 odst. 3 zákona č. 127/2005 Sb.), a proto k nim není potřeba souhlas.</li>
           </ul>
 
           <h3>E-mailová komunikace</h3>
           <ul>
-            <li>Pokud nám napíšete (například nahlášení zneužití), zpracujeme vaši e-mailovou adresu, jméno a obsah zprávy, abychom věc vyřídili.</li>
-            <li>Zprávy uchováváme po dobu nezbytnou k vyřízení a následně nejdéle 3 roky pro případnou ochranu právních nároků. Právní základ: plnění povinností podle nařízení o digitálních službách a oprávněný zájem správce na vyřízení zprávy a ochraně právních nároků (čl. 6 odst. 1 písm. c) a f) GDPR).</li>
+            <li>Pokud nám napíšete (například nahlášení zneužití nebo žádost o smazání údajů), zpracujeme vaši e-mailovou adresu, jméno a obsah zprávy, abychom věc vyřídili.</li>
+            <li>Zprávy uchováváme po dobu nezbytnou k vyřízení a následně nejdéle 3 roky pro případnou ochranu právních nároků. Právní základ: plnění právních povinností (vyřízení oznámení podle nařízení o digitálních službách a žádostí podle GDPR) a oprávněný zájem správce na vyřízení zprávy a ochraně právních nároků (čl. 6 odst. 1 písm. c) a f) GDPR).</li>
+          </ul>
+
+          <h3>Smazání účtu a doba uchování</h3>
+          <ul>
+            <li>Účet můžete kdykoli smazat v nastavení účtu; smazání potvrdíte odkazem zaslaným e-mailem. Pokud se nemůžete přihlásit, napište na <a href="mailto:martin@balcar.me">martin@balcar.me</a>. Účty a weby může smazat také správce; i pro ně platí následující lhůty.</li>
+            <li>Po smazání účtu přestanou být jeho weby okamžitě veřejné a účet se nelze přihlásit. Údaje o účtu (e-mail, jméno, příjmení, IP adresa při vytvoření), soubory webů a historii aktivit uchováváme ještě <b>90 dní</b>, abychom mohli dohledat a řešit případné zneužití služby, ke kterému došlo před smazáním. Poté je trvale smažeme. Právní základ: oprávněný zájem správce (čl. 6 odst. 1 písm. f) GDPR). Po tuto dobu jsou údaje přístupné jen správci a používáme je pouze k prošetření nahlášeného nebo zjištěného zneužití. Lhůtu 90 dní jsme zvolili, protože oznámení o phishingu, malwaru nebo porušení práv obvykle přicházejí do několika týdnů od zveřejnění a pachatelé často účet smažou, jakmile je obsah nahlášen.</li>
+            <li>Pokud chcete údaje smazat okamžitě, napište na <a href="mailto:martin@balcar.me">martin@balcar.me</a>. Smažeme je bez zbytečného odkladu, nejpozději do jednoho měsíce, ledaže je potřebujeme k vyřešení konkrétního nahlášeného zneužití nebo k ochraně právních nároků; v takovém případě vám to sdělíme.</li>
+            <li>Když si po smazání vytvoříte účet se stejným e-mailem, vznikne nový, prázdný účet; data původního účtu k němu připojena nejsou.</li>
+            <li>Zálohy serveru (včetně databáze s údaji o účtech a historií aktivit) uchováváme nejdéle 30 dní, smazané údaje z nich proto zmizí nejpozději 30 dní po trvalém smazání. Ze záloh obnovujeme jen celou službu po havárii; dříve smazané údaje pak znovu smažeme.</li>
           </ul>
 
           <h2>3. Kdo další se k údajům dostane</h2>
           <ul>
-            <li><b>Cloudflare, Inc.</b> (USA) zajišťuje síťové připojení, šifrování (HTTPS) a ochranu služby jako zpracovatel. Údaje mohou být zpracovány v USA i v dalších zemích, kde má Cloudflare datová centra. Cloudflare je certifikován podle rámce ochrany údajů mezi EU a USA (EU-U.S. Data Privacy Framework) a předání je dále zajištěno standardními smluvními doložkami.</li>
-            <li>Poskytovatelé serverové infrastruktury a e-mailových služeb, které správce používá k provozu služby a ke komunikaci, a to jako zpracovatelé.</li>
+            <li><b>Cloudflare, Inc.</b> (USA) zajišťuje síťové připojení, šifrování (HTTPS) a ochranu služby jako zpracovatel. Údaje mohou být zpracovány v USA i v dalších zemích, kde má Cloudflare datová centra. Cloudflare je certifikován podle rámce ochrany údajů mezi EU a USA (EU-U.S. Data Privacy Framework) a předání je dále zajištěno standardními smluvními doložkami. Kopii doložek vám na požádání zašleme.</li>
+            <li><b>Resend, Inc.</b> (USA) rozesílá e-maily služby (potvrzovací, přihlašovací a další odkazy) jako zpracovatel; zpracovává přitom e-mailovou adresu příjemce, obsah e-mailu a technické údaje o doručení a uchovává je po dobu stanovenou ve smlouvě o zpracování. Předání do USA je zajištěno standardními smluvními doložkami podle rozhodnutí Komise (EU) 2021/914, které jsou součástí smlouvy o zpracování osobních údajů se společností Resend. Kopii doložek vám na požádání zašleme.</li>
+            <li>Poskytovatelé serverové infrastruktury, které správce používá k provozu služby, a to jako zpracovatelé.</li>
             <li>Obsah zveřejněných webů je veřejný a může ho vidět kdokoli.</li>
             <li>Orgánům veřejné moci údaje předáme jen tehdy, pokud nám to ukládá zákon.</li>
             <li>Údaje neprodáváme a nepoužíváme k reklamě.</li>
           </ul>
 
           <h2>4. Vaše práva</h2>
-          <p>Máte právo na přístup ke svým osobním údajům, na jejich opravu, výmaz a omezení zpracování, právo vznést námitku proti zpracování založenému na oprávněném zájmu a právo na přenositelnost údajů. Svá práva uplatníte e-mailem na <a href="mailto:martin@balcar.me">martin@balcar.me</a>. Protože služba nevede účty, u žádostí týkajících se konkrétního webu můžeme požádat o prokázání, že web patří vám (například heslem).</p>
+          <p>Máte právo na přístup ke svým osobním údajům, na jejich opravu, výmaz a omezení zpracování, právo vznést námitku proti zpracování založenému na oprávněném zájmu a právo na přenositelnost údajů. Většinu údajů vidíte přímo ve svém účtu, kde můžete také změnit jméno a smazat weby nebo celý účet. Ostatní práva uplatníte e-mailem na <a href="mailto:martin@balcar.me">martin@balcar.me</a>; odpovíme bez zbytečného odkladu, nejpozději do jednoho měsíce. Abychom ověřili, že žádost podáváte vy, můžeme vás požádat o odpověď z e-mailu vašeho účtu.</p>
+          <p><b>Právo vznést námitku:</b> Proti zpracování založenému na oprávněném zájmu (historie aktivit a IP adresy, jméno a příjmení, uchování 90 dní po smazání) můžete kdykoli vznést námitku z důvodů týkajících se vaší konkrétní situace. Údaje pak přestaneme zpracovávat, ledaže prokážeme závažné oprávněné důvody, které převažují nad vašimi zájmy, nebo je potřebujeme k určení, výkonu či obhajobě právních nároků.</p>
           <p>Máte také právo podat stížnost u Úřadu pro ochranu osobních údajů, Pplk. Sochora 27, 170 00 Praha 7, <a href="https://uoou.gov.cz" target="_blank" rel="noopener">uoou.gov.cz</a>.</p>
 
           <h2>5. Automatizované rozhodování</h2>
           <p>Neprovádíme automatizované rozhodování ani profilování ve smyslu čl. 22 GDPR.</p>
 
           <h2>6. Změny</h2>
-          <p>Tyto zásady můžeme aktualizovat. Novou verzi zveřejníme na této stránce s datem účinnosti.</p>
+          <p>Tyto zásady můžeme aktualizovat. Novou verzi zveřejníme na této stránce s datem účinnosti. O podstatných změnách vás informujeme e-mailem.</p>
         </section>
       </div>
 
@@ -112,72 +138,97 @@
         <section class="prose glass">
           <h2>1. Controller</h2>
           <p>The controller of personal data is Martin Balcar, a self-employed individual registered in the Czech Trade Licensing Register, ID No. (IČO) 21753580, place of business Starkoč 112, 547 01 Studnice, Czech Republic (the “controller”). Contact: <a href="mailto:martin@balcar.me">martin@balcar.me</a>.</p>
-          <p>Freepages works without registration or user accounts. We do not use analytics or advertising tools and we do not track you.</p>
+          <p>We do not use analytics or advertising tools and we do not track your behaviour on or across websites.</p>
 
           <h2>2. What data we process</h2>
 
+          <h3>Account: e-mail, first and last name</h3>
+          <ul>
+            <li>Publishing a site requires an account. When you first publish, you enter your e-mail address, first name and last name; the account is created once you confirm the e-mail with a link we send you. Together with the account we store the date it was created and the IP address it was created from.</li>
+            <li>We use your e-mail address to verify that it is yours, to sign you in (with one-time links), to confirm the deletion of your account, and for messages about your sites (for example about their removal). We do not send marketing messages.</li>
+            <li>Your first and last name are visible to you in your account and to the service administrator; we never publish them. They allow the administrator to find out who published a site when dealing with abuse or a notice of illegal content.</li>
+            <li>Purpose and legal basis: we process your e-mail address to provide the service and manage your account, as performance of a contract, i.e. the <a href="/podminky">terms of use</a> (Art. 6(1)(b) GDPR). We process your first and last name solely to deal with abuse of the service and notices of illegal content, based on the controller's legitimate interest (Art. 6(1)(f) GDPR), and we do not use them for anything else. Providing this data is a condition for publishing a site; without it a site cannot be published.</li>
+            <li>If someone enters an e-mail address when signing in or publishing, we send a link or notice to it even if no account uses it or someone else entered it. We keep the recipient's address, the type of e-mail, the time and the IP address the request came from in the activity history for 90 days (legitimate interest in preventing abuse, Art. 6(1)(f) GDPR).</li>
+          </ul>
+
+          <h3>Activity history and IP addresses</h3>
+          <ul>
+            <li>We record activities: account creation, e-mail confirmation, sign-ins, publishing, editing, renaming and deleting sites, creating previews, creating and revoking API tokens, name changes, e-mails sent (to whom and of what kind) and account deletion. Each entry contains the time, the IP address the activity came from and the site concerned. Some entries (account creation, e-mail confirmation, uploading, publishing and editing a site, e-mails sent) also contain the e-mail address; entries about publishing and editing a site also contain the number of files and the size; the e-mail confirmation entry also contains the IP address the files were uploaded from.</li>
+            <li>You can see your history (without e-mail addresses, and without the administrator's IP address on the administrator's actions) in your account. The service administrator sees the full history.</li>
+            <li>Purpose: security of the service, detecting and dealing with abuse (such as phishing or malware) and protecting legal claims. Legal basis: the controller's legitimate interest (Art. 6(1)(f) GDPR). You can object to this processing (see section 4).</li>
+            <li>We keep entries for at most 12 months from when they were made. Entries about a deleted site are deleted 90 days after the site is deleted, and all entries of a deleted account 90 days after the account is deleted. Entries that belong to no account or site (for example about an unconfirmed upload or an e-mail to an address without an account) are kept for 90 days from when they were made.</li>
+          </ul>
+
           <h3>IP address and technical request data</h3>
           <ul>
-            <li>All traffic to the service and to published sites, including uploaded files and passwords, passes through Cloudflare's network inside an encrypted connection. Cloudflare processes your IP address, technical request data (time, page address, browser type) and the content of the transmitted data in order to deliver it and protect the service against attacks. It keeps data according to its own <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">privacy policy</a>.</li>
-            <li>The service's application does not store your IP address in its logs. It keeps it briefly in memory only, to limit the number of uploads from one address (at most 60 per hour) and the number of wrong passwords. This data is deleted no later than one hour after the last upload or failed attempt, and also whenever the server restarts.</li>
-            <li>The service cannot technically be provided without processing your IP address.</li>
+            <li>All traffic to the service and to published sites, including uploaded files and sign-in data, passes through Cloudflare's network inside an encrypted connection. Cloudflare processes your IP address, technical request data (time, page address, browser type) and the content of the transmitted data in order to deliver it and protect the service against attacks. As a processor it handles the data under the data processing agreement; to the extent it acts as an independent controller under its own terms (for example for threat data), its <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">privacy policy</a> applies.</li>
+            <li>Apart from the activity history (see above), the application does not store IP addresses in its logs. It briefly keeps IP addresses and recipients' e-mail addresses in memory to limit the number of uploads, e-mails and wrong passwords; this data is deleted roughly one hour after the last attempt and whenever the server restarts.</li>
             <li>Purpose: running the service, its security and protection against abuse. Legal basis: the controller's legitimate interest (Art. 6(1)(f) GDPR).</li>
           </ul>
 
           <h3>Content of uploaded sites</h3>
           <ul>
-            <li>The files you upload are stored on the server and published at the site's address. They are publicly accessible to anyone.</li>
-            <li>We keep them until the site is deleted by you or the controller, or until the service is discontinued. Deleting a site removes its files from the server; if the server makes backups, the files may remain in them until the backups are overwritten.</li>
-            <li>Purpose: providing the service. Legal basis: performance of a contract, i.e. the <a href="/podminky">terms of use</a> (Art. 6(1)(b) GDPR). Uploading a site is voluntary.</li>
+            <li>The files you upload are stored on the server and, once you confirm your e-mail, published at the site's address. Published sites are publicly accessible to anyone.</li>
+            <li>Uploaded files whose publication you do not confirm within 24 hours are deleted. The first and last name you entered are deleted no later than 24 hours after the link expires. The e-mail address and IP address remain in the activity history (the upload and sent-e-mail entries) for 90 days from the upload.</li>
+            <li>Previews (preview-… addresses) stop working after 5 minutes and their files are deleted no later than a minute after that.</li>
+            <li>We keep published sites until you or the administrator delete them. A deleted site stops being public immediately; we keep its files and details for 90 more days to deal with possible abuse (legal basis: the controller's legitimate interest, Art. 6(1)(f) GDPR) and then delete them permanently.</li>
+            <li>Purpose: providing the service. Legal basis: performance of a contract (Art. 6(1)(b) GDPR). Uploading a site is voluntary.</li>
             <li>We recommend not putting personal data (your own or anyone else's) on uploaded sites unless it needs to be public, because the sites are public. See the <a href="/podminky">terms of use</a> for details.</li>
-            <li>If a site contains other people's personal data, whoever uploaded it is responsible for publishing it. In that case the controller only stores the data as a hosting provider and handles notices about it on the basis of legitimate interest (Art. 6(1)(f) GDPR). The same applies to any analytics or other tools embedded in an uploaded site.</li>
+            <li>If a site contains other people's personal data, whoever uploaded it is responsible for publishing it. The controller stores and makes this data available as a hosting provider, does not review content in advance and handles notices about it without undue delay (legitimate interest, Art. 6(1)(f) GDPR, and obligations under the Digital Services Act). The same applies to any analytics or other tools embedded in an uploaded site. If you believe a site publishes your personal data unlawfully, write to <a href="mailto:martin@balcar.me">martin@balcar.me</a>.</li>
           </ul>
 
-          <h3>Site details and password</h3>
+          <h3>Site details, API tokens and passwords</h3>
           <ul>
-            <li>For each site we store its name, the date it was created and last changed, the number of files, its size and a hash of its password. We do not store the password itself.</li>
-            <li>We do not store who uploaded a site or their IP address.</li>
-            <li>We keep this data for as long as the site exists. Legal basis: performance of a contract (Art. 6(1)(b) GDPR).</li>
+            <li>For each site we store its name, the account it belongs to, the date it was created and last changed, the number of files and its size.</li>
+            <li>API tokens and sign-in links are stored only as a hash; for tokens we also store their name, first 10 characters (prefix), and the date they were created and last used.</li>
+            <li>Sites published without an account from allowed IP addresses are protected by a password; we store only a hash of it, not the password itself.</li>
+            <li>IP addresses allowed to publish without an account are stored with an administrator's note for as long as the permission lasts.</li>
+            <li>Legal basis: performance of a contract (Art. 6(1)(b) GDPR).</li>
           </ul>
 
-          <h3>Storage in your browser</h3>
+          <h3>Cookies and storage in your browser</h3>
           <ul>
-            <li>The list of your sites (name and password) and your chosen language are kept in your browser's local storage. This data is not stored on our server. When you open the page, the browser sends the names and passwords to the server only to check that the sites still exist and the passwords are still valid; the server does not keep them.</li>
-            <li>The list is saved automatically after you publish a site. Passwords are stored unencrypted in the browser, so clear the list after use on a shared computer.</li>
-            <li>You can remove a site from the list with the “Remove from list” button (this does not delete the site), and all of the data by clearing the site data in your browser.</li>
-          </ul>
-
-          <h3>Cookies</h3>
-          <ul>
-            <li>The service itself sets no cookies for visitors (uploaded sites may use their own, see above). The only cookie is the login cookie of the service administrator (valid for 30 days), which regular users never receive.</li>
+            <li>When you sign in or confirm publishing a site, we set a sign-in cookie (fp_user), valid for 30 days, by which the service recognises your account. The service administrator has a separate sign-in cookie. The service sets no other cookies (uploaded sites may use their own).</li>
+            <li>In your browser's local storage we keep your chosen language. If you tick "Remember my details", we also keep the e-mail and name you entered there so you do not have to type them again; if you untick it, they are deleted the next time you submit. For password-protected sites (published from allowed IP addresses) we keep their names and passwords; the browser sends them to the server only to check that the sites exist and the passwords are valid. This data is not stored on the server, and you delete it by clearing the site data in your browser.</li>
             <li>For security reasons, Cloudflare may set technical cookies (for example __cf_bm or cf_clearance) to tell people apart from automated attacks.</li>
-            <li>The local storage and these cookies are strictly necessary for features you requested, so no consent is required for them.</li>
+            <li>These cookies and the local storage are strictly necessary for features you requested (Section 89(3) of Czech Act No. 127/2005 Coll.), so no consent is required for them.</li>
           </ul>
 
           <h3>E-mail communication</h3>
           <ul>
-            <li>If you write to us (for example to report abuse), we process your e-mail address, name and the content of your message to handle your request.</li>
-            <li>We keep messages for as long as needed to handle them and then for at most 3 years to protect possible legal claims. Legal basis: compliance with obligations under the Digital Services Act and the controller's legitimate interest in handling the message and defending legal claims (Art. 6(1)(c) and (f) GDPR).</li>
+            <li>If you write to us (for example to report abuse or to ask for your data to be deleted), we process your e-mail address, name and the content of your message to handle your request.</li>
+            <li>We keep messages for as long as needed to handle them and then for at most 3 years to protect possible legal claims. Legal basis: compliance with legal obligations (handling notices under the Digital Services Act and requests under the GDPR) and the controller's legitimate interest in handling the message and defending legal claims (Art. 6(1)(c) and (f) GDPR).</li>
+          </ul>
+
+          <h3>Deleting your account and retention</h3>
+          <ul>
+            <li>You can delete your account at any time in its settings and confirm the deletion with a link sent by e-mail. If you cannot sign in, write to <a href="mailto:martin@balcar.me">martin@balcar.me</a>. The administrator can also delete accounts and sites; the same periods apply.</li>
+            <li>After an account is deleted, its sites stop being public immediately and the account can no longer sign in. We keep the account details (e-mail, name, IP address at creation), the sites' files and the activity history for <b>90 more days</b> so we can trace and deal with any abuse of the service that happened before the deletion. We then delete them permanently. Legal basis: the controller's legitimate interest (Art. 6(1)(f) GDPR). During this time the data is accessible only to the controller and used solely to investigate reported or detected abuse. We chose 90 days because reports of phishing, malware or infringements usually arrive within a few weeks of publication, and abusers often delete their account once the content is reported.</li>
+            <li>If you want your data deleted immediately, write to <a href="mailto:martin@balcar.me">martin@balcar.me</a>. We will delete it without undue delay and within one month at the latest, unless we need it to resolve a specific reported abuse or to protect legal claims, in which case we will tell you.</li>
+            <li>If you create an account with the same e-mail address after deletion, it is a new, empty account; the data of the old account is not linked to it.</li>
+            <li>Server backups (including the database with account details and activity history) are kept for at most 30 days, so deleted data disappears from them no later than 30 days after permanent deletion. Backups are used only to restore the whole service after a failure; any previously deleted data is then deleted again.</li>
           </ul>
 
           <h2>3. Who else can access the data</h2>
           <ul>
-            <li><b>Cloudflare, Inc.</b> (USA) provides network connectivity, encryption (HTTPS) and protection of the service as a processor. Data may be processed in the USA and in other countries where Cloudflare operates data centres. Cloudflare is certified under the EU-U.S. Data Privacy Framework, and transfers are additionally covered by standard contractual clauses.</li>
-            <li>Providers of the server infrastructure and e-mail services the controller uses to run the service and to communicate, acting as processors.</li>
+            <li><b>Cloudflare, Inc.</b> (USA) provides network connectivity, encryption (HTTPS) and protection of the service as a processor. Data may be processed in the USA and in other countries where Cloudflare operates data centres. Cloudflare is certified under the EU-U.S. Data Privacy Framework, and transfers are additionally covered by standard contractual clauses. We will send you a copy of the clauses on request.</li>
+            <li><b>Resend, Inc.</b> (USA) sends the service's e-mails (confirmation, sign-in and other links) as a processor, processing the recipient's address, the content of the e-mail and technical delivery data, and keeps them for the period set in the data processing agreement. Transfers to the USA are covered by standard contractual clauses under Commission Decision (EU) 2021/914, included in the data processing agreement with Resend. We will send you a copy of the clauses on request.</li>
+            <li>Providers of the server infrastructure the controller uses to run the service, acting as processors.</li>
             <li>The content of published sites is public and can be seen by anyone.</li>
             <li>We share data with public authorities only where the law requires us to.</li>
             <li>We do not sell data or use it for advertising.</li>
           </ul>
 
           <h2>4. Your rights</h2>
-          <p>You have the right to access your personal data, to have it corrected or erased, to restrict its processing, to object to processing based on legitimate interest, and to data portability. To exercise your rights, write to <a href="mailto:martin@balcar.me">martin@balcar.me</a>. As the service has no accounts, for requests about a specific site we may ask you to show that the site is yours (for example with its password).</p>
+          <p>You have the right to access your personal data, to have it corrected or erased, to restrict its processing, to object to processing based on legitimate interest, and to data portability. You can see most of your data directly in your account, where you can also change your name and delete sites or the whole account. To exercise your other rights, write to <a href="mailto:martin@balcar.me">martin@balcar.me</a>; we will reply without undue delay and within one month at the latest. To verify that the request comes from you, we may ask you to reply from your account's e-mail address.</p>
+          <p><b>Right to object:</b> You may object at any time, on grounds relating to your particular situation, to processing based on legitimate interest (activity history and IP addresses, first and last name, the 90-day retention after deletion). We will then stop, unless we demonstrate compelling legitimate grounds that override your interests, or need the data to establish, exercise or defend legal claims.</p>
           <p>You also have the right to lodge a complaint with the Czech Office for Personal Data Protection (Úřad pro ochranu osobních údajů), Pplk. Sochora 27, 170 00 Prague 7, <a href="https://uoou.gov.cz" target="_blank" rel="noopener">uoou.gov.cz</a>.</p>
 
           <h2>5. Automated decision-making</h2>
           <p>We do not carry out automated decision-making or profiling within the meaning of Art. 22 GDPR.</p>
 
           <h2>6. Changes</h2>
-          <p>We may update this policy and will publish the new version on this page with its effective date.</p>
+          <p>We may update this policy and will publish the new version on this page with its effective date. We will notify you of significant changes by e-mail.</p>
         </section>
       </div>
     </div>

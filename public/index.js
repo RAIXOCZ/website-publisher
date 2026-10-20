@@ -2,7 +2,14 @@
 
 const state = {
   config: null,
-  pending: null, // files waiting for a name fix or a password: { files, name? }
+  pending: null, // files waiting for a decision on a name conflict: { files, name }
+  files: [], // [{ path, file }] new files, [{ path, from, size }] files kept from the edited site
+  emptyDirs: new Set(), // folders created with "New folder" that have no files yet
+  collapsed: new Set(), // folder paths shown collapsed
+  seenDirs: new Set(),
+  dragging: null, // { path, kind } while a tree row is being dragged
+  edit: null, // { name, password } while editing an existing site
+  previewTimer: null,
 };
 
 const els = {
@@ -15,12 +22,42 @@ const els = {
   progress: $('#progress'),
   bar: $('#progress-bar'),
   result: $('#result'),
+  tree: $('#staged-list'),
 };
+
+const signedIn = () => Boolean(state.config.user);
+// Publishing without an account is possible only from whitelisted IPs (site passwords).
+const passwordMode = () => !signedIn() && state.config.whitelisted;
+const needsIdentity = () => !signedIn() && !state.config.whitelisted && !state.config.authed;
 
 async function init() {
   state.config = await api('/config');
-  updatePreview();
-  renderMySites();
+  updateAddress();
+  $('#nav-account').textContent = t(signedIn() ? 'nav.account' : 'nav.login');
+  restoreIdentity();
+  renderStaged();
+  await renderMySites();
+  await handleQuery();
+}
+
+async function handleQuery() {
+  const params = new URLSearchParams(location.search);
+  if (![...params.keys()].length) return;
+  history.replaceState(null, '', location.pathname);
+  if (params.has('accountDeleted')) {
+    showNotice(t('notice.accountDeleted', { days: state.config.retentionDays, contact: state.config.contact }));
+  }
+  if (params.has('published') && signedIn()) {
+    const { sites } = await api('/me');
+    const site = sites.find((s) => s.name === params.get('published'));
+    if (site) done({ ...site, hasIndex: true });
+  }
+  if (params.has('edit')) startEdit(params.get('edit'), ownedPassword(params.get('edit')));
+}
+
+function showNotice(text) {
+  $('#notice').textContent = text;
+  $('#notice').hidden = false;
 }
 
 /* ---------- address bar ---------- */
@@ -30,43 +67,41 @@ function siteUrl(name) {
 }
 
 // The name input sits inside an address bar: <prefix>[name]<suffix>.
-function updatePreview() {
+function updateAddress() {
   const [prefix, suffix] = state.config.urlTemplate.split('{name}');
   $('#url-prefix').textContent = prefix;
   $('#url-suffix').textContent = suffix;
   $('#how-live').textContent = siteUrl(t('how.example')).replace(/^https?:\/\//, '');
 }
 
-// After a name problem, pressing Enter retries with the files already chosen.
 els.name.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && state.files.length) {
     e.preventDefault();
-    start(stagedFiles());
+    publish();
   }
 });
 els.name.addEventListener('blur', () => {
   els.name.value = slugify(els.name.value);
-  updatePreview();
 });
 
-/* ---------- picking files ---------- */
+/* ---------- picking files from the computer ---------- */
 
 $('#pick-folder').addEventListener('click', async (e) => {
   e.stopPropagation();
-  stageFolderSelection(await pickFiles());
+  addFolder(await pickFiles());
 });
 $('#pick-files').addEventListener('click', async (e) => {
   e.stopPropagation();
-  stageFiles((await pickFiles({ folder: false })).map((f) => f.file));
+  addFiles((await pickFiles({ folder: false })).map((f) => f.file));
 });
 els.dropzone.addEventListener('click', async (e) => {
   if (e.target.closest('a, button')) return;
-  stageFolderSelection(await pickFiles());
+  addFolder(await pickFiles());
 });
 els.dropzone.addEventListener('keydown', async (e) => {
   if (e.target === els.dropzone && (e.key === 'Enter' || e.key === ' ')) {
     e.preventDefault();
-    stageFolderSelection(await pickFiles());
+    addFolder(await pickFiles());
   }
 });
 
@@ -89,27 +124,27 @@ els.dropzone.addEventListener('drop', (e) => {
   e.preventDefault();
   dragDepth = 0;
   els.dropzone.classList.remove('dragging');
-  stageDataTransfer(e.dataTransfer);
+  addDataTransfer(e.dataTransfer);
 });
 
 // Adds whatever was dropped from the computer, into folder `dest` ('' = root).
-async function stageDataTransfer(dataTransfer, dest = '') {
+async function addDataTransfer(dataTransfer, dest = '') {
   // Entries must be grabbed synchronously, before any await.
   const entries = [...dataTransfer.items]
     .filter((item) => item.kind === 'file')
     .map((item) => (item.webkitGetAsEntry ? item.webkitGetAsEntry() : null));
-  if (!entries.length || !entries.every(Boolean)) return stageFiles([...dataTransfer.files], dest);
+  if (!entries.length || !entries.every(Boolean)) return addFiles([...dataTransfer.files], dest);
   const loose = [];
   for (const entry of entries) {
     if (entry.isDirectory) {
       const files = [];
       await walk(entry, '', files);
-      stageFolder(entry.name, files, dest);
+      addFolder(files, dest, entry.name);
     } else {
       loose.push(await new Promise((resolve, reject) => entry.file(resolve, reject)));
     }
   }
-  if (loose.length) stageFiles(loose, dest);
+  if (loose.length) addFiles(loose, dest);
 }
 
 function readAllEntries(reader) {
@@ -136,13 +171,7 @@ async function walk(entry, prefix, out) {
   }
 }
 
-/* ---------- publishing ---------- */
-
-/* ---------- staging: the site's file tree, built before publishing ---------- */
-
-state.files = []; // [{ path, file }] exactly as the site will be published
-state.collapsed = new Set(); // folder paths shown collapsed
-state.dragging = null; // { path, kind } while a tree row is being dragged
+/* ---------- the site's file tree, built before publishing ---------- */
 
 function randomName() {
   const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -150,6 +179,16 @@ function randomName() {
 }
 
 const joinPath = (dir, name) => (dir ? `${dir}/${name}` : name);
+const parentOf = (path) => (path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '');
+const baseName = (path) => path.slice(path.lastIndexOf('/') + 1);
+const sizeOf = (f) => (f.file ? f.file.size : f.size || 0);
+const isInside = (p, dir) => p === dir || p.startsWith(`${dir}/`);
+
+function changed() {
+  els.error.hidden = true;
+  hidePreview();
+  renderStaged();
+}
 
 // Adds files; a file at an existing path replaces the old one.
 function putFiles(list) {
@@ -157,52 +196,70 @@ function putFiles(list) {
   if (!list.length) return;
   const incoming = new Set(list.map((f) => f.path));
   state.files = state.files.filter((f) => !incoming.has(f.path)).concat(list);
-  els.error.hidden = true;
-  renderStaged();
+  for (const f of list) for (let d = parentOf(f.path); d; d = parentOf(d)) state.emptyDirs.delete(d);
+  changed();
 }
 
 function prefillName(fallback) {
-  if (!slugify(els.name.value)) els.name.value = slugify(fallback) || randomName();
+  if (!state.edit && !slugify(els.name.value)) els.name.value = slugify(fallback) || randomName();
 }
 
-// A folder's files arrive as "folder/…". Into an empty tree the folder's
-// contents become the site root; otherwise the folder is added as a subfolder.
-function stageFolder(label, files, dest = '') {
-  const asRoot = state.files.length === 0 && !dest;
+// A picked folder arrives as "folder/…". Into an empty tree its contents
+// become the site root; otherwise it is added as a subfolder of `dest`.
+function addFolder(files, dest = '', label = files[0]?.path.split('/')[0]) {
+  if (!files.length) return;
+  const asRoot = state.files.length === 0 && state.emptyDirs.size === 0 && !dest;
   if (asRoot) prefillName(label);
-  putFiles(files.map(({ path, file }) => ({ path: joinPath(dest, asRoot ? path.split('/').slice(1).join('/') : path), file })));
+  const strip = (path) => (path.startsWith(`${label}/`) ? path.slice(label.length + 1) : path);
+  putFiles(files.map(({ path, file }) => ({ path: joinPath(dest, asRoot ? strip(path) : path), file })));
 }
 
-function stageFolderSelection(files) {
-  if (files.length) stageFolder(files[0].path.split('/')[0], files);
-}
-
-function stageFiles(files, dest = '') {
+function addFiles(files, dest = '') {
   if (!files.length) return;
   if (state.files.length === 0) prefillName(files.length === 1 && /\.zip$/i.test(files[0].name) ? files[0].name : '');
   putFiles(files.map((file) => ({ path: joinPath(dest, file.name), file })));
 }
 
-function stagedFiles() {
-  return state.files;
+// Replaces everything inside folder `dir` ('' = the whole site) with a picked folder's contents.
+function replaceFolder(dir, files) {
+  if (!files.length) return;
+  const label = files[0].path.split('/')[0];
+  state.files = state.files.filter((f) => !(dir ? isInside(f.path, dir) : true));
+  if (!dir) state.emptyDirs.clear();
+  putFiles(files.map(({ path, file }) => ({ path: joinPath(dir, path.slice(label.length + 1)), file })));
+  toast(t('toast.replacedFolder', { name: dir ? `${dir}/` : t('tree.root') }));
 }
 
-function buildTree(files) {
+function replaceFile(path, file) {
+  state.files = state.files.map((f) => (f.path === path ? { path, file } : f));
+  changed();
+  toast(t('toast.replacedFile', { name: baseName(path) }));
+}
+
+function buildTree() {
   const root = { name: '', path: '', dirs: new Map(), files: [], count: 0, size: 0 };
-  for (const { path, file } of files) {
-    const parts = path.split('/');
+  const dirNode = (path) => {
     let node = root;
-    node.count++;
-    node.size += file.size;
-    for (const part of parts.slice(0, -1)) {
+    for (const part of path ? path.split('/') : []) {
       if (!node.dirs.has(part)) {
         node.dirs.set(part, { name: part, path: joinPath(node.path, part), dirs: new Map(), files: [], count: 0, size: 0 });
       }
       node = node.dirs.get(part);
-      node.count++;
-      node.size += file.size;
     }
-    node.files.push({ name: parts.at(-1), path, size: file.size });
+    return node;
+  };
+  for (const dir of state.emptyDirs) dirNode(dir);
+  for (const item of state.files) {
+    const size = sizeOf(item);
+    let node = root;
+    root.count++;
+    root.size += size;
+    for (const part of item.path.split('/').slice(0, -1)) {
+      node = dirNode(joinPath(node.path, part));
+      node.count++;
+      node.size += size;
+    }
+    node.files.push({ name: baseName(item.path), path: item.path, size, isNew: Boolean(item.file && state.edit) });
   }
   return root;
 }
@@ -218,13 +275,13 @@ function allFolders(node, out = []) {
 const ICONS = {
   dir: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
   file: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>',
-  move: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>',
+  more: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
   chevron: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
 };
 
-function treeRow({ kind, path, name, meta, depth }) {
+function treeRow({ kind, path, name, meta, depth, isNew = false, empty = false }) {
   const li = document.createElement('li');
-  li.className = `tree-row tree-${kind}`;
+  li.className = `tree-row tree-${kind}${empty ? ' tree-empty' : ''}`;
   li.dataset.path = path;
   li.dataset.kind = kind;
   li.style.setProperty('--depth', depth);
@@ -234,77 +291,149 @@ function treeRow({ kind, path, name, meta, depth }) {
     (kind === 'dir'
       ? `<button type="button" class="twisty" data-act="toggle" aria-expanded="${!collapsed}">${ICONS.chevron}</button>`
       : '<span class="twisty-space"></span>') +
-    `<span class="tree-icon">${ICONS[kind === 'file' ? 'file' : 'dir']}</span><span class="tree-name"></span><span class="tree-meta"></span>` +
-    (kind === 'root'
-      ? ''
-      : `<span class="tree-actions"><button type="button" class="tree-btn" data-act="move">${ICONS.move}</button><button type="button" class="tree-btn tree-remove" data-act="remove">×</button></span>`);
+    `<span class="tree-icon">${ICONS[kind === 'file' ? 'file' : 'dir']}</span><span class="tree-name"></span>` +
+    (isNew ? `<span class="tree-badge">${t('tree.new')}</span>` : '') +
+    '<span class="tree-meta"></span>' +
+    `<span class="tree-actions"><button type="button" class="tree-btn" data-act="menu" aria-haspopup="menu">${ICONS.more}</button>` +
+    (kind === 'root' ? '' : '<button type="button" class="tree-btn tree-remove" data-act="remove">×</button>') +
+    '</span>';
   $('.tree-name', li).textContent = name;
   $('.tree-meta', li).textContent = meta;
+  $('[data-act=menu]', li).setAttribute('aria-label', t('tree.actions', { name }));
+  $('[data-act=menu]', li).title = t('tree.actions', { name });
   if (kind !== 'root') {
-    $('[data-act=move]', li).setAttribute('aria-label', t('tree.move', { name }));
-    $('[data-act=move]', li).title = t('tree.move', { name });
     $('[data-act=remove]', li).setAttribute('aria-label', t('staged.remove', { name }));
+    $('[data-act=remove]', li).title = t('staged.remove', { name });
   }
   return li;
 }
 
 function renderStaged() {
   const files = state.files;
-  $('#staged').hidden = files.length === 0;
-  els.dropzone.classList.toggle('compact', files.length > 0);
-  $('#drop-title').textContent = t(files.length ? 'drop.titleMore' : 'drop.title');
-  const totalSize = files.reduce((sum, f) => sum + f.file.size, 0);
+  const hasContent = files.length > 0 || state.emptyDirs.size > 0 || Boolean(state.edit);
+  $('#staged').hidden = !hasContent || !els.progress.hidden || !els.result.hidden || !$('#pending').hidden;
+  els.dropzone.hidden = hasContent || !els.progress.hidden || !els.result.hidden || !$('#pending').hidden;
+  const totalSize = files.reduce((sum, f) => sum + sizeOf(f), 0);
   $('#staged-summary').textContent = `${filesLabel(files.length)} · ${formatBytes(totalSize)}`;
+  $('[data-tool="replace-all"]').hidden = !state.edit;
 
-  const tree = buildTree(files);
+  // Who publishes: e-mail form for visitors, "signed in as" for accounts.
+  $('#identity').hidden = !needsIdentity() || Boolean(state.edit);
+  $('#signed-as').hidden = !signedIn();
+  if (signedIn()) $('#signed-as').textContent = t('identity.signedAs', { email: state.config.user.email });
+  $('#publish').textContent = t(state.edit ? 'edit.save' : needsIdentity() ? 'publish.confirm' : 'publish');
+
+  const tree = buildTree();
   const rows = [treeRow({ kind: 'root', path: '', name: t('tree.root'), meta: '', depth: 0 })];
   const walkNode = (node, depth) => {
     const dirs = [...node.dirs.values()].sort((a, b) => a.name.localeCompare(b.name));
     const leaves = [...node.files].sort((a, b) => (b.name === 'index.html') - (a.name === 'index.html') || a.name.localeCompare(b.name));
     for (const dir of dirs) {
-      if (!state.seenDirs?.has(dir.path)) {
-        (state.seenDirs ??= new Set()).add(dir.path);
+      if (!state.seenDirs.has(dir.path)) {
+        state.seenDirs.add(dir.path);
         if (dir.count > 20) state.collapsed.add(dir.path); // big folders start collapsed
       }
-      rows.push(treeRow({ kind: 'dir', path: dir.path, name: `${dir.name}/`, meta: `${filesLabel(dir.count)} · ${formatBytes(dir.size)}`, depth }));
+      const empty = dir.count === 0;
+      const meta = empty ? t('tree.emptyDir') : `${filesLabel(dir.count)} · ${formatBytes(dir.size)}`;
+      rows.push(treeRow({ kind: 'dir', path: dir.path, name: `${dir.name}/`, meta, depth, empty }));
       if (!state.collapsed.has(dir.path)) walkNode(dir, depth + 1);
     }
-    for (const leaf of leaves) rows.push(treeRow({ kind: 'file', path: leaf.path, name: leaf.name, meta: formatBytes(leaf.size), depth }));
+    for (const leaf of leaves) rows.push(treeRow({ kind: 'file', path: leaf.path, name: leaf.name, meta: formatBytes(leaf.size), depth, isNew: leaf.isNew }));
   };
   walkNode(tree, 1);
-  $('#staged-list').replaceChildren(...rows);
+  els.tree.replaceChildren(...rows);
   state.tree = tree;
 }
 
-const parentOf = (path) => (path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '');
-
 // Moves a file or a whole folder into folder `dest` ('' = root).
 function moveEntry(path, kind, dest) {
-  const target = joinPath(dest, path.split('/').pop());
-  if (target === path) return;
-  if (kind === 'dir' && (dest === path || dest.startsWith(`${path}/`))) return;
+  renameEntry(path, kind, joinPath(dest, baseName(path)));
+}
+
+// Gives a file or folder a new path (rename or move).
+function renameEntry(path, kind, target) {
+  if (target === path) return renderStaged();
+  if (kind === 'dir' && isInside(target, path)) return renderStaged();
   const inside = (p) => (kind === 'dir' ? p.startsWith(`${path}/`) : p === path);
-  const moved = state.files.filter((f) => inside(f.path)).map((f) => ({ path: target + f.path.slice(path.length), file: f.file }));
+  const moved = state.files.filter((f) => inside(f.path)).map((f) => ({ ...f, path: target + f.path.slice(path.length) }));
   const movedPaths = new Set(moved.map((f) => f.path));
   state.files = state.files.filter((f) => !inside(f.path) && !movedPaths.has(f.path)).concat(moved);
-  if (kind === 'dir' && state.collapsed.delete(path)) state.collapsed.add(target);
-  renderStaged();
+  if (kind === 'dir') {
+    for (const dir of [...state.emptyDirs]) {
+      if (isInside(dir, path)) {
+        state.emptyDirs.delete(dir);
+        state.emptyDirs.add(target + dir.slice(path.length));
+      }
+    }
+    if (state.collapsed.delete(path)) state.collapsed.add(target);
+  }
+  changed();
 }
 
 function removeEntry(path, kind) {
   state.files = state.files.filter((f) => (kind === 'dir' ? !f.path.startsWith(`${path}/`) : f.path !== path));
-  renderStaged();
+  if (kind === 'dir') for (const dir of [...state.emptyDirs]) if (isInside(dir, path)) state.emptyDirs.delete(dir);
+  changed();
 }
 
-// "Move to…" for touch screens: a folder picker in place of the button.
+const validSegment = (name) => name && !name.includes('/') && name !== '.' && name !== '..' && !/[\\\0]/.test(name);
+
+// Edits a row's name in place; `onCommit(newName)` runs on Enter or blur.
+function inlineName(row, initial, onCommit, onCancel = renderStaged) {
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'tree-input';
+  input.value = initial;
+  input.spellcheck = false;
+  input.setAttribute('aria-label', t('tree.nameLabel'));
+  $('.tree-name', row).replaceChildren(input);
+  row.draggable = false;
+  let finished = false;
+  const finish = (commit) => {
+    if (finished) return;
+    finished = true;
+    const value = input.value.trim();
+    if (commit && validSegment(value)) onCommit(value);
+    else {
+      if (commit && value) toast(t('tree.badName'));
+      onCancel();
+    }
+  };
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      finish(true);
+    } else if (e.key === 'Escape') finish(false);
+  });
+  input.addEventListener('blur', () => finish(true));
+  input.focus();
+  const dot = initial.lastIndexOf('.');
+  input.setSelectionRange(0, dot > 0 ? dot : initial.length);
+}
+
+function newFolder(parent) {
+  const taken = new Set([...state.tree ? allFolders(state.tree) : []]);
+  let name = t('tree.newFolderName');
+  for (let i = 2; taken.has(joinPath(parent, name)); i++) name = `${t('tree.newFolderName')}-${i}`;
+  const path = joinPath(parent, name);
+  state.emptyDirs.add(path);
+  state.collapsed.delete(parent);
+  renderStaged();
+  const row = els.tree.querySelector(`.tree-row[data-path="${CSS.escape(path)}"]`);
+  inlineName(row, name, (value) => {
+    state.emptyDirs.delete(path);
+    state.emptyDirs.add(joinPath(parent, value));
+    renderStaged();
+  });
+}
+
+// "Move to…": a folder picker in place of the row's buttons (works on touch screens too).
 function showMoveMenu(row) {
   const { path, kind } = row.dataset;
   const select = document.createElement('select');
   select.className = 'tree-move';
   select.setAttribute('aria-label', t('tree.move', { name: path }));
-  const targets = ['', ...allFolders(state.tree)].filter(
-    (dest) => dest !== parentOf(path) && !(kind === 'dir' && (dest === path || dest.startsWith(`${path}/`))),
-  );
+  const targets = ['', ...allFolders(state.tree)].filter((dest) => dest !== parentOf(path) && !(kind === 'dir' && isInside(dest, path)));
   select.append(new Option(t('tree.moveTo'), '', true, true));
   select.options[0].disabled = true;
   for (const dest of targets) select.append(new Option(dest ? `${dest}/` : t('tree.root'), dest || '/'));
@@ -314,8 +443,93 @@ function showMoveMenu(row) {
   select.focus();
 }
 
-const treeList = $('#staged-list');
-treeList.addEventListener('click', (e) => {
+/* ---------- the ⋯ menu of a tree row ---------- */
+
+function menuItems(kind) {
+  if (kind === 'file') return ['replace-file', 'rename', 'move', '-', 'remove'];
+  const add = ['add-files', 'add-folder', 'mkdir', '-', 'replace-folder'];
+  return kind === 'root' ? add : [...add, 'rename', 'move', '-', 'remove'];
+}
+
+let openMenu = null;
+function closeMenu() {
+  openMenu?.remove();
+  openMenu = null;
+}
+
+function showMenu(button) {
+  closeMenu();
+  const row = button.closest('.tree-row');
+  const { kind } = row.dataset;
+  const menu = document.createElement('div');
+  menu.className = 'menu glass';
+  menu.setAttribute('role', 'menu');
+  for (const item of menuItems(kind)) {
+    if (item === '-') {
+      menu.append(Object.assign(document.createElement('hr'), {}));
+      continue;
+    }
+    const entry = document.createElement('button');
+    entry.type = 'button';
+    entry.setAttribute('role', 'menuitem');
+    entry.dataset.menu = item;
+    entry.textContent = t(`menu.${item}${kind === 'root' && item === 'replace-folder' ? '-root' : ''}`);
+    if (item === 'remove') entry.className = 'danger';
+    menu.append(entry);
+  }
+  menu.addEventListener('click', (e) => {
+    const entry = e.target.closest('button[data-menu]');
+    if (!entry) return;
+    closeMenu();
+    runMenu(entry.dataset.menu, row);
+  });
+  menu.addEventListener('keydown', (e) => {
+    const items = [...menu.querySelectorAll('button')];
+    const i = items.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown') items[(i + 1) % items.length].focus();
+    else if (e.key === 'ArrowUp') items[(i - 1 + items.length) % items.length].focus();
+    else if (e.key === 'Escape') {
+      closeMenu();
+      button.focus();
+    } else return;
+    e.preventDefault();
+  });
+  document.body.append(menu);
+  const rect = button.getBoundingClientRect();
+  const width = menu.offsetWidth;
+  const height = menu.offsetHeight;
+  const left = Math.max(8, Math.min(rect.right - width, window.innerWidth - width - 8));
+  const below = rect.bottom + 4 + height < window.innerHeight;
+  menu.style.setProperty('--x', `${left + window.scrollX}px`);
+  menu.style.setProperty('--y', `${(below ? rect.bottom + 4 : rect.top - height - 4) + window.scrollY}px`);
+  openMenu = menu;
+  menu.owner = button;
+  menu.querySelector('button').focus();
+}
+
+document.addEventListener('click', (e) => {
+  if (openMenu && !e.target.closest('.menu, [data-act=menu]')) closeMenu();
+});
+window.addEventListener('resize', closeMenu);
+
+async function runMenu(action, row) {
+  const { path, kind } = row.dataset;
+  const dir = kind === 'file' ? parentOf(path) : path;
+  if (action === 'add-files') addFiles((await pickFiles({ folder: false })).map((f) => f.file), dir);
+  else if (action === 'add-folder') addFolder(await pickFiles(), dir);
+  else if (action === 'mkdir') newFolder(dir);
+  else if (action === 'replace-folder') replaceFolder(dir, cleanFiles(await pickFiles()));
+  else if (action === 'replace-file') {
+    const [picked] = await pickFiles({ folder: false, multiple: false });
+    if (picked) replaceFile(path, picked.file);
+  } else if (action === 'rename') {
+    const current = baseName(path);
+    inlineName(row, current, (value) => renameEntry(path, kind, joinPath(parentOf(path), value)));
+  } else if (action === 'move') showMoveMenu(row);
+  else if (action === 'remove') removeEntry(path, kind);
+}
+
+els.tree.addEventListener('click', (e) => {
   const button = e.target.closest('button[data-act]');
   if (!button) return;
   const row = button.closest('.tree-row');
@@ -325,17 +539,24 @@ treeList.addEventListener('click', (e) => {
     renderStaged();
   } else if (button.dataset.act === 'remove') {
     removeEntry(path, kind);
-  } else if (button.dataset.act === 'move') {
-    showMoveMenu(row);
+  } else if (button.dataset.act === 'menu') {
+    const same = openMenu?.owner === button;
+    closeMenu();
+    if (!same) showMenu(button);
   }
+});
+els.tree.addEventListener('dblclick', (e) => {
+  const row = e.target.closest('.tree-row');
+  if (!row || row.dataset.kind === 'root' || e.target.closest('button, input')) return;
+  runMenu('rename', row);
 });
 
 // Drag rows onto folders to move them; drop files from the computer onto a folder to add them there.
 const dropFolderOf = (row) => (row.dataset.kind === 'file' ? parentOf(row.dataset.path) : row.dataset.path);
 function clearDropTarget() {
-  for (const el of treeList.querySelectorAll('.drop-target')) el.classList.remove('drop-target');
+  for (const el of els.tree.querySelectorAll('.drop-target')) el.classList.remove('drop-target');
 }
-treeList.addEventListener('dragstart', (e) => {
+els.tree.addEventListener('dragstart', (e) => {
   const row = e.target.closest('.tree-row');
   if (!row || row.dataset.kind === 'root') return;
   state.dragging = { path: row.dataset.path, kind: row.dataset.kind };
@@ -343,25 +564,24 @@ treeList.addEventListener('dragstart', (e) => {
   e.dataTransfer.setData('text/plain', row.dataset.path);
   row.classList.add('dragging');
 });
-treeList.addEventListener('dragend', () => {
+els.tree.addEventListener('dragend', () => {
   state.dragging = null;
   clearDropTarget();
-  for (const el of treeList.querySelectorAll('.dragging')) el.classList.remove('dragging');
+  for (const el of els.tree.querySelectorAll('.dragging')) el.classList.remove('dragging');
 });
-treeList.addEventListener('dragover', (e) => {
+els.tree.addEventListener('dragover', (e) => {
   const row = e.target.closest('.tree-row');
   if (!row) return;
   e.preventDefault();
   e.dataTransfer.dropEffect = state.dragging ? 'move' : 'copy';
   const folder = dropFolderOf(row);
   clearDropTarget();
-  const target = treeList.querySelector(`.tree-row[data-path="${CSS.escape(folder)}"]:not(.tree-file)`);
-  target?.classList.add('drop-target');
+  els.tree.querySelector(`.tree-row[data-path="${CSS.escape(folder)}"]:not(.tree-file)`)?.classList.add('drop-target');
 });
-treeList.addEventListener('dragleave', (e) => {
-  if (!treeList.contains(e.relatedTarget)) clearDropTarget();
+els.tree.addEventListener('dragleave', (e) => {
+  if (!els.tree.contains(e.relatedTarget)) clearDropTarget();
 });
-treeList.addEventListener('drop', (e) => {
+els.tree.addEventListener('drop', (e) => {
   const row = e.target.closest('.tree-row');
   if (!row) return;
   e.preventDefault();
@@ -373,41 +593,184 @@ treeList.addEventListener('drop', (e) => {
     state.dragging = null;
     moveEntry(path, kind, dest);
   } else {
-    stageDataTransfer(e.dataTransfer, dest);
+    addDataTransfer(e.dataTransfer, dest);
   }
 });
 
-$('#clear-staged').addEventListener('click', () => {
-  state.files = [];
-  state.collapsed.clear();
-  renderStaged();
+// Toolbar above the tree: always works on the site root.
+$('.tree-toolbar').addEventListener('click', (e) => {
+  const button = e.target.closest('button[data-tool]');
+  if (!button) return;
+  const root = els.tree.querySelector('.tree-root');
+  runMenu({ files: 'add-files', folder: 'add-folder', mkdir: 'mkdir', 'replace-all': 'replace-folder' }[button.dataset.tool], root);
 });
-$('#publish').addEventListener('click', () => start(stagedFiles()));
 
-function showError(message, { askPassword = false } = {}) {
+$('#clear-staged').addEventListener('click', () => {
+  if (state.edit) return cancelEdit();
+  resetStaging();
+});
+
+function resetStaging() {
+  state.files = [];
+  state.emptyDirs.clear();
+  state.collapsed.clear();
+  state.seenDirs.clear();
+  hidePreview();
+  renderStaged();
+}
+
+/* ---------- editing an existing site ---------- */
+
+async function startEdit(name, password = null) {
+  els.error.hidden = true;
+  let data;
+  try {
+    data = await api(`/sites/${encodeURIComponent(name)}/files`, { method: 'POST', json: { password } });
+  } catch (err) {
+    return showError(err.message);
+  }
+  resetStaging();
+  state.edit = { name, password };
+  state.files = data.files.map((f) => ({ path: f.path, from: f.path, size: f.size }));
+  els.name.value = name;
+  els.name.disabled = true;
+  $('#edit-text').textContent = t('edit.banner', { name });
+  $('#edit-banner').hidden = false;
+  setStage('pick');
+  renderStaged();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelEdit() {
+  state.edit = null;
+  els.name.disabled = false;
+  els.name.value = '';
+  $('#edit-banner').hidden = true;
+  resetStaging();
+}
+$('#edit-cancel').addEventListener('click', cancelEdit);
+
+/* ---------- identity (visitors without an account) ---------- */
+
+const IDENTITY_KEY = 'freepages.identity';
+function restoreIdentity() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(IDENTITY_KEY) || 'null');
+    if (!saved) return;
+    $('#id-remember').checked = true;
+    $('#id-email').value = saved.email || '';
+    $('#id-first').value = saved.firstName || '';
+    $('#id-last').value = saved.lastName || '';
+  } catch {
+    /* storage unavailable */
+  }
+}
+function readIdentity() {
+  const form = $('#identity');
+  if (!form.reportValidity()) return null;
+  const identity = { email: $('#id-email').value.trim(), firstName: $('#id-first').value.trim(), lastName: $('#id-last').value.trim() };
+  // Kept only when asked to ("Remember my details").
+  try {
+    if ($('#id-remember').checked) localStorage.setItem(IDENTITY_KEY, JSON.stringify(identity));
+    else localStorage.removeItem(IDENTITY_KEY);
+  } catch {
+    /* storage unavailable */
+  }
+  return identity;
+}
+$('#identity').addEventListener('submit', (e) => {
+  e.preventDefault();
+  publish();
+});
+
+/* ---------- preview ---------- */
+
+function hidePreview() {
+  clearInterval(state.previewTimer);
+  $('#preview-box').hidden = true;
+}
+
+function showPreview(preview) {
+  const box = $('#preview-box');
+  box.hidden = false;
+  box.classList.remove('expired');
+  $('#preview-title').textContent = t('preview.ready');
+  $('#preview-open').href = preview.url;
+  $('#preview-open').hidden = false;
+  const end = new Date(preview.expiresAt).getTime();
+  const tick = () => {
+    const left = Math.max(0, Math.round((end - Date.now()) / 1000));
+    if (!left) {
+      clearInterval(state.previewTimer);
+      box.classList.add('expired');
+      $('#preview-title').textContent = t('preview.expired');
+      $('#preview-time').textContent = t('preview.expiredHint');
+      $('#preview-open').hidden = true;
+      return;
+    }
+    const clock = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+    $('#preview-time').textContent = t('preview.expires', { time: clock, url: preview.url.replace(/^https?:\/\//, '') });
+  };
+  clearInterval(state.previewTimer);
+  tick();
+  state.previewTimer = setInterval(tick, 1000);
+}
+
+$('#preview').addEventListener('click', async () => {
+  const files = cleanFiles(state.files);
+  if (!files.length) return showError(t('err.noFiles'));
+  const button = $('#preview');
+  button.disabled = true;
+  button.textContent = t('preview.making');
+  const { status, data } = await uploadSite({
+    files,
+    name: slugify(els.name.value) || 'preview',
+    preview: true,
+    exact: Boolean(state.edit),
+    base: state.edit?.name || '',
+    password: state.edit?.password || '',
+  });
+  button.disabled = false;
+  button.textContent = t('preview.button');
+  if (status >= 200 && status < 300 && data.preview) {
+    els.error.hidden = true;
+    showPreview(data.preview);
+  } else {
+    showError(data.error);
+  }
+});
+
+/* ---------- publishing ---------- */
+
+
+$('#publish').addEventListener('click', () => publish());
+
+function showError(message, { askPassword = false, askReplace = false } = {}) {
   els.errorText.textContent = message;
-  els.conflict.hidden = !askPassword;
+  els.conflict.hidden = !askPassword && !askReplace;
+  els.conflictPassword.hidden = !askPassword;
   els.error.hidden = false;
   if (askPassword) els.conflictPassword.focus();
 }
 
 function setStage(stage) {
-  els.dropzone.hidden = stage !== 'pick';
-  $('#staged').hidden = stage !== 'pick' || state.files.length === 0;
   els.progress.hidden = stage !== 'upload';
   els.result.hidden = stage !== 'done';
-  els.name.disabled = stage === 'upload';
+  $('#pending').hidden = stage !== 'pending';
+  els.name.disabled = stage === 'upload' || Boolean(state.edit);
+  renderStaged();
 }
 
-async function start(files) {
+async function publish() {
   els.error.hidden = true;
-  files = cleanFiles(files);
-  if (!files.length) return;
+  const files = cleanFiles(state.files);
+  if (!files.length) return showError(t('err.noFiles'));
+
+  if (state.edit) return upload(files, state.edit.name, { replace: true, password: state.edit.password, base: state.edit.name });
 
   if (!slugify(els.name.value)) els.name.value = randomName();
   const name = slugify(els.name.value);
   els.name.value = name;
-  state.pending = { files, name };
 
   let check;
   try {
@@ -419,51 +782,63 @@ async function start(files) {
     els.name.focus();
     return showError(check.error);
   }
-  // Your own site (password saved here): ask whether to replace it.
-  // Anyone else's: publish right away; the server adds a suffix (name-k3x).
-  const saved = check.exists && ownedPassword(name);
+  let identity = null;
+  if (needsIdentity()) {
+    identity = readIdentity();
+    if (!identity) return;
+  }
+  state.pending = { files, name, identity };
+  // Your own site: ask whether to replace it. Anyone else's: publish right
+  // away; the server adds a suffix (name-k3x).
+  if (check.exists && check.mine) return showError(t('err.existsMine', { name }), { askReplace: true });
+  const saved = check.exists && passwordMode() && ownedPassword(name);
   if (saved) {
     els.conflictPassword.value = saved;
     return showError(t('err.existsOwned', { name }), { askPassword: true });
   }
-  upload(files, name);
+  upload(files, name, { identity });
 }
 
 els.conflict.addEventListener('submit', (e) => {
   e.preventDefault();
   const { files, name } = state.pending || {};
-  const password = els.conflictPassword.value.trim();
-  if (!files || !password) return els.conflictPassword.focus();
+  if (!files) return;
+  const password = els.conflictPassword.hidden ? '' : els.conflictPassword.value.trim();
+  if (!els.conflictPassword.hidden && !password) return els.conflictPassword.focus();
   els.error.hidden = true;
-  upload(files, name, password);
+  upload(files, name, { replace: true, password });
 });
 $('#as-new').addEventListener('click', () => {
-  const { files, name } = state.pending || {};
+  const { files, name, identity } = state.pending || {};
   els.error.hidden = true;
-  if (files) upload(files, name);
+  if (files) upload(files, name, { identity });
 });
 $('#cancel').addEventListener('click', () => {
   state.pending = null;
   els.error.hidden = true;
 });
 
-async function upload(files, name, password = null) {
-  const totalBytes = files.reduce((sum, f) => sum + f.file.size, 0);
+async function upload(files, name, { replace = false, password = '', base = '', identity = null } = {}) {
+  const totalBytes = files.reduce((sum, f) => sum + (f.file ? f.file.size : 0), 0);
   if (totalBytes > state.config.maxUploadMb * 1024 * 1024) {
     return showError(t('err.tooBig', { size: formatBytes(totalBytes), limit: state.config.maxUploadMb }));
   }
 
+  hidePreview();
   setStage('upload');
   $('#progress-title').textContent = t('progress.uploadingName', { name });
-  $('#progress-files').textContent = `${filesLabel(files.length)} · ${formatBytes(totalBytes)}`;
+  $('#progress-files').textContent = `${filesLabel(files.length)} · ${formatBytes(files.reduce((s, f) => s + sizeOf(f), 0))}`;
   els.bar.style.width = '0%';
   $('#progress-pct').textContent = '0%';
 
   const { status, data } = await uploadSite({
     files,
     name,
-    overwrite: Boolean(password),
+    overwrite: replace,
     password,
+    base,
+    identity,
+    exact: Boolean(state.edit),
     onProgress: (p) => {
       const pct = Math.round(p * 100);
       els.bar.style.width = `${pct}%`;
@@ -473,21 +848,30 @@ async function upload(files, name, password = null) {
 
   if (status >= 200 && status < 300) {
     state.pending = null;
-    state.files = [];
-    state.collapsed.clear();
-    renderStaged();
+    if (state.edit) {
+      state.edit = null;
+      $('#edit-banner').hidden = true;
+    }
+    resetStaging();
+    if (data.pending) return pendingDone(data);
     if (data.password) rememberSite(data.name, data.password);
-    else if (password) rememberSite(data.name, password);
+    else if (password && data.hasPassword) rememberSite(data.name, password);
     done(data);
     renderMySites();
     return;
   }
   setStage('pick');
   if (data.exists) {
-    state.pending = { files, name };
-    return showError(data.wrongPassword ? data.error + t('err.tryAgain') : data.error, { askPassword: true });
+    state.pending = { files, name, identity };
+    if (data.wrongPassword) return showError(data.error + t('err.tryAgain'), { askPassword: true });
   }
   showError(data.error);
+}
+
+function pendingDone(data) {
+  setStage('pending');
+  $('#pending-text').textContent = t('pending.text', { email: data.email, name: data.name });
+  $('#pending-note').textContent = t('pending.note', { hours: data.hours });
 }
 
 function done(site) {
@@ -498,7 +882,7 @@ function done(site) {
   $('#open').href = site.url;
   $('#result-password').hidden = !site.password;
   $('#result-password-value').textContent = site.password || '';
-  if (site.requestedName) els.name.value = site.name;
+  els.name.value = site.name;
   $('#result-note').textContent =
     (site.requestedName ? t('result.renamed', { requested: site.requestedName, name: site.name }) + ' ' : '') +
     `${filesLabel(site.files)}, ${formatBytes(site.bytes)}.` +
@@ -507,56 +891,70 @@ function done(site) {
 
 $('#copy').addEventListener('click', () => copy($('#result-link').href));
 $('#copy-password').addEventListener('click', () => copy($('#result-password-value').textContent, t('toast.pwCopied')));
-$('#again').addEventListener('click', () => {
-  els.name.value = '';
-  updatePreview();
-  setStage('pick');
-});
+for (const id of ['#again', '#pending-again']) {
+  $(id).addEventListener('click', () => {
+    els.name.value = '';
+    setStage('pick');
+  });
+}
 
 /* ---------- my sites ---------- */
 
-async function renderMySites() {
-  const owned = loadOwned();
-  const list = $('#my-list');
-  $('#my-count').textContent = owned.length;
-  $('#my-empty').hidden = owned.length > 0;
-  if (!owned.length) return list.replaceChildren();
-
-  let status = {};
-  try {
-    const { sites } = await api('/my-sites', { method: 'POST', json: { sites: owned } });
-    status = Object.fromEntries(sites.map((s) => [s.name, s]));
-  } catch {
-    /* show what we have locally */
+function siteCard({ name, url, info, password = null }) {
+  const row = $('#my-row').content.firstElementChild.cloneNode(true);
+  applyI18n(row);
+  row.dataset.name = name;
+  row.dataset.initial = name[0];
+  $('.site-name', row).textContent = name;
+  $('.site-url', row).textContent = url;
+  $('.site-url', row).href = url;
+  if (info?.files != null) {
+    const chips = [filesLabel(info.files), formatBytes(info.bytes), t('chip.updated', { ago: timeAgo(info.updatedAt) })];
+    $('.site-meta', row).replaceChildren(...chips.map((text) => Object.assign(document.createElement('span'), { className: 'chip', textContent: text })));
   }
+  if (password) {
+    row.dataset.password = '1';
+    $('.site-pw code', row).textContent = password;
+    $('[data-action="password"]', row).hidden = false;
+    $('[data-action="forget"]', row).hidden = false;
+  }
+  return row;
+}
 
-  list.replaceChildren(
-    ...owned.map(({ name, password }) => {
+async function renderMySites() {
+  const list = $('#my-list');
+  const cards = [];
+  if (signedIn()) {
+    const { sites } = await api('/me');
+    for (const site of sites) cards.push(siteCard({ name: site.name, url: site.url, info: site }));
+  }
+  const owned = signedIn() && !state.config.whitelisted ? [] : loadOwned();
+  if (owned.length) {
+    let status = {};
+    try {
+      const { sites } = await api('/my-sites', { method: 'POST', json: { sites: owned } });
+      status = Object.fromEntries(sites.map((s) => [s.name, s]));
+    } catch {
+      /* show what we have locally */
+    }
+    for (const { name, password } of owned) {
       const info = status[name] || { status: 'unknown' };
-      const row = $('#my-row').content.firstElementChild.cloneNode(true);
-      applyI18n(row);
-      row.dataset.name = name;
-      row.dataset.initial = name[0];
-      $('.site-name', row).textContent = name;
-      const url = info.url || siteUrl(name);
-      $('.site-url', row).textContent = url;
-      $('.site-url', row).href = url;
-      $('.site-pw code', row).textContent = password;
-      const ok = info.status === 'ok' || info.status === 'unknown';
-      if (info.status === 'ok') {
-        const chips = [filesLabel(info.files), formatBytes(info.bytes), t('chip.updated', { ago: timeAgo(info.updatedAt) })];
-        $('.site-meta', row).replaceChildren(...chips.map((text) => Object.assign(document.createElement('span'), { className: 'chip', textContent: text })));
-      }
+      const card = siteCard({ name, url: info.url || siteUrl(name), info: info.status === 'ok' ? info : null, password });
       if (info.status === 'missing' || info.status === 'wrong-password') {
-        $('.site-status', row).textContent = t(info.status === 'missing' ? 'my.missing' : 'my.wrongPw');
-        $('.site-status', row).hidden = false;
+        $('.site-status', card).textContent = t(info.status === 'missing' ? 'my.missing' : 'my.wrongPw');
+        $('.site-status', card).hidden = false;
+        card.classList.add('dim');
+        for (const action of ['edit', 'delete']) $(`[data-action="${action}"]`, card).hidden = true;
       }
-      if (!ok) row.classList.add('dim');
-      for (const action of ['update', 'delete']) $(`[data-action="${action}"]`, row).hidden = !ok;
-      $('[data-action="forget"]', row).hidden = false;
-      return row;
-    }),
-  );
+      cards.push(card);
+    }
+  }
+  list.replaceChildren(...cards);
+  $('#my-count').textContent = cards.length;
+  $('#my-account').hidden = !signedIn();
+  $('#add-toggle').hidden = !state.config.whitelisted;
+  $('#login-inline').hidden = signedIn();
+  $('#my-empty').hidden = cards.length > 0 || !signedIn();
 }
 
 $('#my-list').addEventListener('click', async (e) => {
@@ -564,7 +962,7 @@ $('#my-list').addEventListener('click', async (e) => {
   if (!button) return;
   const row = button.closest('.site-card');
   const name = row.dataset.name;
-  const password = ownedPassword(name);
+  const password = row.dataset.password ? ownedPassword(name) : null;
   const url = $('.site-url', row).href;
   const action = button.dataset.action;
 
@@ -578,10 +976,11 @@ $('#my-list').addEventListener('click', async (e) => {
     return renderMySites();
   }
   if (action === 'delete') {
-    if (!confirm(t('confirm.deleteOwn', { name, url }))) return;
+    if (!confirm(`${t('confirm.deleteOwn', { name, url })}\n\n${retentionNote(state.config)}`)) return;
     try {
       await api(`/sites/${encodeURIComponent(name)}/delete`, { method: 'POST', json: { password } });
-      forgetSite(name);
+      if (password) forgetSite(name);
+      if (state.edit?.name === name) cancelEdit();
       toast(t('toast.deleted', { name }));
       renderMySites();
     } catch (err) {
@@ -589,13 +988,7 @@ $('#my-list').addEventListener('click', async (e) => {
     }
     return;
   }
-  if (action === 'update') {
-    const files = cleanFiles(await pickFiles());
-    if (!files.length) return;
-    els.name.value = name;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    upload(files, name, password);
-  }
+  if (action === 'edit') startEdit(name, password);
 });
 
 $('#add-toggle').addEventListener('click', () => {
@@ -627,6 +1020,8 @@ $('#add-form').addEventListener('submit', async (e) => {
     error.hidden = false;
   }
 });
+
+setupEmailLogin($('#login-inline'));
 
 init().catch((err) => {
   document.querySelector('main').textContent = t('err.load', { message: err.message });

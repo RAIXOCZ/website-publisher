@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title data-i18n="title.account">Účet – Freepages</title>
+  <link rel="icon" href="/_app/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/_app/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <div class="bar glass">
+        <a class="brand" href="/"><img class="logo" src="/_app/favicon.svg" alt=""><span data-brand>freepages</span></a>
+        <div class="bar-right">
+          <nav class="nav">
+            <a href="/" data-i18n="nav.publish">+ Zveřejnit</a>
+            <a href="/docs" class="hide-sm" data-i18n="nav.docs">Návod</a>
+            <a href="/ucet" aria-current="page" data-i18n="nav.account">Účet</a>
+          </nav>
+          <div class="lang" data-lang-switch></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap page">
+      <section class="login glass" id="signin" hidden>
+        <h2 data-i18n="account.signinTitle">Přihlášení</h2>
+        <p class="muted" data-i18n="account.signinText">Zadejte e-mail, se kterým jste zveřejnili web. Pošleme vám odkaz pro přihlášení – žádné heslo není potřeba.</p>
+        <form id="signin-form">
+          <input type="email" name="email" data-i18n-placeholder="identity.email" placeholder="E-mail" autocomplete="email" required autofocus>
+          <div class="alert" hidden></div>
+          <button class="btn btn-primary" type="submit" data-i18n="login.send">Poslat přihlašovací odkaz</button>
+        </form>
+        <p class="muted small" data-i18n="account.noAccount">Účet ještě nemáte? Vznikne automaticky při zveřejnění prvního webu.</p>
+      </section>
+
+      <div class="account" id="account" hidden>
+        <div class="account-head">
+          <div>
+            <h1 id="account-name"></h1>
+            <p class="lead" id="account-email"></p>
+          </div>
+          <button class="btn" id="logout" data-i18n="nav.logout">Odhlásit</button>
+        </div>
+
+        <section class="card glass">
+          <h2 data-i18n="account.sites">Weby</h2>
+          <div class="site-list" id="sites"></div>
+          <div class="empty" id="sites-empty" hidden data-i18n-html="account.sitesEmpty">Zatím nemáte žádné weby. <a href="/">Zveřejnit první →</a></div>
+        </section>
+
+        <section class="card glass">
+          <h2 data-i18n="account.profile">Osobní údaje</h2>
+          <form class="profile" id="profile">
+            <label><span data-i18n="identity.first">Jméno</span><input type="text" name="firstName" autocomplete="given-name" maxlength="80" required></label>
+            <label><span data-i18n="identity.last">Příjmení</span><input type="text" name="lastName" autocomplete="family-name" maxlength="80" required></label>
+            <div class="row"><button class="btn btn-primary" type="submit" data-i18n="account.save">Uložit</button></div>
+          </form>
+          <p class="muted small" data-i18n="account.emailNote">E-mail nelze změnit. Pokud ho potřebujete změnit, napište nám.</p>
+        </section>
+
+        <section class="card glass">
+          <h2 data-i18n="account.cli">Příkazová řádka (API tokeny)</h2>
+          <p class="muted" data-i18n="account.cliText">S tokenem můžete zveřejňovat a aktualizovat weby přes curl, například ze skriptu nebo CI. Token je jako heslo – nikomu ho nedávejte.</p>
+          <form class="row" id="token-form">
+            <input type="text" name="name" class="grow" data-i18n-placeholder="account.tokenName" placeholder="Název tokenu, např. notebook" maxlength="80">
+            <button class="btn btn-primary" type="submit" data-i18n="account.tokenCreate">Vytvořit token</button>
+          </form>
+          <div class="token-new" id="token-new" hidden>
+            <p class="field-label" data-i18n="account.tokenOnce">Nový token – zobrazí se jen teď, uložte si ho:</p>
+            <div class="field"><code id="token-value"></code><button class="btn btn-sm" id="token-copy" data-i18n="copy">Kopírovat</button></div>
+          </div>
+          <pre class="code" id="curl-example"></pre>
+          <table class="tokens" id="tokens-table">
+            <thead><tr><th data-i18n="account.thToken">Token</th><th data-i18n="account.thCreated">Vytvořen</th><th data-i18n="account.thUsed">Naposledy použit</th><th></th></tr></thead>
+            <tbody id="tokens"></tbody>
+          </table>
+          <p class="muted small" id="tokens-empty" data-i18n="account.tokensEmpty">Zatím nemáte žádné tokeny.</p>
+        </section>
+
+        <section class="card glass">
+          <h2 data-i18n="account.audit">Historie aktivit</h2>
+          <p class="muted small" data-i18n="account.auditText">Záznam přihlášení a změn vašeho účtu a webů včetně IP adres, ze kterých byly provedeny.</p>
+          <div class="table-wrap">
+            <table class="audit">
+              <thead><tr><th data-i18n="audit.when">Kdy</th><th data-i18n="audit.what">Událost</th><th data-i18n="audit.site">Web</th><th data-i18n="audit.ip">IP adresa</th></tr></thead>
+              <tbody id="audit"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card glass danger-zone">
+          <h2 data-i18n="account.delete">Smazání účtu</h2>
+          <p id="delete-text"></p>
+          <div class="row"><button class="btn btn-danger" id="delete-account" data-i18n="account.deleteButton">Smazat účet</button></div>
+          <div class="notice" id="delete-sent" hidden></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-row">
+        <p><span data-i18n="footer.by">Vytvořil</span> <a href="https://martin-balcar.cz" target="_blank" rel="noopener">Martin Balcar</a></p>
+        <p class="footer-links"><a href="/podminky" data-i18n="footer.terms">Podmínky</a> · <a href="/soukromi" data-i18n="footer.privacy">Soukromí</a> · <span data-i18n="footer.abuse">Nahlásit zneužití</span>: <a class="abuse-link" href="mailto:martin@balcar.me">martin@balcar.me</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/_app/i18n.js"></script>
+  <script src="/_app/common.js"></script>
+  <script src="/_app/account.js"></script>
+</body>
+</html>

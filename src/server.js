@@ -7,6 +7,9 @@ const express = require('express');
 const config = require('./config');
 const auth = require('./auth');
 const sites = require('./sites');
+const accounts = require('./accounts');
+const mail = require('./mail');
+const db = require('./db');
 const { serveSite, page } = require('./serve');
 const { langOf, t } = require('./i18n');
 
@@ -34,7 +37,7 @@ if (config.SITE_DOMAIN) {
     if (!host.endsWith(suffix)) return next();
     const name = host.slice(0, -suffix.length);
     if (req.method !== 'GET' && req.method !== 'HEAD') return res.status(405).send(t(langOf(req), 'methodNotAllowed'));
-    serveSite(req, res, name, req.path, '').catch(next);
+    serveSite(req, res, name, req.path, '', sites.previewRoot(name)).catch(next);
   });
 }
 
@@ -87,23 +90,71 @@ app.get(['/admin', '/admin/'], securityHeaders, appPage('admin.html'));
 app.get(['/docs', '/docs/'], securityHeaders, appPage('docs.html'));
 app.get(['/podminky', '/terms'], securityHeaders, appPage('terms.html'));
 app.get(['/soukromi', '/privacy'], securityHeaders, appPage('privacy.html'));
+app.get(['/ucet', '/account'], securityHeaders, appPage('account.html'));
+app.get('/email/:token', securityHeaders, appPage('confirm.html'));
 app.get('/robots.txt', (req, res) => res.type('text').send('User-agent: *\nDisallow: /admin\n'));
 app.get('/favicon.ico', (req, res) => res.sendFile(path.join(publicDir, 'favicon.svg'), { headers: { 'Content-Type': 'image/svg+xml' } }));
 
 const api = express.Router();
 api.use(securityHeaders, auth.sameOrigin);
 
-api.get('/config', (req, res) => {
-  res.json({
-    authed: auth.isAuthed(req),
-    maxUploadMb: config.MAX_UPLOAD_MB,
-    urlTemplate: sites.siteUrl('{name}'),
-  });
-});
-
 const json = express.json({ limit: '100kb' });
 // JSON error in the requester's language.
 const fail = (req, res, status, key, params) => res.status(status).json({ error: t(langOf(req), key, params) });
+const ipOf = (req) => accounts.normIp(auth.clientIp(req));
+const emailLink = (token) => `${config.PUBLIC_URL}/email/${token}`;
+
+// At most EMAILS_PER_HOUR e-mails per IP address and per recipient.
+const sentMail = new Map();
+function emailAllowed(...keys) {
+  const cutoff = Date.now() - 3600_000;
+  for (const key of keys) {
+    const times = (sentMail.get(key) || []).filter((t) => t > cutoff);
+    if (times.length >= config.EMAILS_PER_HOUR) return false;
+    sentMail.set(key, times);
+  }
+  for (const key of keys) sentMail.get(key).push(Date.now());
+  return true;
+}
+setInterval(() => {
+  const cutoff = Date.now() - 3600_000;
+  for (const [key, times] of sentMail) if (!times.some((t) => t > cutoff)) sentMail.delete(key);
+}, 60_000).unref();
+
+async function sendMail(req, { to, kind, params, userId = null }) {
+  await mail.send({ to, kind, params, lang: langOf(req) });
+  accounts.audit('email.sent', { userId, ip: ipOf(req), detail: { to, kind } });
+}
+
+// Whether this request may change `site`: its owner, the admin, or (for
+// password sites) whoever knows the password.
+function canManage(req, site, password) {
+  if (auth.isAuthed(req)) return true;
+  const user = accounts.currentUser(req);
+  if (user && site.user_id === user.id) return true;
+  return sites.checkSitePassword(site, password);
+}
+
+function requireUser(req, res, next) {
+  if (accounts.currentUser(req)) return next();
+  fail(req, res, 401, 'loginRequired');
+}
+
+api.get('/config', (req, res) => {
+  const user = accounts.currentUser(req);
+  res.json({
+    authed: auth.isAuthed(req),
+    user: accounts.publicUser(user),
+    whitelisted: accounts.isWhitelisted(ipOf(req)),
+    maxUploadMb: config.MAX_UPLOAD_MB,
+    urlTemplate: sites.siteUrl('{name}'),
+    previewMinutes: config.PREVIEW_MINUTES,
+    retentionDays: config.RETENTION_DAYS,
+    contact: config.ABUSE_EMAIL,
+  });
+});
+
+/* ---------- admin login (password from .env) ---------- */
 
 api.post('/login', json, (req, res) => {
   if (auth.tooManyAttempts(req)) return fail(req, res, 429, 'tooManyAttempts');
@@ -120,80 +171,341 @@ api.post('/logout', (req, res) => {
   res.json({ ok: true });
 });
 
-api.get('/check-name', async (req, res) => {
+/* ---------- user sign-in by e-mail link ---------- */
+
+api.post('/auth/login', json, async (req, res) => {
+  const email = accounts.normEmail(req.body?.email);
+  if (!email) return fail(req, res, 400, 'emailInvalid');
+  if (!emailAllowed(`ip:${ipOf(req)}`, `to:${email}`)) return fail(req, res, 429, 'tooManyEmails');
+  const user = accounts.activeUserByEmail(email);
+  if (user) {
+    const token = accounts.createEmailToken({ purpose: 'login', email, userId: user.id, ip: ipOf(req), minutes: config.LINK_MINUTES });
+    await sendMail(req, { to: email, kind: 'login', userId: user.id, params: { link: emailLink(token), minutes: config.LINK_MINUTES } });
+  } else {
+    await sendMail(req, { to: email, kind: 'loginNoAccount', params: { app: config.PUBLIC_URL } });
+  }
+  // Same answer either way, so nobody can probe which addresses have accounts.
+  res.json({ ok: true });
+});
+
+api.post('/auth/logout', (req, res) => {
+  accounts.endSession(req, res);
+  res.json({ ok: true });
+});
+
+// What an e-mail link does, shown on the confirmation page before it is used.
+api.get('/auth/token', (req, res) => {
+  const row = accounts.readEmailToken(String(req.query.token || ''));
+  if (!row) return res.json({ valid: false });
+  res.json({ valid: row.valid, purpose: row.purpose, name: row.payload?.name || null });
+});
+
+api.post('/auth/consume', json, async (req, res) => {
+  const ip = ipOf(req);
+  const row = accounts.consumeEmailToken(String(req.body?.token || ''));
+  if (!row) return fail(req, res, 410, 'linkExpired');
+
+  if (row.purpose === 'login') {
+    const user = accounts.activeUserByEmail(row.email);
+    if (!user) return fail(req, res, 410, 'linkExpired');
+    accounts.startSession(res, user.id);
+    accounts.audit('account.login', { userId: user.id, ip });
+    return res.json({ redirect: '/ucet' });
+  }
+
+  if (row.purpose === 'publish') {
+    const dir = sites.pendingDir(row.payload?.dir);
+    if (!dir) return fail(req, res, 410, 'linkExpired');
+    let user = accounts.activeUserByEmail(row.email);
+    if (!user) user = accounts.createUser({ email: row.email, firstName: row.payload.firstName, lastName: row.payload.lastName, ip });
+    accounts.audit('email.verified', { userId: user.id, ip, detail: { email: row.email, uploadIp: row.ip } });
+    const site = await sites.createSite({ requested: row.payload.name, dir, userId: user.id, ip });
+    accounts.startSession(res, user.id);
+    return res.json({ redirect: `/?published=${encodeURIComponent(site.name)}`, site });
+  }
+
+  if (row.purpose === 'delete-account') {
+    const user = accounts.userById(row.user_id);
+    if (!user || user.deleted_at) return fail(req, res, 410, 'linkExpired');
+    await accounts.deleteUser(user.id, { by: 'user', ip });
+    accounts.endSession(req, res);
+    return res.json({ redirect: '/?accountDeleted=1' });
+  }
+  fail(req, res, 410, 'linkExpired');
+});
+
+/* ---------- the signed-in user's account ---------- */
+
+api.get('/me', requireUser, (req, res) => {
+  const user = accounts.currentUser(req);
+  res.json({ user: accounts.publicUser(user), sites: sites.sitesOfUser(user.id), tokens: accounts.listApiTokens(user.id) });
+});
+
+api.post('/me', requireUser, json, (req, res) => {
+  const user = accounts.currentUser(req);
+  const firstName = accounts.cleanName(req.body?.firstName);
+  const lastName = accounts.cleanName(req.body?.lastName);
+  if (!firstName || !lastName) return fail(req, res, 400, 'nameRequired');
+  accounts.updateNames(user, { firstName, lastName }, ipOf(req));
+  res.json({ user: accounts.publicUser(accounts.userById(user.id)) });
+});
+
+api.get('/me/audit', requireUser, (req, res) => {
+  res.json({ events: accounts.auditForUser(accounts.currentUser(req).id, { hideEmails: true }) });
+});
+
+api.post('/me/tokens', requireUser, json, (req, res) => {
+  const { id, token } = accounts.createApiToken(accounts.currentUser(req), req.body?.name, ipOf(req));
+  res.json({ id, token });
+});
+
+api.post('/me/tokens/:id/revoke', requireUser, (req, res) => {
+  if (!accounts.revokeApiToken(accounts.currentUser(req), Number(req.params.id), ipOf(req))) return fail(req, res, 404, 'notFound');
+  res.json({ ok: true });
+});
+
+// Deleting an account needs a click in an e-mail.
+api.post('/me/delete', requireUser, async (req, res) => {
+  const user = accounts.currentUser(req);
+  if (!emailAllowed(`ip:${ipOf(req)}`, `to:${user.email}`)) return fail(req, res, 429, 'tooManyEmails');
+  const token = accounts.createEmailToken({ purpose: 'delete-account', email: user.email, userId: user.id, ip: ipOf(req), minutes: config.LINK_MINUTES });
+  accounts.audit('account.delete_requested', { userId: user.id, ip: ipOf(req) });
+  await sendMail(req, {
+    to: user.email,
+    kind: 'deleteAccount',
+    userId: user.id,
+    params: { link: emailLink(token), days: config.RETENTION_DAYS, contact: config.ABUSE_EMAIL },
+  });
+  res.json({ ok: true });
+});
+
+/* ---------- sites ---------- */
+
+api.get('/check-name', (req, res) => {
   const name = sites.slugify(req.query.name);
   const error = sites.validateName(name);
+  const site = !error && sites.activeSite(name);
+  const user = accounts.currentUser(req);
   res.json({
     name,
     error: error && t(langOf(req), error, { name }),
-    exists: !error && (await sites.exists(name)),
+    exists: Boolean(site),
+    mine: Boolean(site && user && site.user_id === user.id),
     url: name ? sites.siteUrl(name) : null,
   });
 });
 
-// Anyone may publish a new site; replacing one needs its password (or the admin).
+/**
+ * Publishing. Who may do what:
+ *  - signed in (session or API token): publish right away, replace own sites
+ *  - admin: replace any site
+ *  - whitelisted IP without an account: publish with a site password
+ *  - everyone else: give e-mail + name; the site goes live after the e-mail link
+ *  - preview=1: anyone, a temporary preview-xxxxxx site for PREVIEW_MINUTES
+ */
 api.post('/sites', async (req, res) => {
+  const ip = ipOf(req);
+  const user = accounts.currentUser(req);
   const isAdmin = auth.isAuthed(req);
-  if (!isAdmin) {
+  if (!user && !isAdmin) {
     if (auth.tooManyAttempts(req)) return fail(req, res, 429, 'tooManyAttempts');
     if (!auth.publishAllowed(req)) return fail(req, res, 429, 'tooManyUploads');
   }
-  const result = await sites.handleUpload(req, { isAdmin, onWrongPassword: () => auth.recordFailure(req) });
-  console.log(`published ${result.name} (${result.files} files, ${result.bytes} bytes)${result.replaced ? ' [replaced]' : ''}${isAdmin ? ' [admin]' : ''}`);
-  res.json(result);
+  const upload = await sites.parseUpload(req);
+  try {
+    const f = upload.fields;
+    let base = null;
+    if (f.base) {
+      base = sites.activeSite(f.base);
+      if (!base) throw new sites.UserError('siteNotFound', 404);
+      if (!canManage(req, base, f.password)) throw new sites.UserError('notYourSite', 403);
+    }
+    const { dir, requested } = await sites.assemble(upload, { baseDir: base ? sites.siteDir(base.name) : null });
+
+    if (f.preview) {
+      return res.json({ preview: await sites.savePreview(dir, { userId: user?.id ?? null, ip, siteName: base?.name ?? null }) });
+    }
+
+    if (f.overwrite) {
+      const site = sites.activeSite(requested);
+      if (site) {
+        if (!canManage(req, site, f.password)) {
+          if (f.password) auth.recordFailure(req);
+          throw new sites.UserError(
+            site.password_hash ? 'wrongSitePasswordNamed' : 'notYourSite', 403,
+            { exists: true, name: site.name, wrongPassword: Boolean(site.password_hash) }, { name: site.name },
+          );
+        }
+        const owner = isAdmin && !(user && site.user_id === user.id) && !sites.checkSitePassword(site, f.password);
+        const result = await sites.replaceSite(site, dir, { userId: user?.id ?? null, ip, by: owner ? 'admin' : 'owner' });
+        console.log(`updated ${result.name}`);
+        return res.json(result);
+      }
+    }
+
+    const invalid = sites.validateName(requested);
+    if (invalid) throw new sites.UserError(invalid, 400, {}, { name: requested });
+
+    if (user) {
+      const result = await sites.createSite({ requested, dir, userId: user.id, ip });
+      console.log(`published ${result.name} (${result.files} files)`);
+      return res.json(result);
+    }
+    if (isAdmin || accounts.isWhitelisted(ip)) {
+      const result = await sites.createSite({ requested, dir, withPassword: true, ip });
+      console.log(`published ${result.name} (${result.files} files, password)`);
+      return res.json(result);
+    }
+
+    // Everyone else confirms their e-mail address first.
+    const email = accounts.normEmail(f.email);
+    if (!email) throw new sites.UserError('emailRequired');
+    const existing = accounts.activeUserByEmail(email);
+    const firstName = accounts.cleanName(f.firstName);
+    const lastName = accounts.cleanName(f.lastName);
+    if (!existing && (!firstName || !lastName)) throw new sites.UserError('nameRequired');
+    if (!emailAllowed(`ip:${ip}`, `to:${email}`)) throw new sites.UserError('tooManyEmails', 429);
+    const pendingId = await sites.savePending(dir);
+    const token = accounts.createEmailToken({
+      purpose: 'publish', email, userId: existing?.id ?? null, ip, minutes: config.PENDING_HOURS * 60,
+      payload: { dir: pendingId, name: requested, firstName, lastName },
+    });
+    accounts.audit('site.pending', { userId: existing?.id ?? null, siteName: requested, ip, detail: { email } });
+    await sendMail(req, {
+      to: email, kind: 'publish', userId: existing?.id ?? null,
+      params: { link: emailLink(token), name: requested, hours: config.PENDING_HOURS, terms: `${config.PUBLIC_URL}/podminky` },
+    });
+    res.json({ pending: true, email, name: requested, hours: config.PENDING_HOURS });
+  } finally {
+    upload.cleanup();
+  }
 });
 
-// The browser's own list of sites: checks which saved passwords are still valid.
-api.post('/my-sites', json, async (req, res) => {
+// The files of a site, for editing it in the file tree.
+api.post('/sites/:name/files', json, async (req, res) => {
+  const site = sites.activeSite(req.params.name);
+  if (!site) return fail(req, res, 404, 'siteNotFound');
+  if (!canManage(req, site, req.body?.password)) return fail(req, res, 403, 'notYourSite');
+  res.json({ site: sites.publicSite(site), files: await sites.listFiles(site) });
+});
+
+api.post('/sites/:name/delete', json, async (req, res) => {
+  const site = sites.activeSite(req.params.name);
+  if (!site) return fail(req, res, 404, 'siteNotFound');
+  if (!canManage(req, site, req.body?.password)) {
+    if (req.body?.password) auth.recordFailure(req);
+    return fail(req, res, 403, site.password_hash ? 'wrongSitePassword' : 'notYourSite');
+  }
+  const user = accounts.currentUser(req);
+  const byAdmin = auth.isAuthed(req) && !(user && site.user_id === user.id) && !sites.checkSitePassword(site, req.body?.password);
+  await sites.softDelete(site, { by: byAdmin ? 'admin' : 'owner', ip: ipOf(req) });
+  console.log(`deleted ${site.name}`);
+  res.json({ ok: true, retentionDays: config.RETENTION_DAYS });
+});
+
+api.post('/sites/:name/rename', json, async (req, res) => {
+  const site = sites.activeSite(req.params.name);
+  if (!site) return fail(req, res, 404, 'siteNotFound');
+  const user = accounts.currentUser(req);
+  const isOwner = user && site.user_id === user.id;
+  if (!isOwner && !auth.isAuthed(req)) return fail(req, res, 403, 'notYourSite');
+  res.json(await sites.rename(site, req.body?.name, { ip: ipOf(req), by: isOwner ? 'owner' : 'admin' }));
+});
+
+// Password sites (whitelisted uploads): which saved passwords still work.
+api.post('/my-sites', json, (req, res) => {
   if (auth.tooManyAttempts(req)) return fail(req, res, 429, 'tooManyAttempts');
   const entries = Array.isArray(req.body?.sites) ? req.body.sites.slice(0, 500) : [];
-  const out = [];
-  for (const entry of entries) {
+  const out = entries.map((entry) => {
     const name = String(entry?.name || '');
-    const site = await sites.info(name);
-    if (!site) {
-      out.push({ name, status: 'missing' });
-    } else if (await sites.checkSitePassword(name, entry.password)) {
-      out.push({ ...site, status: 'ok' });
-    } else {
-      auth.recordFailure(req);
-      out.push({ name, status: 'wrong-password' });
-    }
-  }
+    const site = sites.activeSite(name);
+    if (!site) return { name, status: 'missing' };
+    if (sites.checkSitePassword(site, entry.password)) return { ...sites.publicSite(site), status: 'ok' };
+    auth.recordFailure(req);
+    return { name, status: 'wrong-password' };
+  });
   res.json({ sites: out });
 });
 
-// Owner (with the site's password) or admin.
-async function authorizeSite(req, res, next) {
-  if (auth.isAuthed(req)) return next();
-  if (auth.tooManyAttempts(req)) return fail(req, res, 429, 'tooManyAttempts');
-  if (await sites.checkSitePassword(req.params.name, req.body?.password)) return next();
-  auth.recordFailure(req);
-  fail(req, res, 403, 'wrongSitePassword');
-}
+/* ---------- admin ---------- */
 
-api.post('/sites/:name/delete', json, authorizeSite, async (req, res) => {
-  await sites.remove(req.params.name);
-  console.log(`deleted ${req.params.name}`);
+const admin = express.Router();
+admin.use(auth.requireAuth, json);
+const adminSite = (req, res) => {
+  const site = sites.siteById(Number(req.params.id));
+  if (!site) fail(req, res, 404, 'siteNotFound');
+  return site;
+};
+const adminUser = (req, res) => {
+  const user = accounts.userById(Number(req.params.id));
+  if (!user) fail(req, res, 404, 'notFound');
+  return user;
+};
+
+admin.get('/sites', (req, res) => res.json({ sites: sites.listAll() }));
+admin.get('/sites/:id/audit', (req, res) => {
+  const site = adminSite(req, res);
+  if (site) res.json({ site: sites.publicSite(site), events: accounts.auditForSite(site.id) });
+});
+admin.post('/sites/:id/delete', async (req, res) => {
+  const site = adminSite(req, res);
+  if (!site) return;
+  if (!site.deleted_at) await sites.softDelete(site, { by: 'admin', ip: ipOf(req) });
+  res.json({ ok: true });
+});
+admin.post('/sites/:id/purge', async (req, res) => {
+  const site = adminSite(req, res);
+  if (!site) return;
+  await sites.purgeSite(site);
+  console.log(`purged site ${site.id} (${site.name})`);
+  res.json({ ok: true });
+});
+admin.post('/sites/:id/rename', async (req, res) => {
+  const site = adminSite(req, res);
+  if (site) res.json(await sites.rename(site, req.body?.name, { ip: ipOf(req), by: 'admin' }));
+});
+admin.post('/sites/:id/reset-password', (req, res) => {
+  const site = adminSite(req, res);
+  if (!site) return;
+  if (site.user_id) return fail(req, res, 400, 'accountSite');
+  res.json({ name: site.name, password: sites.resetPassword(site) });
+});
+
+admin.get('/users', (req, res) => res.json({ users: accounts.listUsers() }));
+admin.get('/users/:id/audit', (req, res) => {
+  const user = adminUser(req, res);
+  if (user) res.json({ user: accounts.publicUser(user), events: accounts.auditForUser(user.id, { hideEmails: false }) });
+});
+admin.post('/users/:id/delete', async (req, res) => {
+  const user = adminUser(req, res);
+  if (!user) return;
+  await accounts.deleteUser(user.id, { by: 'admin', ip: ipOf(req) });
+  res.json({ ok: true });
+});
+admin.post('/users/:id/purge', async (req, res) => {
+  const user = adminUser(req, res);
+  if (!user) return;
+  await accounts.purgeUser(user.id);
+  console.log(`purged account ${user.id} on request`);
   res.json({ ok: true });
 });
 
-// Admin only.
-api.get('/sites', auth.requireAuth, async (req, res) => {
-  res.json({ sites: await sites.list() });
+admin.get('/whitelist', (req, res) => res.json({ ips: accounts.listWhitelist(), yourIp: ipOf(req) }));
+admin.post('/whitelist', (req, res) => {
+  if (!accounts.addWhitelist(req.body?.ip, req.body?.note)) return fail(req, res, 400, 'ipInvalid');
+  res.json({ ips: accounts.listWhitelist() });
+});
+admin.post('/whitelist/remove', (req, res) => {
+  accounts.removeWhitelist(req.body?.ip);
+  res.json({ ips: accounts.listWhitelist() });
 });
 
-api.post('/sites/:name/rename', auth.requireAuth, json, async (req, res) => {
-  const result = await sites.rename(req.params.name, req.body?.name);
-  console.log(`renamed ${req.params.name} -> ${result.name}`);
-  res.json(result);
-});
+api.use('/admin', admin);
 
-api.post('/sites/:name/reset-password', auth.requireAuth, async (req, res) => {
-  const password = await sites.resetPassword(req.params.name);
-  console.log(`password reset for ${req.params.name}`);
-  res.json({ name: req.params.name, password });
-});
+if (config.MAIL_DEV_OUTBOX) {
+  // Tests read sent e-mails here. Never enabled in production.
+  api.get('/dev/outbox', (req, res) => res.json({ messages: mail.outbox }));
+}
 
 api.use((req, res) => fail(req, res, 404, 'notFound'));
 app.use('/api', api);
@@ -208,7 +520,7 @@ app.use((req, res, next) => {
     const query = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
     return res.redirect(301, sites.siteUrl(name) + (rest || '/').slice(1) + query);
   }
-  serveSite(req, res, name, rest, `/${name}`).catch(next);
+  serveSite(req, res, name, rest, `/${name}`, sites.previewRoot(name)).catch(next);
 });
 
 app.use((req, res) => {
@@ -227,7 +539,11 @@ app.use((err, req, res, _next) => {
   fail(req, res, 500, 'serverError');
 });
 
+db.open();
 sites.init().then(() => {
+  const housekeeping = () => accounts.cleanup().catch((err) => console.error('cleanup failed:', err));
+  housekeeping();
+  setInterval(housekeeping, 60_000).unref();
   app.listen(config.PORT, () => {
     console.log(`Website publisher listening on :${config.PORT}`);
     console.log(`  app:   ${config.PUBLIC_URL}`);

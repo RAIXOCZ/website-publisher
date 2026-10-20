@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title data-i18n="title.confirm">Potvrzení – Freepages</title>
+  <link rel="icon" href="/_app/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/_app/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <div class="bar glass">
+        <a class="brand" href="/"><img class="logo" src="/_app/favicon.svg" alt=""><span data-brand>freepages</span></a>
+        <div class="bar-right">
+          <nav class="nav">
+            <a href="/" data-i18n="nav.publish">+ Zveřejnit</a>
+            <a href="/docs" class="hide-sm" data-i18n="nav.docs">Návod</a>
+            <a href="/ucet" aria-current="page" data-i18n="nav.account">Účet</a>
+          </nav>
+          <div class="lang" data-lang-switch></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap page">
+      <section class="login glass confirm" id="confirm">
+        <h2 id="confirm-title" data-i18n="confirm.loading">Načítám…</h2>
+        <p class="muted" id="confirm-text"></p>
+        <div class="alert" id="confirm-error" hidden></div>
+        <div class="row">
+          <button class="btn btn-primary" id="confirm-button" hidden></button>
+          <a class="btn" href="/" id="confirm-home" hidden data-i18n="confirm.home">Na hlavní stránku</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-row">
+        <p><span data-i18n="footer.by">Vytvořil</span> <a href="https://martin-balcar.cz" target="_blank" rel="noopener">Martin Balcar</a></p>
+        <p class="footer-links"><a href="/podminky" data-i18n="footer.terms">Podmínky</a> · <a href="/soukromi" data-i18n="footer.privacy">Soukromí</a> · <span data-i18n="footer.abuse">Nahlásit zneužití</span>: <a class="abuse-link" href="mailto:martin@balcar.me">martin@balcar.me</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/_app/i18n.js"></script>
+  <script src="/_app/common.js"></script>
+  <script src="/_app/confirm.js"></script>
+</body>
+</html>

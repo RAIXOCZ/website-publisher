@@ -32,8 +32,12 @@ module.exports = {
   PORT: int(process.env.PORT, 3000),
   DATA_DIR,
   SITES_DIR: path.join(DATA_DIR, 'sites'),
-  META_DIR: path.join(DATA_DIR, 'meta'),
+  META_DIR: path.join(DATA_DIR, 'meta'), // legacy per-site JSON, migrated into the database
   TMP_DIR: path.join(DATA_DIR, 'tmp'),
+  TRASH_DIR: path.join(DATA_DIR, 'trash'),
+  PENDING_DIR: path.join(DATA_DIR, 'pending'),
+  PREVIEWS_DIR: path.join(DATA_DIR, 'previews'),
+  DB_FILE: path.join(DATA_DIR, 'freepages.db'),
   PUBLIC_URL,
   APP_HOSTNAME: publicUrl.hostname.toLowerCase(),
   SCHEME: publicUrl.protocol.replace(':', ''),
@@ -51,4 +55,31 @@ module.exports = {
   SESSION_SECRET: process.env.SESSION_SECRET || '',
   // Sent as a Report-Abuse header with every response, including published sites.
   ABUSE_EMAIL: 'martin@balcar.me',
+
+  // Sites that existed before accounts are assigned to this account.
+  ADMIN_EMAIL: (process.env.ADMIN_EMAIL || 'martin@balcar.me').trim().toLowerCase(),
+  ADMIN_FIRST_NAME: process.env.ADMIN_FIRST_NAME || 'Martin',
+  ADMIN_LAST_NAME: process.env.ADMIN_LAST_NAME || 'Balcar',
+
+  // E-mail: Resend (https://resend.com) when RESEND_API_KEY is set, otherwise
+  // messages are only written to the log (and, with MAIL_DEV_OUTBOX, exposed
+  // at /api/dev/outbox for tests).
+  RESEND_API_KEY: process.env.RESEND_API_KEY || '',
+  MAIL_FROM: process.env.MAIL_FROM || `Freepages <noreply@${SITE_DOMAIN || publicUrl.hostname}>`,
+  MAIL_DEV_OUTBOX: bool(process.env.MAIL_DEV_OUTBOX, false),
+  EMAILS_PER_HOUR: int(process.env.EMAILS_PER_HOUR, 10),
+
+  // IPs allowed to publish without an account, using per-site passwords
+  // (comma separated; more can be added in the admin panel).
+  IP_WHITELIST: (process.env.IP_WHITELIST || '').split(',').map((s) => s.trim()).filter(Boolean),
+
+  PREVIEW_MINUTES: int(process.env.PREVIEW_MINUTES, 5),
+  // Uploads waiting for e-mail confirmation are dropped after this.
+  PENDING_HOURS: int(process.env.PENDING_HOURS, 24),
+  LINK_MINUTES: int(process.env.LINK_MINUTES, 30),
+  USER_SESSION_DAYS: int(process.env.USER_SESSION_DAYS, 30),
+  // Deleted accounts, sites and their audit logs are kept this long.
+  RETENTION_DAYS: int(process.env.RETENTION_DAYS, 90),
+  // Activity history entries are deleted after this, whatever happens.
+  AUDIT_DAYS: int(process.env.AUDIT_DAYS, 365),
 };

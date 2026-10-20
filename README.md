@@ -2,12 +2,17 @@
 
 Drop a folder, get a website. A small self-hosted static site publisher with a Czech and English UI. The language follows the browser (Czech/Slovak → Czech, anything else → English), and visitors can switch with the CS/EN toggle; their choice is remembered.
 
-- **Upload page** (`/`): anyone can drag & drop a folder (or a `.zip`), no account needed. The site is live as soon as the upload finishes.
-- **Per-site passwords**: every new site gets a generated password. Replacing or deleting a site needs it. The browser remembers it in `localStorage`, and the upload page lists those sites under *Moje weby*. A site can be added on another device with its name and password.
-- **Admin panel** (`/admin`, not linked anywhere): behind `ADMIN_PASSWORD`, lists every site and can replace, rename, delete it or generate a new password for it.
-- **Guide** (`/docs`): how to publish, for whoever uses it.
+- **Upload page** (`/`): drag & drop a folder (or a `.zip`), arrange it in a file tree (add files/folders, new folders, move, rename, replace, remove), look at a **5-minute preview** at `preview-xxxxxx`, then publish.
+- **Accounts by e-mail, no passwords**: a visitor enters e-mail, first and last name; the site goes live once they click the confirmation link, which also creates the account. Later sign-ins use one-time e-mail links. Signed-in users publish immediately.
+- **Editing**: an existing site opens in the same file tree; replace single files, a folder or everything, add and remove, preview, save (atomic swap).
+- **Account page** (`/ucet`): sites, name, API tokens for curl/CI, activity history (with IPs, without e-mails), account deletion confirmed by e-mail.
+- **CLI**: `curl -H "Authorization: Bearer fp_…" -F name=my-site -F overwrite=1 -F f=@site.zip https://freepages.dev/api/sites`.
+- **Admin panel** (`/admin`, not linked anywhere, behind `ADMIN_PASSWORD`): all sites with owners, users, activity history with IPs and e-mails, rename/edit/delete/purge sites and accounts, IP whitelist.
+- **Retention**: deleted sites and accounts stop being public immediately and are purged automatically after 90 days (`RETENTION_DAYS`); the admin can purge at once. Activity history is capped at 12 months (`AUDIT_DAYS`).
+- **IP whitelist**: from whitelisted IPs (`IP_WHITELIST` or the admin panel) publishing works without an account, with per-site passwords remembered in the browser (the original mode).
+- **Guide** (`/docs`), **terms** (`/podminky`) and **privacy policy** (`/soukromi`).
 - Each site gets its own subdomain, e.g. `https://<name>.freepages.dev/`, or without `SITE_DOMAIN` a path, `PUBLIC_URL/<name>/`.
-- Everything is stored in one Docker volume (`/data`). There is no database.
+- Everything is stored in one Docker volume (`/data`), including a SQLite database (Node's built-in `node:sqlite`, no native dependencies).
 
 ## Quick start
 
@@ -26,23 +31,44 @@ Open http://localhost:3000 and drop a folder. The admin panel is at http://local
 Data lives in the `publisher-data` volume:
 
 ```
-/data/sites/<name>/   published files
-/data/meta/<name>.json
+/data/sites/<name>/     published files
+/data/freepages.db      accounts, sites, activity history (SQLite, WAL)
+/data/trash/            deleted sites, kept until purged
+/data/pending/          uploads waiting for e-mail confirmation (24 h)
+/data/previews/         5-minute previews
 /data/.session-secret
 ```
 
-Back up that volume and you have backed up everything.
+Back up that volume and you have backed up everything. The privacy policy promises that backups are kept for at most 30 days, so rotate them accordingly.
+
+Sites that existed before accounts were introduced are moved to the `ADMIN_EMAIL` account on the first start (their old passwords are dropped).
 
 ### Configuration (`.env`)
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `ADMIN_PASSWORD` | required | Password for `/admin`. Publishing needs no login. Changing it logs the admin out. |
+| `ADMIN_PASSWORD` | required | Password for `/admin`. Changing it logs the admin out. |
+| `RESEND_API_KEY` | empty | API key of [Resend](https://resend.com) (free tier: 3,000 e-mails a month). Without it no e-mails are sent, so nobody outside the IP whitelist can publish or sign in. |
+| `MAIL_FROM` | `Freepages <noreply@SITE_DOMAIN>` | Sender; must be on a domain verified in Resend. |
+| `ADMIN_EMAIL` | `martin@balcar.me` | Account that receives the sites published before accounts existed. |
+| `IP_WHITELIST` | empty | Comma-separated IPs that may publish without an account (password sites). More can be added in `/admin`. |
+| `RETENTION_DAYS` | `90` | How long deleted sites and accounts are kept before they are purged. |
+| `AUDIT_DAYS` | `365` | Activity history entries are deleted after this. |
+| `PREVIEW_MINUTES` | `5` | Lifetime of previews. |
 | `PUBLIC_URL` | `http://localhost:3000` | Address of the publisher as the browser sees it, e.g. `https://freepages.dev`. Secure cookies are enabled when it starts with `https`. |
 | `SITE_DOMAIN` | empty | Empty: sites live at `PUBLIC_URL/<name>/`. Set to `freepages.dev`: sites live at `https://<name>.freepages.dev/` and the path URLs redirect there. |
-| `PUBLISH_PER_HOUR` | `60` | Uploads allowed per IP address per hour (the admin is not limited). |
+| `PUBLISH_PER_HOUR` | `60` | Anonymous uploads allowed per IP address per hour (signed-in users and the admin are not limited). |
+| `EMAILS_PER_HOUR` | `10` | E-mails per IP address and per recipient per hour. |
 | `MAX_UPLOAD_MB` | `100` | Upload limit. Cloudflare Free/Pro rejects request bodies over 100 MB anyway. |
 | `PATH_SANDBOX` | `true` | Serve path-style sites with a CSP sandbox (see Security). |
+
+### Setting up e-mail (Resend)
+
+1. Create a free account at https://resend.com and add your domain (e.g. `freepages.dev`) under *Domains*. Prefer the EU region (`eu-west-1`).
+2. Add the DNS records Resend shows (SPF/DKIM TXT and MX on a `send.` subdomain) in Cloudflare DNS. They must be **DNS only** (grey cloud).
+3. Wait until the domain shows *Verified*, then create an API key with *Sending access* and put it into `RESEND_API_KEY`.
+4. In the domain settings, keep **click and open tracking off**, otherwise the one-time links are rewritten through Resend.
+5. Accept Resend's data processing agreement (DPA) in the account settings; the privacy policy relies on it.
 
 ## Deploying with Cloudflare Tunnel
 
@@ -87,9 +113,10 @@ Point the tunnel's public hostnames at `http://publisher:3000`.
 ## Security notes
 
 - Uploaded sites can contain arbitrary JavaScript. With subdomains each site has its own origin, so it is isolated from the admin panel. In path mode, sites share the admin's origin, so they are served with a CSP `sandbox` (opaque origin). Their scripts can't use your session, but they also can't use `localStorage` or cookies. Prefer subdomain mode if your sites need those.
-- Site passwords are generated by the server (about 60 random bits) and stored only as salted SHA-256 hashes in `/data/meta/<name>.json`. Wrong site or admin passwords count towards the same per-IP lockout.
-- Publishing is open, so anyone can use your domain to host pages. Uploads are capped per IP per hour; watch `/admin` for abuse and delete anything unwanted.
-- State-changing API calls require a custom header plus a matching `Origin`, and the session cookie is `HttpOnly; SameSite=Strict`.
+- Publishing needs a confirmed e-mail address, and every account, upload, edit, sign-in and e-mail is logged with its IP address (visible in `/admin`). Uploads and e-mails are capped per IP per hour.
+- E-mail links, sessions and API tokens are random 192-bit values stored only as SHA-256 hashes. E-mail links are used up by a button click on `/email/<token>`, not by opening the link, so mail scanners can't consume them.
+- Site passwords (whitelist mode) are generated by the server (about 60 random bits) and stored only as salted hashes. Wrong site or admin passwords count towards the same per-IP lockout.
+- State-changing API calls require a custom header plus a matching `Origin` (requests with an `Authorization: Bearer` token are exempt: they carry no cookies). The admin cookie is `HttpOnly; SameSite=Strict`, the user cookie `HttpOnly; SameSite=Lax`.
 - Wrong passwords are rate-limited to `MAX_FAILED_ATTEMPTS` (default 10) per IP per 15 minutes.
 - Every response, including published sites, carries a `Report-Abuse: martin@balcar.me` header, and every page links to abuse reports in the footer.
 - Upload paths are sanitized (`..` is rejected), zip extraction counts uncompressed bytes against the limit, and a publish swaps directories atomically.
@@ -99,11 +126,12 @@ Point the tunnel's public hostnames at `http://publisher:3000`.
 ```bash
 npm install
 npm run dev     # ADMIN_PASSWORD=dev, data in ./data, http://localhost:3000
+                # e-mails are printed to the console instead of being sent
 ```
 
 ## Tests
 
-End-to-end tests use Playwright and click through every button of the upload page, *Moje weby*, the admin panel, the guide and the language switch. They also cover site serving, password protection, the `Report-Abuse` header and subdomain routing.
+End-to-end tests use Playwright and click through the upload page, file tree editor, previews, e-mail confirmation and sign-in, the account page (tokens, curl, history, deletion), the admin panel (sites, users, history, purge, whitelist), whitelist password sites, the guide and the language switch. They also cover site serving, the `Report-Abuse` header and subdomain routing.
 
 ```bash
 npm install
@@ -111,4 +139,4 @@ npx playwright install chromium   # once
 npm test
 ```
 
-`npm test` starts two throwaway servers (path mode on :4317, subdomain mode on :4318) with a temporary data directory, so it never touches real data.
+`npm test` starts three throwaway servers (path mode on :4317, subdomain mode on :4318, IP-whitelisted on :4319) with temporary data directories and `MAIL_DEV_OUTBOX=1`, so e-mails are read from `/api/dev/outbox` instead of being sent. It never touches real data.

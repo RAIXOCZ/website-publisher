@@ -86,7 +86,7 @@ async function notFound(req, res, root, sandboxed) {
  * @param subPath  path inside the site, starting with "/"
  * @param basePath URL prefix the site is mounted at ("" for subdomains)
  */
-async function serveSite(req, res, name, subPath, basePath) {
+async function serveSite(req, res, name, subPath, basePath, previewRoot = null) {
   const sandboxed = basePath !== '' && config.PATH_SANDBOX;
   const lang = langOf(req);
   const noSuchSite = (text = '') =>
@@ -94,7 +94,10 @@ async function serveSite(req, res, name, subPath, basePath) {
   if (!sites.NAME_RE.test(name)) {
     return noSuchSite();
   }
-  const root = sites.siteDir(name);
+  if (name.startsWith(sites.PREVIEW_PREFIX) && !previewRoot) {
+    return noSuchSite(`<p>${t(lang, 'previewExpired')}</p>`);
+  }
+  const root = previewRoot || sites.siteDir(name);
   if (!(await statOrNull(root))) {
     return noSuchSite(`<p>${t(lang, 'noSuchSiteText', { name: escapeHtml(name) })}</p>`);
   }

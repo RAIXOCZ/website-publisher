@@ -167,12 +167,12 @@ function ownedPassword(name) {
 
 // Opens the browser's folder picker (or, with folder: false, a picker for any
 // number of files); resolves with [{ path, file }].
-function pickFiles({ folder = true } = {}) {
+function pickFiles({ folder = true, multiple = true } = {}) {
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
     if (folder) input.webkitdirectory = true;
-    else input.multiple = true;
+    else input.multiple = multiple;
     input.addEventListener('change', () => {
       resolve([...input.files].map((file) => ({ path: file.webkitRelativePath || file.name, file })));
     });
@@ -185,15 +185,24 @@ function cleanFiles(files) {
 }
 
 /**
- * Uploads files as a site. Resolves with { status, data } whatever the
- * outcome, so callers can react to 403/409 themselves.
+ * Uploads a site. `files` are [{ path, file }] for new files and
+ * [{ path, from }] for files kept from the existing site `base`.
+ * Resolves with { status, data } whatever the outcome, so callers can react
+ * to 403/409 themselves.
  */
-function uploadSite({ files, name, overwrite = false, password = '', onProgress }) {
+function uploadSite({ files, name, overwrite = false, password = '', preview = false, base = '', exact = false, identity = null, onProgress }) {
   const form = new FormData();
   form.append('name', name);
   form.append('overwrite', overwrite ? '1' : '0');
   form.append('password', password || '');
+  if (preview) form.append('preview', '1');
+  if (exact) form.append('exact', '1');
+  if (base) form.append('base', base);
+  if (identity) for (const key of ['email', 'firstName', 'lastName']) form.append(key, identity[key] || '');
+  const keep = files.filter((f) => f.from).map(({ path, from }) => ({ path, from }));
+  if (keep.length) form.append('keep', JSON.stringify(keep));
   for (const { path, file } of files) {
+    if (!file) continue;
     form.append('p', path);
     form.append('f', file, file.name);
   }
@@ -222,4 +231,43 @@ function uploadSite({ files, name, overwrite = false, password = '', onProgress 
     );
     xhr.send(form);
   });
+}
+
+/* ---------- signing in with an e-mail link ---------- */
+
+function setupEmailLogin(form) {
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const button = $('button[type=submit]', form);
+    const alert = $('.alert', form);
+    alert.hidden = true;
+    button.disabled = true;
+    try {
+      await api('/auth/login', { method: 'POST', json: { email: form.email.value.trim() } });
+      form.replaceChildren(Object.assign(document.createElement('p'), {
+        className: 'sent',
+        textContent: t('login.sent', { email: form.email.value.trim() }),
+      }));
+    } catch (err) {
+      alert.textContent = err.message;
+      alert.hidden = false;
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
+
+function retentionNote(config) {
+  return t('retention.note', { days: config.retentionDays, contact: config.contact });
+}
+
+function formatDateTime(iso) {
+  return iso ? new Date(iso).toLocaleString(LANG, { dateStyle: 'medium', timeStyle: 'short' }) : '–';
+}
+
+// Human-readable audit action, e.g. "site.published" → "Web zveřejněn".
+function actionLabel(action) {
+  const key = `audit.${action}`;
+  const label = t(key);
+  return label === key ? action : label;
 }

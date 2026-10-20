@@ -5,12 +5,12 @@
   "main": "src/server.js",
   "private": true,
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "ADMIN_PASSWORD=dev DATA_DIR=./data node --watch src/server.js",
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "dev": "ADMIN_PASSWORD=dev DATA_DIR=./data MAIL_DEV_OUTBOX=1 node --disable-warning=ExperimentalWarning --watch src/server.js",
     "test": "playwright test"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.13"
   },
   "dependencies": {
     "busboy": "^1.6.0",
