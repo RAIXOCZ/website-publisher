@@ -1,0 +1,37 @@
+# Docker Compose file for Dokploy (Compose service → "Compose Path": ./docker-compose.dokploy.yml).
+# Set ADMIN_PASSWORD, PUBLIC_URL, SITE_DOMAIN in Dokploy's "Environment" tab.
+#
+# Routing is done with the Traefik labels below instead of Dokploy's "Domains"
+# tab, because they also match the wildcard *.freepages.dev. Point your
+# Cloudflare Tunnel's public hostnames (freepages.dev and *.freepages.dev) at
+# Dokploy's Traefik on plain HTTP, e.g. http://localhost:80 (cloudflared on the
+# host) or http://dokploy-traefik:80 (cloudflared on dokploy-network).
+# If you change the domains, edit the Host/HostRegexp rule too.
+
+services:
+  publisher:
+    build: .
+    restart: unless-stopped
+    environment:
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD}
+      PUBLIC_URL: ${PUBLIC_URL:-https://freepages.dev}
+      SITE_DOMAIN: ${SITE_DOMAIN:-freepages.dev}
+      PUBLIC_UPLOAD: ${PUBLIC_UPLOAD:-false}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-100}
+    volumes:
+      - publisher-data:/data
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.website-publisher.entrypoints=web
+      - traefik.http.routers.website-publisher.rule=Host(`freepages.dev`) || HostRegexp(`^[a-z0-9-]+\.freepages\.dev$$`)
+      - traefik.http.services.website-publisher.loadbalancer.server.port=3000
+
+volumes:
+  publisher-data:
+
+networks:
+  dokploy-network:
+    external: true

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Správa webů</title>
+  <link rel="icon" href="/_app/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/_app/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/"><span class="brand-mark">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+    </span>Publikování <span class="muted hide-sm">správa</span></a>
+    <nav class="nav" id="nav" hidden>
+      <a class="btn btn-ghost hide-sm" href="/docs">Návod</a>
+      <a class="btn btn-primary" href="/">+ Zveřejnit</a>
+      <button class="btn btn-ghost" id="logout">Odhlásit</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="login card" id="login" hidden>
+      <h2>Přihlášení do správy</h2>
+      <form>
+        <input type="password" name="password" placeholder="Heslo" autocomplete="current-password" required autofocus>
+        <div class="alert" hidden></div>
+        <button class="btn btn-primary" type="submit">Přihlásit</button>
+      </form>
+    </section>
+
+    <div id="panel" hidden>
+      <h1>Weby</h1>
+      <p class="lead">Vše, co je na tomto serveru zveřejněno.</p>
+
+      <section class="card">
+        <div class="toolbar">
+          <input type="text" id="filter" placeholder="Hledat weby…" autocomplete="off">
+          <span class="stats" id="stats"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Web</th>
+                <th class="hide-sm">Soubory</th>
+                <th class="hide-sm">Velikost</th>
+                <th>Aktualizováno</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+          <div class="empty" id="empty" hidden>
+            Zatím tu nejsou žádné weby. <a href="/">Zveřejněte první →</a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <template id="row">
+    <tr>
+      <td>
+        <div class="site-name"></div>
+        <a class="site-url" target="_blank" rel="noopener"></a>
+      </td>
+      <td class="num hide-sm" data-files></td>
+      <td class="num hide-sm" data-size></td>
+      <td class="num" data-updated></td>
+      <td class="actions">
+        <button class="btn btn-sm" data-action="copy">Kopírovat odkaz</button>
+        <button class="btn btn-sm" data-action="rename">Přejmenovat</button>
+        <button class="btn btn-sm btn-danger" data-action="delete">Smazat</button>
+      </td>
+    </tr>
+  </template>
+
+  <script src="/_app/common.js"></script>
+  <script src="/_app/admin.js"></script>
+</body>
+</html>

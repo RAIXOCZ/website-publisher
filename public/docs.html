@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Návod – Publikování webů</title>
+  <link rel="icon" href="/_app/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/_app/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/"><span class="brand-mark">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+    </span>Publikování</a>
+    <nav class="nav">
+      <a class="btn btn-primary" href="/">+ Zveřejnit</a>
+    </nav>
+  </header>
+
+  <main class="narrow">
+    <h1>Návod</h1>
+    <p class="lead">Jak zveřejnit statický web během pár sekund.</p>
+
+    <section class="card docs">
+      <h2>Jak zveřejnit web</h2>
+      <ol>
+        <li>Na <a href="/">hlavní stránce</a> přetáhněte složku s webem do vyznačeného pole, případně klikněte na <b>Vybrat složku</b>.</li>
+        <li>Název webu se doplní podle názvu složky. Chcete-li jiný, napište ho do pole <b>Název webu</b> ještě před nahráním.</li>
+        <li>Po dokončení nahrávání je web okamžitě online. Odkaz si můžete zkopírovat nebo rovnou otevřít.</li>
+      </ol>
+      <p>Web bude dostupný na adrese <code class="url-example">…</code></p>
+
+      <h2>Co má složka obsahovat</h2>
+      <ul>
+        <li>Úvodní stránku <code>index.html</code> přímo ve složce.</li>
+        <li>Cokoli dalšího: CSS, JavaScript, obrázky, fonty, podsložky. Struktura zůstane zachovaná.</li>
+        <li>Fungují jen statické soubory. PHP, Node.js a databáze se nespouští.</li>
+      </ul>
+      <pre>muj-web/
+├── index.html
+├── o-nas.html
+├── css/style.css
+└── img/logo.png</pre>
+      <p>Pokud nahrajete složku, která obsahuje jen jednu další složku (třeba <code>muj-web/dist/…</code>), zveřejní se automaticky její obsah.</p>
+
+      <h2>Nahrání .zip souboru</h2>
+      <p>Místo složky můžete nahrát jeden soubor <code>.zip</code>. Po nahrání se rozbalí a zveřejní stejně jako složka. Hodí se pro velké weby nebo prohlížeče, které neumí nahrávat složky.</p>
+
+      <h2>Aktualizace webu</h2>
+      <p>Nahrajte novou verzi se <b>stejným názvem</b>. Aplikace se zeptá, jestli chcete stávající web nahradit. Výměna proběhne najednou, návštěvníci nikdy neuvidí napůl nahraný web.</p>
+
+      <h2>Hezké adresy a chybová stránka</h2>
+      <ul>
+        <li>Adresa <code>/o-nas</code> zobrazí soubor <code>o-nas.html</code>, příponu psát nemusíte.</li>
+        <li>Když přidáte soubor <code>404.html</code>, zobrazí se u neexistujících stránek.</li>
+        <li>Složka bez <code>index.html</code> zobrazí seznam svých souborů.</li>
+      </ul>
+
+      <h2>Pravidla pro název</h2>
+      <ul>
+        <li>Malá písmena bez diakritiky, číslice a pomlčky, nejvýše 63 znaků.</li>
+        <li>Velká písmena, mezery a háčky se převedou automaticky (<code>Můj Web</code> → <code>muj-web</code>).</li>
+        <li>Některé názvy jsou rezervované, například <code>admin</code>, <code>api</code>, <code>docs</code> nebo <code>www</code>.</li>
+      </ul>
+
+      <h2>Limity</h2>
+      <ul>
+        <li>Největší velikost jednoho nahrání: <b class="max-upload">…</b></li>
+        <li>Soubory systému jako <code>.DS_Store</code>, <code>Thumbs.db</code> nebo <code>__MACOSX</code> se přeskočí.</li>
+      </ul>
+
+      <h2>Správa webů</h2>
+      <p>Ve <a href="/admin">správě</a> (po přihlášení heslem) najdete přehled všech webů a můžete je přejmenovat nebo smazat.</p>
+    </section>
+  </main>
+
+  <script src="/_app/common.js"></script>
+  <script src="/_app/docs.js"></script>
+</body>
+</html>

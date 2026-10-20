@@ -1,0 +1,35 @@
+# Plain Docker Compose setup.
+#   cp .env.example .env   # set ADMIN_PASSWORD
+#   docker compose up -d --build
+# Optional: also run a Cloudflare Tunnel connector next to it:
+#   docker compose --profile tunnel up -d --build
+
+services:
+  publisher:
+    build: .
+    restart: unless-stopped
+    environment:
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3000}
+      SITE_DOMAIN: ${SITE_DOMAIN:-}
+      PUBLIC_UPLOAD: ${PUBLIC_UPLOAD:-false}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-100}
+    volumes:
+      - publisher-data:/data
+    ports:
+      - "${HOST_PORT:-3000}:3000"
+
+  # In the Cloudflare Zero Trust dashboard point the tunnel's public hostnames
+  # (freepages.dev and *.freepages.dev) at http://publisher:3000
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      - publisher
+
+volumes:
+  publisher-data:
