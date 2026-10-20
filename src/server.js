@@ -11,6 +11,7 @@ const accounts = require('./accounts');
 const mail = require('./mail');
 const db = require('./db');
 const { serveSite, page } = require('./serve');
+const seo = require('./seo');
 const { langOf, t } = require('./i18n');
 
 const app = express();
@@ -71,7 +72,16 @@ function appPage(name) {
   pages[name] ??= fs
     .readFileSync(path.join(publicDir, name), 'utf8')
     .replace(/((?:src|href)=")\/_app\/([^"?]+)"/g, `$1/_app/$2?v=${assetVersion}"`);
-  return (req, res) => res.set('Cache-Control', 'no-cache').type('html').send(pages[name]);
+  return (req, res) => {
+    // ?lang=cs|en gives every page a fixed language for search engines;
+    // without it the visitor's browser decides.
+    const explicit = seo.LANGS.includes(req.query.lang) ? req.query.lang : null;
+    const lang = explicit || langOf(req);
+    res.set('Cache-Control', 'no-cache');
+    if (!explicit) res.vary('Accept-Language');
+    if (seo.PRIVATE.has(name)) res.set('X-Robots-Tag', 'noindex');
+    res.type('html').send(seo.render(name, pages[name], { lang, explicit: Boolean(explicit) }));
+  };
 }
 
 app.use(
@@ -92,8 +102,13 @@ app.get(['/podminky', '/terms'], securityHeaders, appPage('terms.html'));
 app.get(['/soukromi', '/privacy'], securityHeaders, appPage('privacy.html'));
 app.get(['/ucet', '/account'], securityHeaders, appPage('account.html'));
 app.get('/email/:token', securityHeaders, appPage('confirm.html'));
-app.get('/robots.txt', (req, res) => res.type('text').send('User-agent: *\nDisallow: /admin\n'));
-app.get('/favicon.ico', (req, res) => res.sendFile(path.join(publicDir, 'favicon.svg'), { headers: { 'Content-Type': 'image/svg+xml' } }));
+app.get('/robots.txt', (req, res) => res.type('text').send(seo.robots()));
+app.get('/sitemap.xml', (req, res) => res.type('application/xml').send(seo.sitemap()));
+app.get('/site.webmanifest', (req, res) => res.type('application/manifest+json').send(JSON.stringify(seo.manifest())));
+for (const file of seo.ROOT_FILES) {
+  app.get(`/${file}`, (req, res) => res.sendFile(path.join(publicDir, file), { headers: { 'Cache-Control': 'public, max-age=86400' } }));
+}
+app.get('/apple-touch-icon-precomposed.png', (req, res) => res.sendFile(path.join(publicDir, 'apple-touch-icon.png'), { headers: { 'Cache-Control': 'public, max-age=86400' } }));
 
 const api = express.Router();
 api.use(securityHeaders, auth.sameOrigin);

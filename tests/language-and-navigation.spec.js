@@ -16,7 +16,7 @@ test.describe('language detection', () => {
     test('gets English, including server messages', async ({ page }) => {
       await page.goto('/');
       await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-      await expect(page).toHaveTitle('Publish a website');
+      await expect(page).toHaveTitle('Freepages – publish a website for free in one drop');
       await expect(page.locator('h1')).toHaveText('Your site online in one drop.');
       await page.locator('#name').fill('api');
       await pickAndPublish(page, page.locator('#pick-folder'), FIXTURES.site);

@@ -98,6 +98,8 @@ async function serveSite(req, res, name, subPath, basePath, previewRoot = null) 
     return noSuchSite(`<p>${t(lang, 'previewExpired')}</p>`);
   }
   const root = previewRoot || sites.siteDir(name);
+  // Previews are temporary: keep them out of search engines.
+  if (previewRoot) res.set('X-Robots-Tag', 'noindex, nofollow');
   if (!(await statOrNull(root))) {
     return noSuchSite(`<p>${t(lang, 'noSuchSiteText', { name: escapeHtml(name) })}</p>`);
   }

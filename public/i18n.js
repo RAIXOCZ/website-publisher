@@ -26,9 +26,9 @@ const I18N = {
     'how.docs': 'Přečíst návod',
     'how.example': 'muj-web',
     'chip.updated': 'aktualizováno {ago}',
-    'title.index': 'Publikování webů',
+    'title.index': 'Freepages – zveřejněte web zdarma jedním přetažením',
     'title.admin': 'Správa webů',
-    'title.docs': 'Návod – Publikování webů',
+    'title.docs': 'Návod – Freepages',
     brand: 'Publikování',
     'brand.admin': 'správa',
     'nav.mySites': 'Moje weby',
@@ -338,9 +338,9 @@ const I18N = {
     'how.docs': 'Read the guide',
     'how.example': 'my-site',
     'chip.updated': 'updated {ago}',
-    'title.index': 'Publish a website',
+    'title.index': 'Freepages – publish a website for free in one drop',
     'title.admin': 'Site admin',
-    'title.docs': 'Guide – Publish a website',
+    'title.docs': 'Guide – Freepages',
     brand: 'Publisher',
     'brand.admin': 'admin',
     'nav.mySites': 'My sites',
@@ -633,6 +633,17 @@ const I18N = {
 };
 
 function detectLang() {
+  // An explicit ?lang= in the address wins (search engines index those URLs)
+  // and is remembered like a choice made with the CS/EN switch.
+  const fromUrl = new URLSearchParams(location.search).get('lang');
+  if (LANGS.includes(fromUrl)) {
+    try {
+      localStorage.setItem(LANG_KEY, fromUrl);
+    } catch {
+      /* storage unavailable */
+    }
+    return fromUrl;
+  }
   try {
     const saved = localStorage.getItem(LANG_KEY);
     if (LANGS.includes(saved)) return saved;
@@ -660,7 +671,13 @@ function setLang(lang) {
   } catch {
     /* storage unavailable */
   }
-  location.reload();
+  const url = new URL(location.href);
+  if (url.searchParams.has('lang')) {
+    url.searchParams.set('lang', lang);
+    location.href = url.href;
+  } else {
+    location.reload();
+  }
 }
 
 // Fills every element marked with data-i18n* attributes, and shows only the
