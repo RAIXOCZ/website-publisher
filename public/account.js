@@ -17,7 +17,7 @@ async function load() {
     if (err.status === 401) return init();
     throw err;
   }
-  const { user, sites, tokens } = me;
+  const { user, sites, tokens, usage } = me;
   $('#account-name').textContent = `${user.firstName} ${user.lastName}`.trim() || user.email;
   $('#account-email').textContent = t('account.since', { email: user.email, date: new Date(user.createdAt).toLocaleDateString(LANG) });
   $('#profile').firstName.value = user.firstName;
@@ -28,6 +28,7 @@ async function load() {
   $('#delete-admin').hidden = !user.isAdmin;
   $('#curl-example').textContent = curlExample();
   renderSites(sites);
+  renderUsage(usage);
   renderTokens(tokens);
   await renderAudit();
 }
@@ -84,6 +85,16 @@ $('#sites').addEventListener('click', async (e) => {
     uiError(err);
   }
 });
+
+// How much of the account's storage the sites use (the admin has no limit).
+function renderUsage({ used, limit, siteLimit }) {
+  $('#usage-text').textContent = limit ? t('usage.used', { used: formatBytes(used), limit: formatBytes(limit) }) : t('usage.unlimited', { used: formatBytes(used) });
+  $('#usage-limit').textContent = t('usage.siteLimit', { limit: formatBytes(siteLimit) });
+  const share = limit ? Math.min(1, used / limit) : 0;
+  $('#usage-bar').style.width = `${(share * 100).toFixed(1)}%`;
+  $('#usage-bar').classList.toggle('full', share >= 0.8); // almost full
+  $('.usage .meter').hidden = !limit;
+}
 
 /* ---------- profile ---------- */
 

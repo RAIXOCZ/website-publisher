@@ -405,6 +405,10 @@ select option { color: #0b1324; background: #fff; }
 .progress p { margin: 0 0 10px; }
 .meter { height: 10px; border-radius: 6px; background: var(--well); border: 1px solid var(--glass-line); overflow: hidden; }
 .meter > div { height: 100%; width: 0; background: #0d9488; transition: width 0.15s; }
+.meter > div.full { background: #c2410c; }
+.usage { display: flex; flex-direction: column; gap: 8px; }
+.usage-label { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 14px; font-weight: 600; }
+.usage-label .muted { font-weight: 400; }
 .progress-label { display: flex; justify-content: space-between; margin-top: 8px; font-size: 13px; color: var(--muted); }
 
 .result { display: flex; flex-direction: column; gap: 12px; }

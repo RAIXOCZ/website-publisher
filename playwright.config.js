@@ -3,7 +3,8 @@ const { defineConfig, devices } = require('@playwright/test');
 
 // Three servers: path-style URLs (localhost:4317/<name>/) for the browser tests,
 // per-site subdomains (<name>.pub.test on :4318) for host-routing tests, and
-// one where this machine is on the IP whitelist (password sites, :4319).
+// one where this machine is on the IP whitelist (password sites, :4319), and
+// one with tiny storage limits (:4320).
 // E-mails are not sent; tests read them from /api/dev/outbox.
 const common = {
   PUBLISH_PER_HOUR: '100000',
@@ -43,6 +44,13 @@ module.exports = defineConfig({
       url: 'http://localhost:4319/api/config',
       // tests/start-server.js puts these on the whitelist (the admin panel does it in production).
       env: { ...common, PORT: '4319', PUBLIC_URL: 'http://localhost:4319', TEST_WHITELIST: '127.0.0.1,::1' },
+      reuseExistingServer: false,
+    },
+    {
+      // Small storage limits, so tests/limits.spec.js can reach them.
+      command: 'node --disable-warning=ExperimentalWarning tests/start-server.js',
+      url: 'http://localhost:4320/api/config',
+      env: { ...common, PORT: '4320', PUBLIC_URL: 'http://localhost:4320', SITE_MAX_MB: '1', ACCOUNT_MAX_MB: '2' },
       reuseExistingServer: false,
     },
   ],

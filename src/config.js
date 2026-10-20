@@ -43,6 +43,10 @@ module.exports = {
   PATH_SANDBOX: bool(process.env.PATH_SANDBOX, true),
   // Cloudflare rejects request bodies over 100 MB on Free/Pro plans.
   MAX_UPLOAD_MB: int(process.env.MAX_UPLOAD_MB, 100),
+  // Storage limits: one site, one account (not the admin), the whole service.
+  SITE_MAX_MB: int(process.env.SITE_MAX_MB, 100),
+  ACCOUNT_MAX_MB: int(process.env.ACCOUNT_MAX_MB, 500),
+  TOTAL_MAX_GB: int(process.env.TOTAL_MAX_GB, 20),
   MAX_FILES: int(process.env.MAX_FILES, 20000),
   // Sent as a Report-Abuse header with every response, including published sites.
   ABUSE_EMAIL: 'martin@freepages.dev',

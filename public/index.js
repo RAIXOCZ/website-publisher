@@ -759,6 +759,7 @@ $('#preview').addEventListener('click', async () => {
     files,
     name: slugify(els.name.value) || 'preview',
     preview: true,
+    replacePreview: state.lastPreview || '', // the old preview is deleted right away
     exact: Boolean(state.edit),
     base: state.edit?.name || '',
     password: state.edit?.password || '',
@@ -766,6 +767,7 @@ $('#preview').addEventListener('click', async () => {
   button.disabled = false;
   button.textContent = t('preview.button');
   if (status >= 200 && status < 300 && data.preview) {
+    state.lastPreview = data.preview.code;
     els.error.hidden = true;
     showPreview(data.preview);
   } else {

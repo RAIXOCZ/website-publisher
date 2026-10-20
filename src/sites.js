@@ -14,8 +14,9 @@ const accounts = require('./accounts');
 const NAME_RE = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 const RESERVED = new Set([
   'admin', 'api', 'app', 'docs', 'podminky', 'soukromi', 'terms', 'privacy', 'ucet', 'account', 'email', 'www', 'static',
-  'assets', 'login', 'logout', 'mail', 'ftp', 'dashboard', 'favicon.ico', 'robots.txt',
+  'assets', 'login', 'logout', 'mail', 'ftp', 'dashboard', 'favicon.ico', 'robots.txt', 'preview',
 ]);
+// preview-xxxxxx addresses belong to temporary previews; no site may use them.
 const PREVIEW_PREFIX = 'preview-';
 // Files that operating systems sprinkle into folders and nobody wants published.
 const JUNK = new Set(['.ds_store', 'thumbs.db', 'desktop.ini', '__macosx', '.git']);
@@ -335,6 +336,7 @@ async function parseUpload(req) {
       firstName: fields.firstName || '',
       lastName: fields.lastName || '',
       base: fields.base || '',
+      replacePreview: fields.replacePreview || '',
     },
   };
 }
@@ -387,9 +389,50 @@ async function moveInto(sourceDir, target) {
   await fsp.rename(sourceDir, target);
 }
 
+/* ---------- storage limits ---------- */
+
+const MB = 1024 * 1024;
+
+// Bytes used by everything stored: published sites and deleted ones that
+// are kept until purged.
+const storageUsed = () => one('SELECT COALESCE(SUM(bytes), 0) AS n FROM sites')?.n || 0;
+const accountUsed = (userId) => one('SELECT COALESCE(SUM(bytes), 0) AS n FROM sites WHERE user_id = ? AND deleted_at IS NULL', userId)?.n || 0;
+
+function usage(userId) {
+  const user = userId && accounts.userById(userId);
+  return {
+    used: userId ? accountUsed(userId) : 0,
+    limit: user && !user.is_admin ? config.ACCOUNT_MAX_MB * MB : null,
+    siteLimit: config.SITE_MAX_MB * MB,
+  };
+}
+
+/**
+ * Refuses content that would break a limit: SITE_MAX_MB per site,
+ * ACCOUNT_MAX_MB per account (the admin has none) and TOTAL_MAX_GB for the
+ * whole service. `replacing` is the site whose current files go away.
+ */
+async function assertQuota(dir, { ownerId = null, replacing = null } = {}) {
+  const { bytes } = await stats(dir);
+  if (bytes > config.SITE_MAX_MB * MB) {
+    throw new UserError('siteTooLarge', 413, {}, { size: (bytes / MB).toFixed(1), limit: config.SITE_MAX_MB });
+  }
+  const freed = replacing ? replacing.bytes : 0;
+  if (storageUsed() - freed + bytes > config.TOTAL_MAX_GB * 1024 * MB) throw new UserError('storageFull', 507);
+  const owner = ownerId && accounts.userById(ownerId);
+  if (owner && !owner.is_admin) {
+    const used = accountUsed(owner.id) - (replacing && replacing.user_id === owner.id && !replacing.deleted_at ? freed : 0);
+    if (used + bytes > config.ACCOUNT_MAX_MB * MB) {
+      throw new UserError('accountFull', 413, {}, { used: (used / MB).toFixed(1), limit: config.ACCOUNT_MAX_MB });
+    }
+  }
+  return bytes;
+}
+
 async function createSite({ requested, dir, userId = null, withPassword = false, ip }) {
   const invalid = validateName(requested);
   if (invalid) throw new UserError(invalid, 400, {}, { name: requested });
+  await assertQuota(dir, { ownerId: userId });
   const name = freeName(requested);
   busy.add(name);
   try {
@@ -422,6 +465,7 @@ async function createSite({ requested, dir, userId = null, withPassword = false,
 // Swap the new folder into place: visitors see the old or the new version, never half of it.
 async function replaceSite(site, dir, { userId = null, ip, by = 'owner' }) {
   if (busy.has(site.name)) throw new UserError('busy', 409);
+  await assertQuota(dir, { ownerId: site.user_id, replacing: site });
   busy.add(site.name);
   try {
     const target = siteDir(site.name);
@@ -442,7 +486,8 @@ async function replaceSite(site, dir, { userId = null, ip, by = 'owner' }) {
 }
 
 // Keeps an upload until its owner confirms their e-mail address.
-async function savePending(dir) {
+async function savePending(dir, { ownerId = null } = {}) {
+  await assertQuota(dir, { ownerId });
   const id = crypto.randomUUID();
   await moveInto(dir, path.join(config.PENDING_DIR, id));
   return id;
@@ -458,7 +503,18 @@ function pendingDir(id) {
 const previewUrl = (code) =>
   config.SITE_DOMAIN ? `${config.SCHEME}://${PREVIEW_PREFIX}${code}.${config.SITE_DOMAIN}/` : `${config.PUBLIC_URL}/${PREVIEW_PREFIX}${code}/`;
 
-async function savePreview(dir, { userId = null, ip, siteName = null }) {
+async function savePreview(dir, { userId = null, ip, siteName = null, replace = '' }) {
+  await assertQuota(dir);
+  // One preview at a time: a new one deletes the account's previous previews.
+  // Without an account, the page names the preview it replaces (IP addresses
+  // can be shared by many people, so they are only a check).
+  const previous = userId
+    ? all('SELECT code FROM previews WHERE user_id = ?', userId)
+    : all('SELECT code FROM previews WHERE code = ? AND user_id IS NULL AND ip = ?', String(replace).replace(PREVIEW_PREFIX, ''), ip);
+  for (const { code } of previous) {
+    run('DELETE FROM previews WHERE code = ?', code);
+    await fsp.rm(path.join(config.PREVIEWS_DIR, code), { recursive: true, force: true });
+  }
   const code = randomCode(6);
   await moveInto(dir, path.join(config.PREVIEWS_DIR, code));
   const expiresAt = inMinutes(config.PREVIEW_MINUTES);
@@ -545,7 +601,9 @@ function listAll() {
 // Sites from before accounts existed (folders + meta/*.json with passwords)
 // become sites of the ADMIN_EMAIL account; their passwords are dropped.
 async function migrateLegacy() {
-  const dirs = (await fsp.readdir(config.SITES_DIR, { withFileTypes: true })).filter((e) => e.isDirectory() && NAME_RE.test(e.name));
+  const dirs = (await fsp.readdir(config.SITES_DIR, { withFileTypes: true })).filter(
+    (e) => e.isDirectory() && NAME_RE.test(e.name) && !e.name.startsWith(PREVIEW_PREFIX),
+  );
   const missing = dirs.filter((e) => !exists(e.name));
   if (!missing.length) return;
   const admin = accounts.ensureAdmin();
@@ -596,6 +654,9 @@ module.exports = {
   assemble,
   createSite,
   replaceSite,
+  usage,
+  storageUsed,
+  assertQuota,
   savePending,
   pendingDir,
   savePreview,

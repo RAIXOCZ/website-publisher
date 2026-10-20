@@ -162,6 +162,8 @@ api.get('/config', (req, res) => {
     user: accounts.publicUser(user),
     whitelisted: accounts.isWhitelisted(ipOf(req)),
     maxUploadMb: config.MAX_UPLOAD_MB,
+    siteMaxMb: config.SITE_MAX_MB,
+    accountMaxMb: config.ACCOUNT_MAX_MB,
     urlTemplate: sites.siteUrl('{name}'),
     previewMinutes: config.PREVIEW_MINUTES,
     retentionDays: config.RETENTION_DAYS,
@@ -200,6 +202,13 @@ api.get('/auth/token', (req, res) => {
 
 api.post('/auth/consume', json, async (req, res) => {
   const ip = ipOf(req);
+  // A publish link that would exceed a storage limit stays unused, so it
+  // still works after the owner frees some space.
+  const peek = accounts.readEmailToken(String(req.body?.token || ''));
+  if (peek?.valid && peek.purpose === 'publish') {
+    const dir = sites.pendingDir(peek.payload?.dir);
+    if (dir) await sites.assertQuota(dir, { ownerId: accounts.activeUserByEmail(peek.email)?.id });
+  }
   const row = accounts.consumeEmailToken(String(req.body?.token || ''));
   if (!row) return fail(req, res, 410, 'linkExpired');
 
@@ -236,7 +245,7 @@ api.post('/auth/consume', json, async (req, res) => {
 
 api.get('/me', requireUser, (req, res) => {
   const user = accounts.currentUser(req);
-  res.json({ user: accounts.publicUser(user), sites: sites.sitesOfUser(user.id), tokens: accounts.listApiTokens(user.id) });
+  res.json({ user: accounts.publicUser(user), sites: sites.sitesOfUser(user.id), tokens: accounts.listApiTokens(user.id), usage: sites.usage(user.id) });
 });
 
 api.post('/me', requireUser, json, (req, res) => {
@@ -322,7 +331,7 @@ api.post('/sites', async (req, res) => {
     const { dir, requested } = await sites.assemble(upload, { baseDir: base ? sites.siteDir(base.name) : null });
 
     if (f.preview) {
-      return res.json({ preview: await sites.savePreview(dir, { userId: user?.id ?? null, ip, siteName: base?.name ?? null }) });
+      return res.json({ preview: await sites.savePreview(dir, { userId: user?.id ?? null, ip, siteName: base?.name ?? null, replace: f.replacePreview }) });
     }
 
     if (f.overwrite) {
@@ -364,7 +373,7 @@ api.post('/sites', async (req, res) => {
     const lastName = accounts.cleanName(f.lastName);
     if (!existing && (!firstName || !lastName)) throw new sites.UserError('nameRequired');
     if (!emailAllowed(`ip:${ip}`, `to:${email}`)) throw new sites.UserError('tooManyEmails', 429);
-    const pendingId = await sites.savePending(dir);
+    const pendingId = await sites.savePending(dir, { ownerId: existing?.id });
     const token = accounts.createEmailToken({
       purpose: 'publish', email, userId: existing?.id ?? null, ip, minutes: config.PENDING_HOURS * 60,
       payload: { dir: pendingId, name: requested, firstName, lastName },
@@ -444,7 +453,9 @@ const adminUser = (req, res) => {
   return user;
 };
 
-admin.get('/sites', (req, res) => res.json({ sites: sites.listAll() }));
+admin.get('/sites', (req, res) =>
+  res.json({ sites: sites.listAll(), storage: { used: sites.storageUsed(), limit: config.TOTAL_MAX_GB * 1024 ** 3 } }),
+);
 admin.get('/sites/:id/audit', (req, res) => {
   const site = adminSite(req, res);
   if (site) res.json({ site: sites.publicSite(site), events: accounts.auditForSite(site.id) });

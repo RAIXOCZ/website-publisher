@@ -20,6 +20,9 @@ services:
       SITE_DOMAIN: ${SITE_DOMAIN:-freepages.dev}
       PUBLISH_PER_HOUR: ${PUBLISH_PER_HOUR:-60}
       MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-100}
+      SITE_MAX_MB: ${SITE_MAX_MB:-100}
+      ACCOUNT_MAX_MB: ${ACCOUNT_MAX_MB:-500}
+      TOTAL_MAX_GB: ${TOTAL_MAX_GB:-20}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       MAIL_FROM: ${MAIL_FROM:-}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-martin@balcar.me}

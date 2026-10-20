@@ -1,6 +1,6 @@
 'use strict';
 
-const data = { sites: [], users: [], whitelist: [], yourIp: '' };
+const data = { sites: [], users: [], whitelist: [], yourIp: '', storage: { used: 0, limit: 0 } };
 let config;
 
 async function init() {
@@ -17,6 +17,7 @@ async function load() {
   try {
     const [sites, users, whitelist] = await Promise.all([api('/admin/sites'), api('/admin/users'), api('/admin/whitelist')]);
     data.sites = sites.sites;
+    data.storage = sites.storage;
     data.users = users.users;
     data.whitelist = whitelist.ips;
     data.yourIp = whitelist.yourIp;
@@ -93,7 +94,7 @@ function renderSites() {
   $('#sites-empty').hidden = sites.length > 0;
   const active = data.sites.filter((s) => !s.deletedAt);
   $('#count-sites').textContent = active.length;
-  $('#stats').textContent = `${sitesLabel(active.length)} · ${formatBytes(active.reduce((sum, s) => sum + (s.bytes || 0), 0))}`;
+  $('#stats').textContent = `${sitesLabel(active.length)} · ${t('usage.total', { used: formatBytes(data.storage.used), limit: formatBytes(data.storage.limit) })}`;
 }
 
 $('#site-rows').addEventListener('click', async (e) => {

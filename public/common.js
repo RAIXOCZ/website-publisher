@@ -242,12 +242,13 @@ function cleanFiles(files) {
  * Resolves with { status, data } whatever the outcome, so callers can react
  * to 403/409 themselves.
  */
-function uploadSite({ files, name, overwrite = false, password = '', preview = false, base = '', exact = false, identity = null, onProgress }) {
+function uploadSite({ files, name, overwrite = false, password = '', preview = false, replacePreview = '', base = '', exact = false, identity = null, onProgress }) {
   const form = new FormData();
   form.append('name', name);
   form.append('overwrite', overwrite ? '1' : '0');
   form.append('password', password || '');
   if (preview) form.append('preview', '1');
+  if (replacePreview) form.append('replacePreview', replacePreview);
   if (exact) form.append('exact', '1');
   if (base) form.append('base', base);
   if (identity) for (const key of ['email', 'firstName', 'lastName']) form.append(key, identity[key] || '');
