@@ -95,6 +95,14 @@ CREATE TABLE IF NOT EXISTS previews (
   expires_at TEXT NOT NULL
 );
 
+-- Page views per site and hour (no data about visitors).
+CREATE TABLE IF NOT EXISTS site_views (
+  site_id INTEGER NOT NULL,
+  hour TEXT NOT NULL,           -- UTC, e.g. 2026-10-21T14
+  views INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (site_id, hour)
+);
+
 CREATE TABLE IF NOT EXISTS ip_whitelist (
   ip TEXT PRIMARY KEY,
   note TEXT NOT NULL DEFAULT '',

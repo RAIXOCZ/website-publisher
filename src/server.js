@@ -12,6 +12,7 @@ const mail = require('./mail');
 const db = require('./db');
 const { serveSite, page } = require('./serve');
 const seo = require('./seo');
+const stats = require('./stats');
 const { langOf, t } = require('./i18n');
 
 const app = express();
@@ -188,6 +189,29 @@ api.post('/auth/login', json, async (req, res) => {
   res.json({ ok: true });
 });
 
+// Creating an account without publishing anything: the account exists
+// once the e-mail link is confirmed.
+api.post('/auth/register', json, async (req, res) => {
+  const email = accounts.normEmail(req.body?.email);
+  if (!email) return fail(req, res, 400, 'emailInvalid');
+  const firstName = accounts.cleanName(req.body?.firstName);
+  const lastName = accounts.cleanName(req.body?.lastName);
+  if (!firstName || !lastName) return fail(req, res, 400, 'nameRequired');
+  if (!emailAllowed(`ip:${ipOf(req)}`, `to:${email}`)) return fail(req, res, 429, 'tooManyEmails');
+  const user = accounts.activeUserByEmail(email);
+  if (user) {
+    // Already registered: a sign-in link instead (and the same answer).
+    const token = accounts.createEmailToken({ purpose: 'login', email, userId: user.id, ip: ipOf(req), minutes: config.LINK_MINUTES });
+    await sendMail(req, { to: email, kind: 'login', userId: user.id, params: { link: emailLink(token), minutes: config.LINK_MINUTES } });
+  } else {
+    const token = accounts.createEmailToken({
+      purpose: 'register', email, ip: ipOf(req), minutes: config.PENDING_HOURS * 60, payload: { firstName, lastName },
+    });
+    await sendMail(req, { to: email, kind: 'register', params: { link: emailLink(token), hours: config.PENDING_HOURS, terms: `${config.PUBLIC_URL}/podminky` } });
+  }
+  res.json({ ok: true });
+});
+
 api.post('/auth/logout', (req, res) => {
   accounts.endSession(req, res);
   res.json({ ok: true });
@@ -213,6 +237,14 @@ api.post('/auth/consume', json, async (req, res) => {
   }
   const row = accounts.consumeEmailToken(String(req.body?.token || ''));
   if (!row) return fail(req, res, 410, 'linkExpired');
+
+  if (row.purpose === 'register') {
+    let user = accounts.activeUserByEmail(row.email);
+    if (!user) user = accounts.createUser({ email: row.email, firstName: row.payload?.firstName, lastName: row.payload?.lastName, ip });
+    accounts.audit('email.verified', { userId: user.id, ip, detail: { email: row.email } });
+    accounts.startSession(res, user.id);
+    return res.json({ redirect: '/ucet?welcome=1' });
+  }
 
   if (row.purpose === 'login') {
     const user = accounts.activeUserByEmail(row.email);
@@ -257,6 +289,13 @@ api.post('/me', requireUser, json, (req, res) => {
   if (!firstName || !lastName) return fail(req, res, 400, 'nameRequired');
   accounts.updateNames(user, { firstName, lastName }, ipOf(req));
   res.json({ user: accounts.publicUser(accounts.userById(user.id)) });
+});
+
+// Visits of the signed-in user's sites: all of them, or one (?site=name).
+api.get('/me/stats', requireUser, (req, res) => {
+  const mine = sites.sitesOfUser(accounts.currentUser(req).id);
+  const chosen = req.query.site ? mine.filter((s) => s.name === req.query.site) : mine;
+  res.json(stats.series(chosen.map((s) => s.id), String(req.query.range || '24h')));
 });
 
 api.get('/me/audit', requireUser, (req, res) => {
@@ -466,10 +505,24 @@ admin.get('/sites/:id/audit', (req, res) => {
   const site = adminSite(req, res);
   if (site) res.json({ site: sites.publicSite(site), events: accounts.auditForSite(site.id) });
 });
+// Tells the owner about a measure taken by the admin, with the reasons the
+// admin wrote (only when there are some).
+async function notifyMeasure(req, user, measure, params = {}) {
+  const reason = String(req.body?.reason || '').trim().slice(0, 4000);
+  if (!reason || !user || user.deleted_at && measure !== 'accountDeleted') return;
+  await sendMail(req, {
+    to: user.email, kind: 'measure', userId: user.id,
+    params: { measure: mail.measureText(langOf(req), measure, params), reason, contact: config.ABUSE_EMAIL, terms: `${config.PUBLIC_URL}/podminky` },
+  });
+}
+
 admin.post('/sites/:id/delete', async (req, res) => {
   const site = adminSite(req, res);
   if (!site) return;
-  if (!site.deleted_at) await sites.softDelete(site, { by: 'admin', ip: ipOf(req) });
+  if (!site.deleted_at) {
+    await sites.softDelete(site, { by: 'admin', ip: ipOf(req) });
+    await notifyMeasure(req, site.user_id && accounts.userById(site.user_id), 'siteDeleted', { name: site.name });
+  }
   res.json({ ok: true });
 });
 admin.post('/sites/:id/purge', async (req, res) => {
@@ -490,6 +543,11 @@ admin.post('/sites/:id/reset-password', (req, res) => {
   res.json({ name: site.name, password: sites.resetPassword(site) });
 });
 
+admin.get('/stats', (req, res) => {
+  const active = sites.listAll().filter((s) => !s.deletedAt);
+  const chosen = req.query.site ? active.filter((s) => s.name === req.query.site) : active;
+  res.json(stats.series(chosen.map((s) => s.id), String(req.query.range || '24h')));
+});
 admin.get('/users', (req, res) => res.json({ users: accounts.listUsers() }));
 admin.get('/users/:id/audit', (req, res) => {
   const user = adminUser(req, res);
@@ -499,6 +557,7 @@ admin.post('/users/:id/delete', async (req, res) => {
   const user = adminUser(req, res);
   if (!user) return;
   if (user.is_admin) return fail(req, res, 400, 'adminAccount');
+  await notifyMeasure(req, user, 'accountDeleted');
   await accounts.deleteUser(user.id, { by: 'admin', ip: ipOf(req) });
   res.json({ ok: true });
 });
@@ -507,6 +566,7 @@ admin.post('/users/:id/block', async (req, res) => {
   if (!user) return;
   if (user.is_admin) return fail(req, res, 400, 'adminAccount');
   accounts.setBlocked(user.id, Boolean(req.body?.blocked), ipOf(req));
+  if (req.body?.blocked) await notifyMeasure(req, user, 'accountBlocked');
   res.json({ ok: true, blocked: Boolean(req.body?.blocked) });
 });
 admin.post('/users/:id/purge', async (req, res) => {
@@ -569,7 +629,11 @@ app.use((err, req, res, _next) => {
 
 db.open();
 sites.init().then(() => {
-  const housekeeping = () => accounts.cleanup().catch((err) => console.error('cleanup failed:', err));
+  const housekeeping = () =>
+    accounts
+      .cleanup()
+      .then(() => stats.cleanup())
+      .catch((err) => console.error('cleanup failed:', err));
   housekeeping();
   setInterval(housekeeping, 60_000).unref();
   app.listen(config.PORT, () => {

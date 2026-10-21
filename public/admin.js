@@ -82,7 +82,7 @@ function renderSites() {
       cell(tr, 2).children[2].title = formatDateTime(site.updatedAt);
       const actions = [button(t('admin.history'), 'audit')];
       if (!site.deletedAt) {
-        actions.push(`<a class="btn btn-sm" href="/?edit=${encodeURIComponent(site.name)}">${t('row.edit')}</a>`);
+        actions.push(`<a class="btn btn-sm btn-accent" href="/?edit=${encodeURIComponent(site.name)}">${t('row.edit')}</a>`);
         actions.push(button(t('row.rename'), 'rename'));
         if (!site.owner) actions.push(button(t('row.newPw'), 'password'));
         actions.push(button(t('row.delete'), 'delete', 'btn-danger'));
@@ -122,8 +122,9 @@ $('#site-rows').addEventListener('click', async (e) => {
       const result = await api(`/admin/sites/${site.id}/reset-password`, { method: 'POST' });
       await uiAlert(t('admin.resetPrompt', { name }), { title: t('admin.resetTitle'), value: result.password });
     } else if (el.dataset.action === 'delete') {
-      if (!(await uiConfirm(t('admin.deleteConfirm', { name, days: config.retentionDays }), { title: t('delete.title'), ok: t('delete.ok'), danger: true }))) return;
-      await api(`/admin/sites/${site.id}/delete`, { method: 'POST' });
+      const reason = await askReason(t('admin.deleteConfirm', { name, days: config.retentionDays }), Boolean(site.owner), { title: t('delete.title'), ok: t('delete.ok') });
+      if (reason === null) return;
+      await api(`/admin/sites/${site.id}/delete`, { method: 'POST', json: { reason } });
       toast(t('admin.deleted', { name }));
     } else if (el.dataset.action === 'purge') {
       if (!(await uiConfirm(t('admin.purgeSiteConfirm', { name }), { title: t('admin.purgeTitle'), ok: t('admin.purge'), danger: true }))) return;
@@ -135,6 +136,17 @@ $('#site-rows').addEventListener('click', async (e) => {
     uiError(err);
   }
 });
+
+// Confirms a measure; when the owner has an e-mail, an optional message
+// (the reasons) is sent to them. Resolves with the message, '' or null (cancelled).
+async function askReason(text, hasOwner, { title, ok }) {
+  if (!hasOwner) return (await uiConfirm(text, { title, ok, danger: true })) ? '' : null;
+  return uiDialog({
+    title, ok, danger: true, multiline: true, optional: true, input: '',
+    text: `${text}\n\n${t('admin.reasonHelp')}`,
+    placeholder: t('admin.reasonPlaceholder'),
+  });
+}
 
 /* ---------- users ---------- */
 
@@ -191,12 +203,14 @@ $('#user-rows').addEventListener('click', async (e) => {
     }
     if (el.dataset.action === 'block' || el.dataset.action === 'unblock') {
       const blocked = el.dataset.action === 'block';
-      if (blocked && !(await uiConfirm(t('admin.blockConfirm', { email: label }), { title: t('admin.blockTitle'), ok: t('admin.block'), danger: true }))) return;
-      await api(`/admin/users/${user.id}/block`, { method: 'POST', json: { blocked } });
+      const reason = blocked ? await askReason(t('admin.blockConfirm', { email: label }), true, { title: t('admin.blockTitle'), ok: t('admin.block') }) : '';
+      if (reason === null) return;
+      await api(`/admin/users/${user.id}/block`, { method: 'POST', json: { blocked, reason } });
       toast(t(blocked ? 'admin.blocked' : 'admin.unblocked', { email: label }));
     } else if (el.dataset.action === 'delete') {
-      if (!(await uiConfirm(t('admin.deleteUserConfirm', { email: label, days: config.retentionDays }), { title: t('admin.deleteUserTitle'), ok: t('delete.ok'), danger: true }))) return;
-      await api(`/admin/users/${user.id}/delete`, { method: 'POST' });
+      const reason = await askReason(t('admin.deleteUserConfirm', { email: label, days: config.retentionDays }), true, { title: t('admin.deleteUserTitle'), ok: t('delete.ok') });
+      if (reason === null) return;
+      await api(`/admin/users/${user.id}/delete`, { method: 'POST', json: { reason } });
       toast(t('admin.userDeleted', { email: label }));
     } else if (el.dataset.action === 'purge') {
       if (!(await uiConfirm(t('admin.purgeUserConfirm', { email: label }), { title: t('admin.purgeTitle'), ok: t('admin.purge'), danger: true }))) return;
@@ -296,7 +310,14 @@ $('#whitelist-rows').addEventListener('click', async (e) => {
 
 /* ---------- tabs and filters ---------- */
 
+// Built when the tab is first opened, over the active sites.
+let visits = null;
 function showTab(tab) {
+  if (tab === 'visits') {
+    const names = data.sites.filter((s) => !s.deletedAt).map((s) => s.name);
+    if (visits) visits.reload();
+    else visits = statsPanel($('#visits'), { endpoint: '/admin/stats', siteNames: names });
+  }
   for (const el of document.querySelectorAll('[role=tab]')) el.setAttribute('aria-selected', String(el.dataset.tab === tab));
   for (const el of document.querySelectorAll('[data-panel]')) el.hidden = el.dataset.panel !== tab;
 }

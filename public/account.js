@@ -7,6 +7,10 @@ async function init() {
   $('#signin').hidden = Boolean(config.user);
   $('#account').hidden = !config.user;
   if (config.user) await load();
+  if (new URLSearchParams(location.search).has('welcome')) {
+    history.replaceState(null, '', location.pathname);
+    toast(t('register.welcome'));
+  }
 }
 
 async function load() {
@@ -31,6 +35,7 @@ async function load() {
   $('#curl-example').textContent = curlExample();
   renderSites(sites);
   renderUsage(usage);
+  renderVisits(sites);
   renderTokens(tokens);
   await renderAudit();
 }
@@ -48,7 +53,8 @@ function renderSites(sites) {
       card.innerHTML = `<div><h3></h3><a class="site-url" target="_blank" rel="noopener"></a></div>
         <div class="chips site-meta"></div>
         <div class="site-actions">
-          <a class="btn btn-sm" data-action="edit"></a>
+          <a class="btn btn-sm btn-accent" data-action="edit"></a>
+          <button class="btn btn-sm" data-action="copy"></button>
           <button class="btn btn-sm" data-action="rename"></button>
           <button class="btn btn-sm btn-danger" data-action="delete"></button>
         </div>`;
@@ -56,6 +62,7 @@ function renderSites(sites) {
       $('.site-url', card).textContent = site.url;
       $('.site-url', card).href = site.url;
       $('[data-action=edit]', card).textContent = t('row.edit');
+      $('[data-action=copy]', card).textContent = t('row.copyLink');
       $('[data-action=edit]', card).href = `/?edit=${encodeURIComponent(site.name)}`;
       $('[data-action=rename]', card).textContent = t('row.rename');
       $('[data-action=delete]', card).textContent = t('row.delete');
@@ -70,6 +77,7 @@ $('#sites').addEventListener('click', async (e) => {
   const button = e.target.closest('button[data-action]');
   if (!button) return;
   const name = button.closest('.site-card').dataset.name;
+  if (button.dataset.action === 'copy') return copy($('.site-url', button.closest('.site-card')).href);
   try {
     if (button.dataset.action === 'rename') {
       const next = await uiPrompt(t('rename.label', { name }), name, { title: t('rename.title'), ok: t('rename.ok') });
@@ -96,6 +104,16 @@ function renderUsage({ used, limit, siteLimit }) {
   $('#usage-bar').style.width = `${(share * 100).toFixed(1)}%`;
   $('#usage-bar').classList.toggle('full', share >= 0.8); // almost full
   $('.usage .meter').hidden = !limit;
+}
+
+// The visits chart; rebuilt only when the list of sites changes.
+let visits = null;
+let visitSites = '';
+function renderVisits(sites) {
+  const names = sites.map((s) => s.name);
+  if (visits && names.join() === visitSites) return visits.reload();
+  visitSites = names.join();
+  visits = statsPanel($('#visits'), { endpoint: '/me/stats', siteNames: names });
 }
 
 /* ---------- profile ---------- */
@@ -204,6 +222,25 @@ $('#logout').addEventListener('click', async () => {
 });
 
 setupEmailLogin($('#signin-form'));
+
+$('#register-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const alert = $('.alert', form);
+  const button = $('button[type=submit]', form);
+  alert.hidden = true;
+  button.disabled = true;
+  try {
+    const email = form.email.value.trim();
+    await api('/auth/register', { method: 'POST', json: { email, firstName: form.firstName.value.trim(), lastName: form.lastName.value.trim() } });
+    form.replaceChildren(Object.assign(document.createElement('p'), { className: 'sent', textContent: t('register.sent', { email }) }));
+  } catch (err) {
+    alert.textContent = err.message;
+    alert.hidden = false;
+  } finally {
+    button.disabled = false;
+  }
+});
 scrollSpy($('.side-nav'));
 
 init().catch((err) => {

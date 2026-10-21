@@ -4,6 +4,10 @@ Drop a folder, get a website. A small self-hosted static site publisher with a C
 
 - **Upload page** (`/`): drag & drop a folder (or a `.zip`), arrange it in a file tree (add files/folders, new folders, move, rename, replace, remove), look at a **5-minute preview** at `preview-xxxxxx`, then publish.
 - **Accounts by e-mail, no passwords**: a visitor enters e-mail, first and last name; the site goes live once they click the confirmation link, which also creates the account. Later sign-ins use one-time e-mail links. Signed-in users publish immediately.
+- **Registration without a site**: `/ucet` has a "new account" form; the account exists once the e-mail link is confirmed.
+- **No index.html required**: a folder shows its index.html, index.htm or only HTML page; a site root without pages leads to the nearest subfolder with an index.html (e.g. `dist/`); otherwise a file list.
+- **Visit statistics**: page views per site and hour (no IPs, cookies or visitor data; bots and previews not counted; kept 90 days), as charts on the account page (per site and total) and in the admin panel.
+- **Admin measures**: deleting a site, disabling editing or deleting an account can e-mail the owner a statement of reasons written in the dialog.
 - **Editing**: an existing site opens in the same file tree; replace single files, a folder or everything, add and remove, preview, save (atomic swap).
 - **Account page** (`/ucet`): sites, name, API tokens for curl/CI, activity history (with IPs, without e-mails), account deletion confirmed by e-mail.
 - **CLI**: `curl -H "Authorization: Bearer fp_…" -F name=my-site -F overwrite=1 -F f=@site.zip https://freepages.dev/api/sites`.

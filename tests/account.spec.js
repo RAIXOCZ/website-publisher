@@ -185,3 +185,31 @@ test('publishing confirmation for an existing account adds the site to it', asyn
   await expect(page.locator('#result-title')).toHaveText(`Web ${name} je online`);
   await expect(page.locator('#my-list .site-card')).toHaveCount(2);
 });
+
+test('an account can be created without uploading a site', async ({ page, request }) => {
+  const email = uniqueEmail('reg');
+  await page.goto('/ucet');
+  const form = page.locator('#register-form');
+  await form.locator('[name=email]').fill(email);
+  await form.locator('[name=firstName]').fill('Eva');
+  await form.locator('[name=lastName]').fill('Malá');
+  await form.locator('button[type=submit]').click();
+  await expect(page.locator('#signin .sent')).toContainText(email);
+
+  const mail = await lastMail(request, email, 'register');
+  expect(mail.subject).toBe('Potvrďte registraci do Freepages');
+  await page.goto(new URL(mail.params.link).pathname);
+  await expect(page.locator('#confirm-title')).toHaveText('Vytvořit účet');
+  await page.locator('#confirm-button').click();
+  await expect(page).toHaveURL('/ucet');
+  await expect(page.locator('.toast')).toHaveText('Vítejte! Účet je vytvořený.');
+  await expect(page.locator('#account-name')).toHaveText('Eva Malá');
+  await expect(page.locator('#sites-empty')).toBeVisible();
+
+  // Registering again with the same address just sends a sign-in link.
+  await request.post('/api/auth/register', { headers: HEADERS, data: { email, firstName: 'X', lastName: 'Y' } });
+  expect((await lastMail(request, email)).kind).toBe('login');
+  // Names are required.
+  const bad = await request.post('/api/auth/register', { headers: HEADERS, data: { email: uniqueEmail() } });
+  expect(bad.status()).toBe(400);
+});

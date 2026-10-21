@@ -30,7 +30,7 @@ const MESSAGES = {
     expectedUpload: 'Očekávalo se nahrání souborů.',
     uploadFailed: 'Nahrávání selhalo: {reason}',
     uploadAborted: 'Nahrávání bylo přerušeno.',
-    noFiles: 'Nepřišly žádné soubory. Nahrajte složku, která obsahuje alespoň index.html.',
+    noFiles: 'Nepřišly žádné soubory. Nahrajte složku nebo soubory webu.',
     emptyUpload: 'Nahraná data neobsahují žádné soubory ke zveřejnění.',
     busy: 'Tento web se právě zveřejňuje, zkuste to za chvíli znovu.',
     emailInvalid: 'Zadejte platnou e-mailovou adresu.',
@@ -54,7 +54,7 @@ const MESSAGES = {
     pageNotFound: '404 – Stránka nenalezena',
     noSuchSite: '404 – Web neexistuje',
     noSuchSiteText: 'Na adrese <code>{name}</code> zatím nic není zveřejněno.',
-    listingText: 'Tato složka neobsahuje <code>index.html</code>, zde jsou její soubory:',
+    listingText: 'Tato složka nemá úvodní stránku, zde jsou její soubory:',
   },
   en: {
     missingHeader: 'Missing request header.',
@@ -82,7 +82,7 @@ const MESSAGES = {
     expectedUpload: 'Expected a file upload.',
     uploadFailed: 'Upload failed: {reason}',
     uploadAborted: 'The upload was interrupted.',
-    noFiles: 'No files received. Upload a folder that contains at least an index.html.',
+    noFiles: 'No files received. Upload a folder or the files of your site.',
     emptyUpload: 'The upload contains no files to publish.',
     busy: 'This site is being published right now, try again in a moment.',
     emailInvalid: 'Enter a valid e-mail address.',
@@ -105,7 +105,7 @@ const MESSAGES = {
     pageNotFound: '404 – Page not found',
     noSuchSite: '404 – No such site',
     noSuchSiteText: 'Nothing is published at <code>{name}</code> yet.',
-    listingText: 'This folder has no <code>index.html</code>, here are its files:',
+    listingText: 'This folder has no start page, here are its files:',
   },
 };
 

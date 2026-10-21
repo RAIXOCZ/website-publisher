@@ -240,6 +240,19 @@ test('the admin can stop an account from adding and editing sites, and allow it 
   await userPage.context().close();
 });
 
+test('a message written when deleting a site is e-mailed to its owner', async ({ page, playwright, request }) => {
+  const { email, site } = await ownedSite(playwright);
+  await login(page);
+  await siteRow(page, site).locator('[data-action=delete]').click();
+  await expect(page.locator('#ui-dialog .ui-area')).toBeVisible();
+  await page.locator('#ui-dialog .ui-area').fill('Web posílá přes 1 TB dat denně.');
+  await page.locator('#ui-dialog [data-ui=ok]').click();
+  const mail = await lastMail(request, email, 'measure');
+  expect(mail.text).toContain(`web ${site} byl smazán`);
+  expect(mail.text).toContain('Web posílá přes 1 TB dat denně.');
+  expect(mail.text).toContain('ohradit');
+});
+
 test('IP whitelist can be edited', async ({ page }) => {
   await login(page);
   await page.locator('[role=tab][data-tab=whitelist]').click();

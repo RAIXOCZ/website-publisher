@@ -4,6 +4,7 @@ const fsp = require('fs/promises');
 const path = require('path');
 const config = require('./config');
 const sites = require('./sites');
+const stats = require('./stats');
 const { langOf, t } = require('./i18n');
 
 // Sites served from the admin's own origin (PUBLIC_URL/<name>/) run in a
@@ -86,6 +87,37 @@ async function notFound(req, res, root, sandboxed) {
  * @param subPath  path inside the site, starting with "/"
  * @param basePath URL prefix the site is mounted at ("" for subdomains)
  */
+/**
+ * What a folder shows when it is opened. index.html is not required:
+ * index.htm, or the only HTML page in the folder, works too, and the root
+ * of a site that has no pages of its own leads to the nearest subfolder
+ * with an index.html (e.g. dist/). Otherwise the folder is listed.
+ */
+async function entryPage(dir, isRoot) {
+  for (const name of ['index.html', 'index.htm']) {
+    if ((await statOrNull(path.join(dir, name)))?.isFile()) return { file: path.join(dir, name) };
+  }
+  const entries = await fsp.readdir(dir, { withFileTypes: true }).catch(() => []);
+  const pages = entries.filter((e) => e.isFile() && /\.html?$/i.test(e.name) && !/^404\.html?$/i.test(e.name));
+  if (pages.length === 1) return { file: path.join(dir, pages[0].name) };
+  if (!isRoot || pages.length) return null;
+  // Breadth-first, so the shallowest index.html wins.
+  let level = [''];
+  for (let depth = 0; depth < 3 && level.length; depth++) {
+    const next = [];
+    for (const rel of level) {
+      const children = await fsp.readdir(path.join(dir, rel), { withFileTypes: true }).catch(() => []);
+      for (const child of children.filter((c) => c.isDirectory()).sort((a, b) => a.name.localeCompare(b.name))) {
+        const sub = rel ? `${rel}/${child.name}` : child.name;
+        if ((await statOrNull(path.join(dir, sub, 'index.html')))?.isFile()) return { redirect: `${sub.split('/').map(encodeURIComponent).join('/')}/` };
+        next.push(sub);
+      }
+    }
+    level = next;
+  }
+  return null;
+}
+
 async function serveSite(req, res, name, subPath, basePath, previewRoot = null) {
   const sandboxed = basePath !== '' && config.PATH_SANDBOX;
   const lang = langOf(req);
@@ -115,20 +147,27 @@ async function serveSite(req, res, name, subPath, basePath, previewRoot = null) 
   const full = path.join(root, rel);
   if (full !== root && !full.startsWith(root + path.sep)) return res.status(400).send(t(lang, 'badRequest'));
 
+  // Pages (not previews, not images or styles) count as visits.
+  const view = (file) => {
+    if (!previewRoot && /\.html?$/i.test(file)) stats.hit(name, req);
+    return send(res, file, sandboxed);
+  };
+
   const st = await statOrNull(full);
   if (st && st.isDirectory()) {
     if (!subPath.endsWith('/')) {
       const query = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
       return res.redirect(301, `${basePath}${subPath}/${query}`);
     }
-    const index = path.join(full, 'index.html');
-    if (await statOrNull(index)) return send(res, index, sandboxed);
+    const entry = await entryPage(full, rel === '/');
+    if (entry?.file) return view(entry.file);
+    if (entry?.redirect) return res.redirect(302, `${basePath}${rel.replace(/\/?$/, '/')}${entry.redirect}`);
     return listing(req, res, full, rel.endsWith('/') ? rel : rel + '/', name);
   }
-  if (st && st.isFile()) return send(res, full, sandboxed);
+  if (st && st.isFile()) return view(full);
 
   // Clean URLs: /about -> /about.html
-  if (!rel.endsWith('/') && (await statOrNull(full + '.html'))) return send(res, full + '.html', sandboxed);
+  if (!rel.endsWith('/') && (await statOrNull(full + '.html'))) return view(full + '.html');
 
   return notFound(req, res, root, sandboxed);
 }

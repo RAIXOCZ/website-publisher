@@ -159,3 +159,42 @@ test('pages reference versioned assets so a deploy never mixes old CSS/JS with n
   expect((await request.get('/_app/app.css')).headers()['cache-control']).toBe('no-cache');
   expect((await request.get('/_app/app.css?v=stale')).headers()['cache-control']).toBe('no-cache');
 });
+
+test.describe('sites without index.html', () => {
+  const files = (list) => Object.fromEntries(list.flatMap(([p, html], i) => [[`p${i}`, p], [`f${i}`, { name: p.split('/').pop(), mimeType: 'text/html', buffer: Buffer.from(html) }]]));
+  async function publish(request, name, list) {
+    const { apiToken } = require('./helpers');
+    const form = new FormData();
+    form.append('name', name);
+    form.append('exact', '1');
+    for (const [p, html] of list) {
+      form.append('p', p);
+      form.append('f', new Blob([html], { type: 'text/html' }), p.split('/').pop());
+    }
+    const res = await request.post('/api/sites', { headers: { Authorization: `Bearer ${await apiToken()}` }, multipart: form });
+    expect(res.status(), await res.text()).toBe(200);
+  }
+
+  test('the only HTML page of a folder is its start page', async ({ request }) => {
+    const name = unique('one');
+    await publish(request, name, [['stranka.html', '<h1>Only page</h1>'], ['style.css', 'body{}']]);
+    expect(await (await request.get(`/${name}/`)).text()).toContain('Only page');
+  });
+
+  test('a root without pages leads to the subfolder with index.html', async ({ request }) => {
+    const name = unique('dist');
+    await publish(request, name, [['dist/index.html', '<h1>Built</h1>'], ['src/app.txt', 'x'], ['README.md', '# hi']]);
+    const res = await request.get(`/${name}/`, { maxRedirects: 0 });
+    expect(res.status()).toBe(302);
+    expect(res.headers().location).toBe(`/${name}/dist/`);
+    expect(await (await request.get(`/${name}/`)).text()).toContain('Built');
+  });
+
+  test('several pages and no index.html: a list of files', async ({ request }) => {
+    const name = unique('many');
+    await publish(request, name, [['a.html', 'a'], ['b.html', 'b']]);
+    const html = await (await request.get(`/${name}/`, { headers: { 'Accept-Language': 'cs' } })).text();
+    expect(html).toContain('nemá úvodní stránku');
+    expect(html).toContain('a.html');
+  });
+});

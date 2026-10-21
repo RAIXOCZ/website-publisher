@@ -119,6 +119,7 @@ test.describe('signed in', () => {
     await pick(page, page.locator('#pick-folder'), FIXTURES.site);
     await expect(page.locator('#identity')).toBeHidden();
     await expect(page.locator('#signed-as')).toContainText('Zveřejníte jako');
+    await expect(page.locator('#account-limit')).toHaveText(/^Na účtu po zveřejnění: .* z 500 MB$/);
     await page.locator('#publish').click();
 
     const url = `http://localhost:4317/${name}/`;
@@ -411,6 +412,8 @@ test.describe('file tree before publishing', () => {
     expect(order).toEqual(['', 'css', 'css/style.css', 'files', 'files/readme.txt', 'index.html', '404.html', 'about.html']);
     await expect(page.locator('#dropzone')).toBeHidden();
     await expect(page.locator('#staged-summary')).toContainText('5 souborů');
+    await expect(page.locator('#site-limit')).toHaveText('nejvýše 100 MB na jeden web');
+    await expect(page.locator('#account-limit')).toBeHidden(); // not signed in
     expect((await request.get('/sample-site/')).status()).toBe(404);
   });
 

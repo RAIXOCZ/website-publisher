@@ -14,7 +14,7 @@ function fail(message) {
 async function init() {
   const info = await api(`/auth/token?token=${encodeURIComponent(token)}`);
   if (!info.valid) return fail(t('confirm.invalid'));
-  const kind = { login: 'login', publish: 'publish', 'delete-account': 'delete' }[info.purpose];
+  const kind = { login: 'login', publish: 'publish', register: 'register', 'delete-account': 'delete' }[info.purpose];
   $('#confirm-title').textContent = t(`confirm.${kind}Title`, { name: info.name });
   $('#confirm-text').textContent = t(`confirm.${kind}Text`, { name: info.name });
   const button = $('#confirm-button');

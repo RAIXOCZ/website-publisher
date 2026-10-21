@@ -13,9 +13,17 @@ const TEMPLATES = {
       subject: 'Přihlášení do Freepages',
       text: 'Dobrý den,\n\npro přihlášení do Freepages otevřete tento odkaz:\n{link}\n\nOdkaz platí {minutes} minut a lze ho použít jen jednou. Pokud jste o přihlášení nežádali, e-mail ignorujte.',
     },
+    measure: {
+      subject: 'Opatření k vašemu účtu Freepages',
+      text: 'Dobrý den,\n\nprovozovatel služby Freepages přijal toto opatření: {measure}\n\nOdůvodnění:\n{reason}\n\nRozhodl o něm člověk, bez použití automatizovaných nástrojů. Opatření vychází z podmínek použití: {terms}\n\nProti rozhodnutí se můžete ohradit odpovědí na tento e-mail nebo na adrese {contact}. Tím není dotčeno vaše právo obrátit se na soud.',
+    },
+    register: {
+      subject: 'Potvrďte registraci do Freepages',
+      text: 'Dobrý den,\n\npro vytvoření účtu Freepages potvrďte svou e-mailovou adresu otevřením tohoto odkazu:\n{link}\n\nOdkaz platí {hours} hodin. Potvrzením vytvoříte účet a přijímáte podmínky použití: {terms}\n\nPokud jste o registraci nežádali, e-mail ignorujte.',
+    },
     loginNoAccount: {
       subject: 'Přihlášení do Freepages',
-      text: 'Dobrý den,\n\nněkdo (pravděpodobně vy) se chtěl přihlásit do Freepages s touto e-mailovou adresou, ale účet s ní neexistuje. Účet vytvoříte zveřejněním prvního webu na {app}.\n\nPokud jste o přihlášení nežádali, e-mail ignorujte.',
+      text: 'Dobrý den,\n\nněkdo (pravděpodobně vy) se chtěl přihlásit do Freepages s touto e-mailovou adresou, ale účet s ní neexistuje. Účet si můžete vytvořit na {app}/ucet nebo zveřejněním prvního webu.\n\nPokud jste o přihlášení nežádali, e-mail ignorujte.',
     },
     publish: {
       subject: 'Potvrďte zveřejnění webu {name}',
@@ -31,9 +39,17 @@ const TEMPLATES = {
       subject: 'Sign in to Freepages',
       text: 'Hello,\n\nto sign in to Freepages, open this link:\n{link}\n\nThe link is valid for {minutes} minutes and can be used once. If you did not ask to sign in, ignore this e-mail.',
     },
+    measure: {
+      subject: 'A measure concerning your Freepages account',
+      text: 'Hello,\n\nthe operator of Freepages has taken this measure: {measure}\n\nReasons:\n{reason}\n\nThe decision was made by a person, without automated tools. It is based on the terms of use: {terms}\n\nYou can object by replying to this e-mail or at {contact}. This does not affect your right to go to court.',
+    },
+    register: {
+      subject: 'Confirm your Freepages registration',
+      text: 'Hello,\n\nto create your Freepages account, confirm your e-mail address by opening this link:\n{link}\n\nThe link is valid for {hours} hours. Confirming creates the account and accepts the terms of use: {terms}\n\nIf you did not ask to register, ignore this e-mail.',
+    },
     loginNoAccount: {
       subject: 'Sign in to Freepages',
-      text: 'Hello,\n\nsomeone (probably you) tried to sign in to Freepages with this e-mail address, but no account uses it. You create an account by publishing your first site at {app}.\n\nIf you did not ask to sign in, ignore this e-mail.',
+      text: 'Hello,\n\nsomeone (probably you) tried to sign in to Freepages with this e-mail address, but no account uses it. You can create an account at {app}/ucet or by publishing your first site.\n\nIf you did not ask to sign in, ignore this e-mail.',
     },
     publish: {
       subject: 'Confirm publishing {name}',
@@ -45,6 +61,23 @@ const TEMPLATES = {
     },
   },
 };
+
+const MEASURES = {
+  cs: {
+    siteDeleted: 'web {name} byl smazán a už není veřejně dostupný.',
+    accountBlocked: 'vašemu účtu bylo zakázáno přidávání a úpravy webů (mazat je můžete dál).',
+    accountDeleted: 'váš účet byl zrušen a jeho weby už nejsou veřejně dostupné.',
+  },
+  en: {
+    siteDeleted: 'the site {name} was deleted and is no longer publicly accessible.',
+    accountBlocked: 'your account can no longer add or edit sites (you can still delete them).',
+    accountDeleted: 'your account was closed and its sites are no longer publicly accessible.',
+  },
+};
+function measureText(lang, measure, params = {}) {
+  const text = (MEASURES[lang] || MEASURES.cs)[measure];
+  return text.replace(/\{(\w+)\}/g, (_, k) => String(params[k] ?? ''));
+}
 
 function render(lang, kind, params) {
   const tpl = (TEMPLATES[lang] || TEMPLATES.cs)[kind];
@@ -74,9 +107,9 @@ async function send({ to, lang = 'cs', kind, params = {} }) {
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${config.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: config.MAIL_FROM, to: [to], subject: message.subject, text: message.text, html: message.html }),
+    body: JSON.stringify({ from: config.MAIL_FROM, to: [to], reply_to: config.ABUSE_EMAIL, subject: message.subject, text: message.text, html: message.html }),
   });
   if (!res.ok) throw new Error(`Resend responded ${res.status}: ${await res.text()}`);
 }
 
-module.exports = { send, outbox };
+module.exports = { send, outbox, measureText };

@@ -33,6 +33,7 @@ const needsIdentity = () => !signedIn() && !state.config.whitelisted;
 async function init() {
   state.config = await api('/config');
   updateAddress();
+  $('.dropzone .hint').innerHTML = t('drop.hint', { limit: `${state.config.siteMaxMb} MB` });
   $('#nav-account').textContent = t(signedIn() ? 'nav.account' : 'nav.login');
   restoreIdentity();
   if (state.config.user?.blocked) {
@@ -350,7 +351,9 @@ function renderStaged() {
   els.dropzone.hidden = hasContent || !els.progress.hidden || !els.result.hidden || !$('#pending').hidden;
   const totalSize = files.reduce((sum, f) => sum + sizeOf(f), 0);
   $('#staged-summary').textContent = `${filesLabel(files.length)} · ${formatBytes(totalSize)}`;
+  renderLimits(totalSize);
   $('[data-tool="replace-all"]').hidden = !state.edit;
+  $('#clear-staged').hidden = Boolean(state.edit); // "Cancel editing" in the banner does that
 
   // Who publishes: e-mail form for visitors, "signed in as" for accounts.
   $('#identity').hidden = !needsIdentity() || Boolean(state.edit);
@@ -734,6 +737,7 @@ function showPreview(preview) {
   $('#preview-title').textContent = t('preview.ready');
   $('#preview-open').href = preview.url;
   $('#preview-open').hidden = false;
+  $('#preview-again').hidden = true;
   const end = new Date(preview.expiresAt).getTime();
   const tick = () => {
     const left = Math.max(0, Math.round((end - Date.now()) / 1000));
@@ -743,6 +747,7 @@ function showPreview(preview) {
       $('#preview-title').textContent = t('preview.expired');
       $('#preview-time').textContent = t('preview.expiredHint');
       $('#preview-open').hidden = true;
+      $('#preview-again').hidden = false;
       return;
     }
     const clock = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
@@ -753,6 +758,7 @@ function showPreview(preview) {
   state.previewTimer = setInterval(tick, 1000);
 }
 
+$('#preview-again').addEventListener('click', () => $('#preview').click());
 $('#preview').addEventListener('click', async () => {
   const files = cleanFiles(state.files);
   if (!files.length) return showError(t('err.noFiles'));
@@ -960,11 +966,39 @@ function siteCard({ name, url, info, password = null }) {
   return row;
 }
 
+// The size limits, right where the site is put together.
+function renderLimits(size) {
+  const MB = 1024 * 1024;
+  const siteMax = state.config.siteMaxMb * MB;
+  const siteShare = Math.min(1, size / siteMax);
+  $('#site-meter').style.width = `${(siteShare * 100).toFixed(1)}%`;
+  let over = size > siteMax;
+  $('#site-limit').textContent = t(over ? 'limits.siteOver' : 'limits.site', { limit: formatBytes(siteMax) });
+
+  const usage = state.usage;
+  const accountLimit = $('#account-limit');
+  accountLimit.hidden = !usage?.limit;
+  if (usage?.limit) {
+    // Editing or replacing a site frees its current size first.
+    const replaced = state.edit ? state.sites?.find((s) => s.name === state.edit.name)?.bytes || 0 : 0;
+    const after = usage.used - replaced + size;
+    const accountOver = after > usage.limit;
+    over ||= accountOver;
+    accountLimit.textContent = t(accountOver ? 'limits.accountOver' : 'limits.account', { after: formatBytes(after), limit: formatBytes(usage.limit) });
+    accountLimit.classList.toggle('over', accountOver);
+  }
+  $('#site-meter').classList.toggle('full', over || siteShare >= 0.8);
+  $('#site-limit').classList.toggle('over', size > siteMax);
+  $('#publish').disabled = over;
+}
+
 async function renderMySites() {
   const list = $('#my-list');
   const cards = [];
   if (signedIn()) {
-    const { sites } = await api('/me');
+    const { sites, usage } = await api('/me');
+    state.usage = usage;
+    state.sites = sites;
     for (const site of sites) cards.push(siteCard({ name: site.name, url: site.url, info: site }));
   }
   const owned = signedIn() && !state.config.whitelisted ? [] : loadOwned();

@@ -26,15 +26,30 @@
 
   <main>
     <div class="wrap page">
-      <section class="login glass" id="signin" hidden>
-        <h2 data-i18n="account.signinTitle">Přihlášení</h2>
-        <p class="muted" data-i18n="account.signinText">Zadejte e-mail, se kterým jste zveřejnili web. Pošleme vám odkaz pro přihlášení – žádné heslo není potřeba.</p>
-        <form id="signin-form">
-          <input type="email" name="email" data-i18n-placeholder="identity.email" placeholder="E-mail" autocomplete="email" required autofocus>
-          <div class="alert" hidden></div>
-          <button class="btn btn-primary" type="submit" data-i18n="login.send">Poslat přihlašovací odkaz</button>
-        </form>
-        <p class="muted small" data-i18n="account.noAccount">Účet ještě nemáte? Vznikne automaticky při zveřejnění prvního webu.</p>
+      <section class="auth glass" id="signin" hidden>
+        <div class="auth-col">
+          <h2 data-i18n="account.signinTitle">Přihlášení</h2>
+          <p class="muted" data-i18n="account.signinText">Zadejte e-mail svého účtu. Pošleme vám odkaz pro přihlášení – žádné heslo není potřeba.</p>
+          <form id="signin-form">
+            <input type="email" name="email" data-i18n-placeholder="identity.email" placeholder="E-mail" autocomplete="email" required autofocus>
+            <div class="alert" hidden></div>
+            <button class="btn btn-primary" type="submit" data-i18n="login.send">Poslat přihlašovací odkaz</button>
+          </form>
+        </div>
+        <div class="auth-col">
+          <h2 data-i18n="register.title">Nový účet</h2>
+          <p class="muted" data-i18n="register.text">Účet si můžete založit hned, i bez nahrání webu. Pošleme vám odkaz pro potvrzení e-mailu.</p>
+          <form id="register-form">
+            <input type="email" name="email" data-i18n-placeholder="identity.email" placeholder="E-mail" autocomplete="email" required>
+            <div class="row">
+              <input type="text" name="firstName" class="grow" data-i18n-placeholder="identity.first" placeholder="Jméno" autocomplete="given-name" maxlength="80" required>
+              <input type="text" name="lastName" class="grow" data-i18n-placeholder="identity.last" placeholder="Příjmení" autocomplete="family-name" maxlength="80" required>
+            </div>
+            <div class="alert" hidden></div>
+            <button class="btn" type="submit" data-i18n="register.send">Vytvořit účet</button>
+            <p class="consent" data-i18n-html="register.consent">Vytvořením účtu souhlasíte s <a href="/podminky">podmínkami použití</a>. Jak zacházíme s údaji, popisují <a href="/soukromi">zásady ochrany osobních údajů</a>.</p>
+          </form>
+        </div>
       </section>
 
       <div class="account" id="account" hidden>
@@ -53,6 +68,7 @@
           </div>
           <nav class="side-nav" aria-label="Účet">
             <a href="#weby" data-i18n="account.sites">Weby</a>
+            <a href="#navstevnost" data-i18n="stats.title">Návštěvnost</a>
             <a href="#udaje" data-i18n="account.profile">Osobní údaje</a>
             <a href="#cli" data-i18n="account.cliShort">Příkazová řádka</a>
             <a href="#historie" data-i18n="account.audit">Historie aktivit</a>
@@ -72,6 +88,11 @@
           <div class="empty" id="sites-empty" hidden data-i18n-html="account.sitesEmpty">Zatím nemáte žádné weby. <a href="/">Zveřejnit první →</a></div>
         </section>
 
+        <section class="card glass" id="navstevnost">
+          <h2 data-i18n="stats.title">Návštěvnost</h2>
+          <div id="visits"></div>
+        </section>
+
         <section class="card glass" id="udaje">
           <h2 data-i18n="account.profile">Osobní údaje</h2>
           <form class="profile" id="profile">
@@ -79,7 +100,7 @@
             <label><span data-i18n="identity.last">Příjmení</span><input type="text" name="lastName" autocomplete="family-name" maxlength="80" required></label>
             <div class="row"><button class="btn btn-primary" type="submit" data-i18n="account.save">Uložit</button></div>
           </form>
-          <p class="muted small" data-i18n="account.emailNote">E-mail nelze změnit. Pokud ho potřebujete změnit, napište nám.</p>
+          <p class="muted small" data-i18n-html="account.emailNote">E-mail nelze změnit. Pokud ho potřebujete změnit, napište na <a href="mailto:martin@freepages.dev?subject=Zm%C4%9Bna%20e-mailu">martin@freepages.dev</a>.</p>
         </section>
 
         <section class="card glass" id="cli">
@@ -135,6 +156,7 @@
 
   <script src="/_app/i18n.js"></script>
   <script src="/_app/common.js"></script>
+  <script src="/_app/stats.js"></script>
   <script src="/_app/account.js"></script>
 </body>
 </html>

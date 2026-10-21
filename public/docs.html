@@ -46,7 +46,7 @@
 
         <h2>Co má složka obsahovat</h2>
         <ul>
-          <li>Úvodní stránku <code>index.html</code> přímo ve složce.</li>
+          <li>Ideálně úvodní stránku <code>index.html</code>. Není povinná: bez ní se zobrazí jediná HTML stránka ve složce, podsložka s <code>index.html</code> (například <code>dist/</code>), nebo seznam souborů.</li>
           <li>Cokoli dalšího: CSS, JavaScript, obrázky, fonty, podsložky. Struktura zůstane zachovaná.</li>
           <li>Fungují jen statické soubory. PHP, Node.js a databáze se nespouští.</li>
           <li>Nedávejte na web osobní údaje, které nemusí být veřejné (svoje ani cizí). Web je veřejný a za jeho obsah odpovídáte vy, viz <a href="/podminky">podmínky použití</a>.</li>
@@ -63,6 +63,7 @@
 
         <h2>Účet a přihlášení</h2>
         <ul>
+          <li>Účet si můžete založit na stránce <a href="/ucet">Účet</a> i bez nahrání webu, nebo vznikne sám při prvním zveřejnění.</li>
           <li>Účet nemá heslo. Přihlásíte se na stránce <a href="/ucet">Účet</a> odkazem, který vám pošleme e-mailem.</li>
           <li>V účtu najdete své weby, osobní údaje, API tokeny a historii aktivit.</li>
         </ul>
@@ -93,7 +94,7 @@ curl -H "Authorization: Bearer $FREEPAGES_TOKEN" \
         <ul>
           <li>Adresa <code>/o-nas</code> zobrazí soubor <code>o-nas.html</code>, příponu psát nemusíte.</li>
           <li>Když přidáte soubor <code>404.html</code>, zobrazí se u neexistujících stránek.</li>
-          <li>Složka bez <code>index.html</code> zobrazí seznam svých souborů.</li>
+          <li>Složka bez <code>index.html</code> zobrazí svou jedinou HTML stránku, jinak seznam souborů.</li>
         </ul>
 
         <h2>Pravidla pro název</h2>
@@ -134,7 +135,7 @@ curl -H "Authorization: Bearer $FREEPAGES_TOKEN" \
 
         <h2>What the folder should contain</h2>
         <ul>
-          <li>A start page <code>index.html</code> directly in the folder.</li>
+          <li>Ideally a start page <code>index.html</code>. It is not required: without it the only HTML page in the folder is shown, or a subfolder with an <code>index.html</code> (such as <code>dist/</code>), or a list of files.</li>
           <li>Anything else: CSS, JavaScript, images, fonts, subfolders. The structure is kept as it is.</li>
           <li>Only static files work. PHP, Node.js and databases are not run.</li>
           <li>Avoid putting personal data on your site unless it needs to be public, whether your own or anyone else's. The site is public and you are responsible for its content, see the <a href="/podminky">terms of use</a>.</li>
@@ -151,6 +152,7 @@ curl -H "Authorization: Bearer $FREEPAGES_TOKEN" \
 
         <h2>Account and signing in</h2>
         <ul>
+          <li>You can create an account on the <a href="/ucet">Account</a> page without uploading a site, or it is created when you first publish.</li>
           <li>Accounts have no password. Sign in on the <a href="/ucet">Account</a> page with a link we send you by e-mail.</li>
           <li>Your account shows your sites, personal details, API tokens and activity history.</li>
         </ul>
@@ -181,7 +183,7 @@ curl -H "Authorization: Bearer $FREEPAGES_TOKEN" \
         <ul>
           <li>The address <code>/about</code> serves <code>about.html</code>; you don't have to type the extension.</li>
           <li>Add a <code>404.html</code> file and it is shown for pages that don't exist.</li>
-          <li>A folder without <code>index.html</code> shows a list of its files.</li>
+          <li>A folder without <code>index.html</code> shows its only HTML page, otherwise a list of its files.</li>
         </ul>
 
         <h2>Name rules</h2>

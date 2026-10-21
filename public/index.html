@@ -56,7 +56,7 @@
               <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 16v-5M9.5 13.5 12 11l2.5 2.5"/></svg>
             </div>
             <p class="title" id="drop-title" data-i18n="drop.title">Přetáhněte sem složku s webem</p>
-            <p class="hint" data-i18n-html="drop.hint">nebo soubory či .zip &middot; web musí obsahovat <code>index.html</code></p>
+            <p class="hint">nebo soubory či .zip &middot; až 100 MB na web</p>
             <div class="actions">
               <button class="btn btn-primary" id="pick-folder" type="button" data-i18n="pick.folder">Přidat složku</button>
               <button class="btn" id="pick-files" type="button" data-i18n="pick.files">Přidat soubory</button>
@@ -79,6 +79,9 @@
               <div class="side-summary">
                 <span class="side-label" data-i18n="staged.contents">Obsah webu</span>
                 <b id="staged-summary"></b>
+                <div class="meter mini" aria-hidden="true"><div id="site-meter"></div></div>
+                <span class="muted small" id="site-limit"></span>
+                <span class="muted small" id="account-limit" hidden></span>
               </div>
               <div class="preview-box" id="preview-box" hidden>
                 <span class="preview-dot" aria-hidden="true"></span>
@@ -87,6 +90,7 @@
                   <span class="muted small" id="preview-time"></span>
                 </div>
                 <a class="btn btn-sm btn-primary" id="preview-open" target="_blank" rel="noopener" data-i18n="preview.open">Otevřít náhled</a>
+                <button class="btn btn-sm" type="button" id="preview-again" hidden data-i18n="preview.again">Vytvořit nový náhled</button>
               </div>
               <form class="identity" id="identity" hidden>
                 <p class="identity-lead" data-i18n="identity.lead">Kam poslat potvrzení? Web zveřejníme, jakmile potvrdíte svůj e-mail. Účet se vytvoří automaticky.</p>
@@ -194,7 +198,7 @@
 └── img/logo.png</pre>
         <svg class="arrow" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         <div class="copy">
-          <h3 data-i18n="how.title">Složka s index.html stačí.</h3>
+          <h3 data-i18n="how.title">Stačí složka s HTML soubory.</h3>
           <p data-i18n="how.text">HTML, CSS, JavaScript, obrázky i podsložky se zveřejní tak, jak jsou. Adresy bez .html a vlastní stránka 404 fungují samy.</p>
           <p class="live" id="how-live"></p>
           <div><a class="btn" href="/docs" data-i18n="how.docs">Přečíst návod</a></div>
@@ -237,7 +241,7 @@
       <div class="site-actions">
         <button class="btn btn-sm" data-action="copy" data-i18n="row.copyLink">Kopírovat odkaz</button>
         <button class="btn btn-sm" data-action="password" data-i18n="row.password" hidden>Heslo</button>
-        <button class="btn btn-sm" data-action="edit" data-i18n="row.edit">Upravit</button>
+        <button class="btn btn-sm btn-accent" data-action="edit" data-i18n="row.edit">Upravit</button>
         <button class="btn btn-sm btn-danger" data-action="delete" data-i18n="row.delete">Smazat</button>
         <button class="btn btn-sm" data-action="forget" data-i18n="row.forget" hidden>Odebrat ze seznamu</button>
       </div>

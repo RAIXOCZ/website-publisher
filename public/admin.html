@@ -59,6 +59,7 @@
             <nav class="side-nav" role="tablist" aria-orientation="vertical">
               <button type="button" role="tab" data-tab="sites" aria-selected="true"><span data-i18n="admin.tabSites">Weby</span> <span class="count" id="count-sites">0</span></button>
               <button type="button" role="tab" data-tab="users" aria-selected="false"><span data-i18n="admin.tabUsers">Uživatelé</span> <span class="count" id="count-users">0</span></button>
+              <button type="button" role="tab" data-tab="visits" aria-selected="false"><span data-i18n="stats.title">Návštěvnost</span></button>
               <button type="button" role="tab" data-tab="whitelist" aria-selected="false"><span data-i18n="admin.tabWhitelist">IP whitelist</span> <span class="count" id="count-whitelist">0</span></button>
             </nav>
           </aside>
@@ -106,6 +107,10 @@
             </table>
             <div class="empty" id="users-empty" hidden data-i18n="admin.emptyUsers">Žádní uživatelé.</div>
           </div>
+        </section>
+
+        <section class="table-panel glass" data-panel="visits" hidden>
+          <div id="visits"></div>
         </section>
 
         <section class="table-panel glass" data-panel="whitelist" hidden>
@@ -161,6 +166,7 @@
 
   <script src="/_app/i18n.js"></script>
   <script src="/_app/common.js"></script>
+  <script src="/_app/stats.js"></script>
   <script src="/_app/admin.js"></script>
 </body>
 </html>

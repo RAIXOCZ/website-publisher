@@ -17,12 +17,12 @@ const PAGES = {
     cs: {
       title: 'Freepages – zveřejněte web zdarma jedním přetažením',
       description: () =>
-        `Zveřejněte statický web zdarma: přetáhněte složku s index.html a za pár sekund běží na vlastní adrese ${exampleHost('muj-web')} s HTTPS. Náhledy, úpravy v prohlížeči i nahrávání přes curl.`,
+        `Zveřejněte statický web zdarma: přetáhněte složku s webem a za pár sekund běží na vlastní adrese ${exampleHost('muj-web')} s HTTPS. Náhledy, úpravy v prohlížeči i nahrávání přes curl.`,
     },
     en: {
       title: 'Freepages – publish a website for free in one drop',
       description: () =>
-        `Publish a static website for free: drop a folder with index.html and seconds later it runs at its own address ${exampleHost('my-site')} with HTTPS. Previews, in-browser editing and uploads via curl.`,
+        `Publish a static website for free: drop the folder with your site and seconds later it runs at its own address ${exampleHost('my-site')} with HTTPS. Previews, in-browser editing and uploads via curl.`,
     },
     structuredData: true,
   },

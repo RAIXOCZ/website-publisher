@@ -127,6 +127,7 @@ function uiDialogElement() {
       <h2 id="ui-dialog-title"></h2>
       <p class="ui-text"></p>
       <input type="text" class="ui-input" autocomplete="off" spellcheck="false">
+      <textarea class="ui-area" rows="4"></textarea>
       <div class="field ui-value"><code></code><button type="button" class="btn btn-sm" data-ui="copy"></button></div>
       <div class="dialog-actions">
         <button type="button" class="btn" data-ui="cancel"></button>
@@ -145,15 +146,17 @@ function uiDialogElement() {
  * Shows a message in a styled modal and resolves when it is closed:
  * true/false for confirmations, the typed text (or null) with `input`.
  */
-function uiDialog({ title = '', text = '', input = null, value = null, ok = t('ok'), cancel = t('cancel'), danger = false, showCancel = true }) {
+function uiDialog({ title = '', text = '', input = null, multiline = false, optional = false, placeholder = '', value = null, ok = t('ok'), cancel = t('cancel'), danger = false, showCancel = true }) {
   const dialog = uiDialogElement();
   $('#ui-dialog-title', dialog).textContent = title;
   $('#ui-dialog-title', dialog).hidden = !title;
   $('.ui-text', dialog).textContent = text;
-  const field = $('.ui-input', dialog);
+  for (const el of [$('.ui-input', dialog), $('.ui-area', dialog)]) el.hidden = true;
+  const field = $(multiline ? '.ui-area' : '.ui-input', dialog);
   field.hidden = input === null;
   field.value = input ?? '';
-  field.required = input !== null;
+  field.required = input !== null && !optional;
+  field.placeholder = placeholder;
   $('.ui-value', dialog).hidden = value === null;
   $('.ui-value code', dialog).textContent = value ?? '';
   $('[data-ui=copy]', dialog).textContent = t('copy');
