@@ -28,30 +28,29 @@ function audit(action, { userId = null, siteId = null, siteName = null, ip = nul
   );
 }
 
-function parseAudit(row, { hideEmails }) {
+function parseAudit(row, { forOwner }) {
   let detail = row.detail ? JSON.parse(row.detail) : null;
-  if (detail && hideEmails) {
-    detail = Object.fromEntries(Object.entries(detail).filter(([k]) => !/email|^to$/i.test(k)));
+  // The owner's own history leaves out e-mail and IP addresses; only the admin sees them.
+  if (detail && forOwner) {
+    detail = Object.fromEntries(Object.entries(detail).filter(([k]) => !/email|^to$|ip$/i.test(k)));
   }
-  // Users do not see the administrator's IP address on admin actions.
-  const ip = hideEmails && row.action.endsWith('_by_admin') ? null : row.ip;
+  const ip = forOwner ? null : row.ip;
   return { id: row.id, at: row.at, action: row.action, site: row.site_name, siteId: row.site_id, ip, detail };
 }
 
-// A user's own history leaves out e-mail addresses.
 // History is read a page at a time, newest first: { events, next }.
-function auditPage(where, args, { hideEmails, cursor, limit }) {
+function auditPage(where, args, { forOwner, cursor, limit }) {
   const before = decodeCursor(cursor);
   const size = pageSize(limit);
   const rows = all(`SELECT * FROM audit_log WHERE (${where}) ${before ? 'AND id < ?' : ''} ORDER BY id DESC LIMIT ?`, ...args, ...(before ? [before] : []), size + 1);
   const page = rows.slice(0, size);
-  return { events: page.map((r) => parseAudit(r, { hideEmails })), next: rows.length > size ? encodeCursor(page.at(-1).id) : null };
+  return { events: page.map((r) => parseAudit(r, { forOwner })), next: rows.length > size ? encodeCursor(page.at(-1).id) : null };
 }
 
-const auditForUser = (userId, { hideEmails = true, cursor = null, limit = 50 } = {}) =>
-  auditPage('user_id = ? OR site_id IN (SELECT id FROM sites WHERE user_id = ?)', [userId, userId], { hideEmails, cursor, limit });
+const auditForUser = (userId, { forOwner = true, cursor = null, limit = 50 } = {}) =>
+  auditPage('user_id = ? OR site_id IN (SELECT id FROM sites WHERE user_id = ?)', [userId, userId], { forOwner, cursor, limit });
 
-const auditForSite = (siteId, { cursor = null, limit = 50 } = {}) => auditPage('site_id = ?', [siteId], { hideEmails: false, cursor, limit });
+const auditForSite = (siteId, { cursor = null, limit = 50 } = {}) => auditPage('site_id = ?', [siteId], { forOwner: false, cursor, limit });
 
 /* ---------- users ---------- */
 

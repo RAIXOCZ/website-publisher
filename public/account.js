@@ -185,11 +185,10 @@ const auditList = infiniteList({
   },
   render: (event) => {
     const tr = document.createElement('tr');
-    tr.innerHTML = '<td class="num"></td><td></td><td></td><td class="num"><code></code></td>';
+    tr.innerHTML = '<td class="num"></td><td></td><td></td>';
     tr.children[0].textContent = formatDateTime(event.at);
     tr.children[1].textContent = actionLabel(event.action);
     tr.children[2].textContent = event.site || '';
-    $('code', tr).textContent = event.ip || '';
     return tr;
   },
 });
@@ -212,7 +211,22 @@ $('#logout').addEventListener('click', async () => {
   location.href = '/';
 });
 
-setupEmailLogin($('#signin-form'));
+// Signing in and creating an account both end on their own "check your
+// e-mail" view; "Zadat jiný e-mail" goes back to the forms.
+function showSent(text) {
+  $('#signin').hidden = true;
+  $('.sent-text', $('#signin-sent')).textContent = text;
+  $('#signin-sent').hidden = false;
+  window.scrollTo({ top: 0 });
+}
+$('.sent-back').addEventListener('click', (e) => {
+  e.preventDefault();
+  $('#signin-sent').hidden = true;
+  $('#signin').hidden = false;
+  $('#signin-form input[name=email]').focus();
+});
+
+setupEmailLogin($('#signin-form'), { onSent: (email) => showSent(t('login.sent', { email })) });
 
 $('#register-form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -224,7 +238,8 @@ $('#register-form').addEventListener('submit', async (e) => {
   try {
     const email = form.email.value.trim();
     await api('/auth/register', { method: 'POST', json: { email, firstName: form.firstName.value.trim(), lastName: form.lastName.value.trim() } });
-    form.replaceChildren(Object.assign(document.createElement('p'), { className: 'sent', textContent: t('register.sent', { email }) }));
+    form.reset();
+    showSent(t('register.sent', { email }));
   } catch (err) {
     alert.textContent = err.message;
     alert.hidden = false;

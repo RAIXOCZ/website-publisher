@@ -11,7 +11,7 @@ test('signing in with an e-mail link', async ({ page, browser, request }) => {
   await expect(page.locator('#account')).toBeHidden();
   await page.locator('#signin-form input[name=email]').fill(email);
   await page.locator('#signin-form button').click();
-  await expect(page.locator('#signin .sent')).toContainText(email);
+  await expect(page.locator('#signin-sent')).toContainText(email);
 
   const mail = await lastMail(request, email, 'login');
   expect(mail.subject).toBe('Přihlášení do freepages.dev');
@@ -35,7 +35,7 @@ test('signing in with an unknown e-mail looks the same, but the e-mail says ther
   await expect(page).toHaveURL('/ucet');
   await page.locator('#signin-form input[name=email]').fill(email);
   await page.locator('#signin-form button').click();
-  await expect(page.locator('#signin-form .sent')).toContainText(email);
+  await expect(page.locator('#signin-sent')).toContainText(email);
   const mail = await lastMail(request, email);
   expect(mail.kind).toBe('loginNoAccount');
   expect(mail.params.link).toBeUndefined();
@@ -87,7 +87,7 @@ test('the account page shows sites, lets you change your name and rename or dele
   expect((await request.get(`/${renamed}/`)).status()).toBe(404);
 });
 
-test('the activity history lists actions with IP addresses but no e-mail addresses', async ({ page }) => {
+test('the activity history lists actions without e-mail or IP addresses', async ({ page }) => {
   const { email } = await signIn(page);
   await page.goto('/ucet#historie');
   const rows = page.locator('#audit tr');
@@ -96,11 +96,13 @@ test('the activity history lists actions with IP addresses but no e-mail address
   expect(text).toContain('Účet vytvořen');
   expect(text).toContain('E-mail potvrzen');
   expect(text).toContain('Web zveřejněn');
-  expect(text).toMatch(/127\.0\.0\.1|::1/);
+  expect(text).not.toMatch(/127\.0\.0\.1|::1/);
   expect(text).not.toContain(email);
 
   const { events } = await (await page.request.get('/api/me/audit')).json();
   expect(JSON.stringify(events)).not.toContain('@');
+  expect(JSON.stringify(events)).not.toMatch(/127\.0\.0\.1|::1/);
+  expect(events.every((e) => e.ip === null)).toBe(true);
 });
 
 test('API tokens publish and update sites with curl, and can be revoked', async ({ page, playwright }) => {
@@ -200,7 +202,13 @@ test('an account can be created without uploading a site', async ({ page, reques
   await form.locator('[name=firstName]').fill('Eva');
   await form.locator('[name=lastName]').fill('Malá');
   await form.locator('button[type=submit]').click();
-  await expect(page.locator('#signin .sent')).toContainText(email);
+  await expect(page.locator('#signin-sent')).toContainText(email);
+  await expect(page.locator('#signin-sent h2')).toHaveText('Zkontrolujte e-mail');
+  await expect(page.locator('#signin')).toBeHidden();
+  // "Zadat jiný e-mail" goes back to both forms.
+  await page.locator('#signin-sent .sent-back').click();
+  await expect(page.locator('#signin')).toBeVisible();
+  await expect(page.locator('#signin-sent')).toBeHidden();
 
   const mail = await lastMail(request, email, 'register');
   expect(mail.subject).toBe('Potvrďte registraci do freepages.dev');

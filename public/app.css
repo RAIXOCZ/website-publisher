@@ -611,6 +611,10 @@ select option { color: #0b1324; background: #fff; }
 /* ---------- admin ---------- */
 
 .auth { display: grid; grid-template-columns: 1fr 1fr; width: 100%; max-width: 860px; margin: 4vh auto 0; border-radius: var(--r-lg); }
+.auth-sent { display: grid; justify-items: center; gap: 12px; width: 100%; max-width: 520px; margin: 4vh auto 0; padding: 36px 30px; text-align: center; border-radius: var(--r-lg); }
+.auth-sent h2 { font-size: 26px; }
+.auth-sent p { margin: 0; }
+.auth-sent .sent-text { font-size: 17px; }
 .auth-col { display: flex; flex-direction: column; gap: 12px; padding: 30px; }
 .auth-col + .auth-col { border-left: 1px solid var(--glass-line); }
 .auth-col h2 { font-size: 26px; }

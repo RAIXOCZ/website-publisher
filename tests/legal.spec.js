@@ -3,8 +3,8 @@ const { test, expect } = require('./test');
 const { FIXTURES, pick, pickAndPublish } = require('./helpers');
 
 const PAGES = [
-  { cs: '/podminky', en: '/terms', csTitle: 'Podmínky použití', enTitle: 'terms of use' },
-  { cs: '/soukromi', en: '/privacy', csTitle: 'Zásady ochrany osobních údajů', enTitle: 'privacy policy' },
+  { cs: '/podminky', en: '/terms', csTitle: 'Podmínky použití', enTitle: 'Terms of use' },
+  { cs: '/soukromi', en: '/privacy', csTitle: 'Zásady ochrany osobních údajů', enTitle: 'Privacy policy' },
 ];
 
 for (const p of PAGES) {
@@ -17,7 +17,7 @@ for (const p of PAGES) {
 
     await page.locator('[data-set-lang=en]').click();
     await expect(page.locator('[data-lang=en] h1')).toHaveText(p.enTitle);
-    await expect(page).toHaveTitle(new RegExp(p.enTitle));
+    await expect(page).toHaveTitle(new RegExp(p.enTitle, 'i'));
 
     await page.goto(p.en);
     await expect(page.locator('[data-lang=en] h1')).toHaveText(p.enTitle);

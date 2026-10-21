@@ -38,6 +38,14 @@
         </div>
       </section>
 
+      <section class="auth-sent glass" id="signin-sent" hidden>
+        <span class="oauth-icon" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span>
+        <h2 data-i18n="sent.title">Zkontrolujte e-mail</h2>
+        <p class="sent-text"></p>
+        <p class="muted" data-i18n="sent.hint">Zprávu nevidíte? Podívejte se do složky se spamem nebo hromadnou poštou.</p>
+        <p><a href="/ucet" class="sent-back" data-i18n="sent.back">Zadat jiný e-mail</a></p>
+      </section>
+
       <div class="account-page" id="account" hidden>
       <div class="doc-head"><h1 data-i18n="nav.account">Účet</h1></div>
       <div class="account">
@@ -116,7 +124,7 @@
           <p class="muted small" data-i18n="account.auditText">Záznam přihlášení a změn vašeho účtu a webů včetně IP adres, ze kterých byly provedeny.</p>
           <div class="table-wrap">
             <table class="audit">
-              <thead><tr><th data-i18n="audit.when">Kdy</th><th data-i18n="audit.what">Událost</th><th data-i18n="audit.site">Web</th><th data-i18n="audit.ip">IP adresa</th></tr></thead>
+              <thead><tr><th data-i18n="audit.when">Kdy</th><th data-i18n="audit.what">Událost</th><th data-i18n="audit.site">Web</th></tr></thead>
               <tbody id="audit"></tbody>
             </table>
           </div>

@@ -392,7 +392,7 @@ api.get('/me/stats', requireUser, (req, res) => {
 });
 
 api.get('/me/audit', requireUser, (req, res) => {
-  res.json(accounts.auditForUser(accounts.currentUser(req).id, { hideEmails: true, cursor: req.query.cursor }));
+  res.json(accounts.auditForUser(accounts.currentUser(req).id, { forOwner: true, cursor: req.query.cursor }));
 });
 
 api.post('/me/tokens', requireUser, json, (req, res) => {
@@ -656,7 +656,7 @@ admin.get('/stats', (req, res) => {
 admin.get('/users', (req, res) => res.json({ ...accounts.listUsersPage({ deleted: deletedFilter(req), ...listQuery(req) }), active: accounts.countUsers() }));
 admin.get('/users/:id/audit', (req, res) => {
   const user = adminUser(req, res);
-  if (user) res.json({ user: accounts.publicUser(user), ...accounts.auditForUser(user.id, { hideEmails: false, cursor: req.query.cursor }) });
+  if (user) res.json({ user: accounts.publicUser(user), ...accounts.auditForUser(user.id, { forOwner: false, cursor: req.query.cursor }) });
 });
 admin.post('/users/:id/delete', async (req, res) => {
   const user = adminUser(req, res);
