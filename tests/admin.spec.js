@@ -155,11 +155,18 @@ test('rename, edit and delete any site; deleted sites stay listed until purged',
 
   await page.locator('#show-deleted-sites').check();
   const row = siteRow(page, renamed);
-  await expect(row).toContainText('smazáno · správcem');
+  await expect(row).toContainText('smazáno správcem');
   await expect(row.locator('[data-action=delete]')).toHaveCount(0);
   await row.locator('[data-action=audit]').click();
   await expect(page.locator('#audit-rows')).toContainText('Web smazán správcem');
   await page.locator('#audit-close').click();
+
+  // A deleted site can still be looked at, as a 5-minute preview in a new tab.
+  const [tab] = await Promise.all([page.waitForEvent('popup'), row.locator('[data-action=preview]').click()]);
+  await expect(tab).toHaveURL(/\/preview-[a-z0-9]{6}\/$/);
+  await expect(tab.locator('body')).toContainText('Version 2');
+  await tab.close();
+  expect((await request.get(`/${renamed}/`)).status()).toBe(404);
 
   await rowAction(row, 'purge');
   await answerModal(page, true);
@@ -190,7 +197,7 @@ test('users: history with IPs, delete (unlink, keep data) and purge', async ({ p
   expect((await request.get(`/${site}/`)).status()).toBe(404);
 
   await page.locator('#show-deleted-users').check();
-  await expect(userRow(page, email)).toContainText('smazáno · správcem');
+  await expect(userRow(page, email)).toContainText('smazáno správcem');
   await rowAction(userRow(page, email), 'purge');
   expect((await answerModal(page, true)).title).toMatch(/^Smazat .+ trvale\?$/);
   await expect(userRow(page, email)).toHaveCount(0);

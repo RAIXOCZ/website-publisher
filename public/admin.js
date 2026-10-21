@@ -44,7 +44,7 @@ function button(label, action, extra = '') {
 function statusChip(item) {
   if (!item.deletedAt) return '';
   const by = t(item.deletedBy === 'admin' ? 'admin.byAdmin' : 'admin.byUser');
-  return `<span class="chip chip-danger" title="${t('admin.purgeAfter', { date: formatDateTime(item.purgeAfter) })}">${t('admin.deletedChip')} · ${by}</span>`;
+  return `<span class="chip chip-danger" title="${t('admin.purgeAfter', { date: formatDateTime(item.purgeAfter) })}">${t('admin.deletedChip')} ${by}</span>`;
 }
 
 /* ---------- sites ---------- */
@@ -83,7 +83,7 @@ function renderSites() {
       // An edit button and history; the rest is under "⋯", delete last.
       // "Delete permanently" is offered only once a site is deleted.
       let actions;
-      if (site.deletedAt) actions = [button(t('admin.history'), 'audit'), button(t('admin.purge'), 'purge', 'btn-danger')];
+      if (site.deletedAt) actions = [button(t('preview.button'), 'preview', 'btn-accent'), button(t('admin.history'), 'audit'), moreMenu([[t('admin.purge'), 'purge', 'btn-danger']])];
       else {
         const more = [[t('row.rename'), 'rename']];
         if (!site.owner) more.push([t('row.newPw'), 'password']);
@@ -114,6 +114,20 @@ $('#site-rows').addEventListener('click', async (e) => {
   const site = data.sites.find((s) => s.id === Number(el.closest('tr').dataset.id));
   const { name } = site;
   try {
+    if (el.dataset.action === 'preview') {
+      // A deleted site, as a temporary preview in a new tab. The tab opens
+      // right away (inside the click), so pop-up blockers let it through.
+      const tab = window.open('', '_blank');
+      try {
+        const { preview } = await api(`/admin/sites/${site.id}/preview`, { method: 'POST' });
+        if (tab) tab.location.href = preview.url;
+        toast(t('admin.previewReady', { minutes: preview.minutes }));
+      } catch (err) {
+        tab?.close();
+        throw err;
+      }
+      return;
+    }
     if (el.dataset.action === 'audit') {
       const { events } = await api(`/admin/sites/${site.id}/audit`);
       return showAudit(t('admin.siteHistory', { name }), site.owner ? site.owner.email : t('admin.passwordSite'), events);

@@ -175,6 +175,8 @@ code { font: 0.9em var(--mono); }
   font-weight: 600; font-size: 15px;
 }
 .nav a:hover, .nav a[aria-current='page'] { color: var(--ink); background: var(--hover); text-decoration: none; }
+/* the current item is where you are: nothing to point at */
+.nav a[aria-current='page'], .side-nav .active, .side-nav [aria-selected='true'], .segmented button[aria-pressed='true'], .lang button[aria-pressed='true'] { cursor: default; }
 
 .lang { display: inline-flex; padding: 3px; border-radius: var(--r-sm); background: var(--well); border: 1px solid var(--glass-line); }
 .lang button {
@@ -579,7 +581,7 @@ select option { color: #0b1324; background: #fff; }
   padding: 6px 12px; border: 0; border-radius: 8px;
   font: 600 14px var(--body); color: var(--muted); background: none; cursor: pointer;
 }
-.segmented button:hover { color: var(--ink); }
+.segmented button:not([aria-pressed='true']):hover { color: var(--ink); background: var(--hover); }
 .segmented button[aria-pressed='true'] { color: var(--ink); background: var(--glass-strong); box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12); }
 .stats-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px 24px; }
 .stat-tile { display: flex; flex-direction: column; gap: 2px; }
@@ -821,7 +823,8 @@ td .site-url { font: 12px var(--mono); color: var(--muted); overflow-wrap: anywh
   font: 600 15px var(--body); text-align: left; color: var(--muted); background: none; cursor: pointer;
   transition: background-color 0.15s, color 0.15s;
 }
-.side-nav a:hover, .side-nav button:hover { text-decoration: none; color: var(--ink); background: var(--hover); }
+.side-nav a:hover, .side-nav button:hover { text-decoration: none; }
+.side-nav a:not(.active):hover, .side-nav button:not([aria-selected='true']):hover { color: var(--ink); background: var(--hover); }
 .side-nav .active, .side-nav [aria-selected='true'] { color: var(--teal); background: color-mix(in srgb, var(--accent-fill) 13%, transparent); }
 .side-buttons { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid var(--glass-line); }
 .card { scroll-margin-top: 100px; }

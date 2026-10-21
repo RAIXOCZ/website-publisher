@@ -548,6 +548,19 @@ async function savePreview(dir, { userId = null, ip, siteName = null, replace = 
   return { code, url: previewUrl(code), expiresAt, minutes: config.PREVIEW_MINUTES };
 }
 
+// A deleted site, shown to the admin as a temporary preview. The files stay
+// in the trash; the preview gets a copy.
+async function previewDeleted(site, { userId, ip }) {
+  if (!site.deleted_at || !site.trash_dir || !fs.existsSync(site.trash_dir)) throw new UserError('siteNotFound', 404);
+  const copy = path.join(config.TMP_DIR, `trash-preview-${crypto.randomUUID()}`);
+  await fsp.cp(site.trash_dir, copy, { recursive: true });
+  try {
+    return await savePreview(copy, { userId, ip, siteName: site.name });
+  } finally {
+    await fsp.rm(copy, { recursive: true, force: true });
+  }
+}
+
 // Folder of a live preview ("preview-abc123"), or null when unknown or expired.
 function previewRoot(name) {
   if (!String(name).startsWith(PREVIEW_PREFIX)) return null;
@@ -686,6 +699,7 @@ module.exports = {
   savePending,
   pendingDir,
   savePreview,
+  previewDeleted,
   previewRoot,
   previewUrl,
   listFiles,

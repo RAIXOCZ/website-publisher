@@ -530,6 +530,10 @@ admin.post('/sites/:id/delete', async (req, res) => {
   }
   res.json({ ok: true });
 });
+admin.post('/sites/:id/preview', async (req, res) => {
+  const site = adminSite(req, res);
+  if (site) res.json({ preview: await sites.previewDeleted(site, { userId: accounts.currentUser(req).id, ip: ipOf(req) }) });
+});
 admin.post('/sites/:id/purge', async (req, res) => {
   const site = adminSite(req, res);
   if (!site) return;
