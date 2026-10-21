@@ -440,11 +440,9 @@ select option { color: #0b1324; background: #fff; }
   color: var(--faint); background: none; border: 0; border-radius: 7px; cursor: pointer;
 }
 .tree-btn:hover { color: var(--ink); background: var(--hover); }
-.tree-remove:hover { color: var(--danger); background: var(--danger-soft); }
 .tree-move { width: auto; max-width: 220px; padding: 4px 28px 4px 9px; font-size: 13px; border-color: var(--teal-2); border-radius: 7px; background-position: right 8px center; }
 @media (hover: hover) {
   .tree-row:not(:hover):not(:focus-within) .tree-actions { opacity: 0.55; }
-  .tree-row:not(:hover):not(:focus-within) .tree-remove { opacity: 0; }
 }
 
 
@@ -988,7 +986,6 @@ textarea:focus { border-color: var(--teal-2); box-shadow: 0 0 0 4px var(--ring);
   .tree-row { padding-left: calc(4px + var(--depth, 0) * 12px); }
   .tree-meta { display: none; }
   .tree-actions { opacity: 1 !important; margin-left: auto; gap: 4px; }
-  .tree-remove { opacity: 1 !important; }
   /* touch targets of at least 40px on phones */
   .lang button { min-height: 36px; padding: 8px 12px; }
   .twisty, .twisty-space { width: 28px; height: 36px; }

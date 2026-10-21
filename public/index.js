@@ -329,17 +329,11 @@ function treeRow({ kind, path, name, meta, depth, isNew = false, empty = false }
     `<span class="tree-icon">${ICONS[kind === 'file' ? 'file' : 'dir']}</span><span class="tree-name"></span>` +
     (isNew ? `<span class="tree-badge">${t('tree.new')}</span>` : '') +
     '<span class="tree-meta"></span>' +
-    `<span class="tree-actions"><button type="button" class="tree-btn" data-act="menu" aria-haspopup="menu">${ICONS.more}</button>` +
-    (kind === 'root' ? '' : '<button type="button" class="tree-btn tree-remove" data-act="remove">×</button>') +
-    '</span>';
+    `<span class="tree-actions"><button type="button" class="tree-btn" data-act="menu" aria-haspopup="menu">${ICONS.more}</button></span>`;
   $('.tree-name', li).textContent = name;
   $('.tree-meta', li).textContent = meta;
   $('[data-act=menu]', li).setAttribute('aria-label', t('tree.actions', { name }));
   $('[data-act=menu]', li).title = t('tree.actions', { name });
-  if (kind !== 'root') {
-    $('[data-act=remove]', li).setAttribute('aria-label', t('staged.remove', { name }));
-    $('[data-act=remove]', li).title = t('staged.remove', { name });
-  }
   return li;
 }
 
@@ -576,8 +570,6 @@ els.tree.addEventListener('click', (e) => {
   if (button.dataset.act === 'toggle') {
     if (!state.collapsed.delete(path)) state.collapsed.add(path);
     renderStaged();
-  } else if (button.dataset.act === 'remove') {
-    removeEntry(path, kind);
   } else if (button.dataset.act === 'menu') {
     const same = openMenu?.owner === button;
     closeMenu();

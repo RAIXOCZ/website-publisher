@@ -326,7 +326,7 @@ test.describe('editing a site', () => {
     const [folder] = await Promise.all([page.waitForEvent('filechooser'), page.locator('[data-tool=folder]').click()]);
     await folder.setFiles(FIXTURES.site);
     await expect(row(page, 'sample-site/css/style.css')).toBeVisible();
-    await row(page, 'sample-site').locator('[data-act=remove]').click({ force: true });
+    await menu(page, 'sample-site', 'remove');
     await expect(row(page, 'sample-site')).toHaveCount(0);
 
     await page.locator('#preview').click();
@@ -639,8 +639,7 @@ test.describe('file tree before publishing', () => {
   test('items can be removed, folders collapsed and the list cleared', async ({ page }) => {
     await page.goto('/');
     await pick(page, page.locator('#pick-folder'), FIXTURES.site);
-    await row(page, 'about.html').hover();
-    await row(page, 'about.html').getByRole('button', { name: 'Odebrat about.html' }).click();
+    await menu(page, 'about.html', 'remove');
     await expect(row(page, 'about.html')).toHaveCount(0);
     await menu(page, 'files', 'remove');
     await expect(row(page, 'files/readme.txt')).toHaveCount(0);

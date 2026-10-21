@@ -56,7 +56,8 @@ test('"Upravit" edits a password site in the file tree', async ({ page, request 
   await page.locator(`.site-card[data-name="${name}"] [data-action=edit]`).click();
   await expect(page.locator('#edit-banner')).toContainText(name);
   await page.waitForFunction(() => window.scrollY === 0);
-  await page.locator('.tree-row[data-path="about.html"] [data-act=remove]').click({ force: true });
+  await page.locator('.tree-row[data-path="about.html"] [data-act=menu]').click({ force: true });
+  await page.locator('.menu [data-menu="remove"]').click();
   await page.locator('#publish').click();
   await expect(page.locator('#result')).toBeVisible();
     await expect(page.locator('#result-title')).toHaveText(`Web ${name} byl aktualizován`);
