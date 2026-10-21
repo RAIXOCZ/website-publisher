@@ -23,11 +23,11 @@ function escapeHtml(s) {
 // app. Everything is inline: they load nothing from anywhere.
 const LOGO = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
 const STYLE = `
-:root{color-scheme:light;--page:#f3f5f9;--card:rgba(255,255,255,.82);--line:rgba(15,23,42,.08);--ink:#0b1324;--muted:#586174;--faint:#687083;--accent:#0f766e;--accent-fill:#0d9488;--g1:rgba(45,212,191,.4);--g2:rgba(167,139,250,.38)}
-@media (prefers-color-scheme:dark){:root{color-scheme:dark;--page:#070b14;--card:rgba(17,24,39,.82);--line:rgba(255,255,255,.08);--ink:#e9edf5;--muted:#a0a9ba;--faint:#8b95a8;--accent:#2dd4bf;--g1:rgba(20,184,166,.2);--g2:rgba(124,58,237,.24)}}
+:root{color-scheme:light;--page:#f5f5f7;--card:#fff;--line:rgba(0,0,0,.08);--ink:#0b1324;--muted:#586174;--faint:#687083;--accent:#0f766e;--accent-fill:#0d9488}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--page:#111113;--card:#1c1c1f;--line:rgba(255,255,255,.09);--ink:#e9edf5;--muted:#a0a9ba;--faint:#8b95a8;--accent:#2dd4bf}}
 *{box-sizing:border-box}
-body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px 16px;font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:radial-gradient(800px 500px at 10% -10%,var(--g1),transparent 60%),radial-gradient(700px 600px at 100% 10%,var(--g2),transparent 60%),var(--page)}
-main{width:100%;max-width:560px;padding:32px;border-radius:22px;background:var(--card);border:1px solid var(--line);box-shadow:0 12px 40px -12px rgba(30,41,59,.18)}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px 16px;font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--page)}
+main{width:100%;max-width:560px;padding:32px;border-radius:14px;background:var(--card);border:1px solid var(--line)}
 .code{margin:0 0 6px;font-weight:800;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
 h1{margin:0 0 10px;font-size:30px;line-height:1.15;letter-spacing:-.02em}
 p{margin:0 0 12px;color:var(--muted)}
@@ -41,7 +41,7 @@ a{color:var(--accent);text-decoration:underline;text-underline-offset:3px;text-d
 main:has(.files){max-width:680px}
 .path{margin:-4px 0 14px}
 .path code{display:inline-block;padding:3px 10px;border-radius:8px;background:var(--line);font-size:14px}
-.files{margin:18px 0 0;padding:6px;list-style:none;border:1px solid var(--line);border-radius:14px}
+.files{margin:18px 0 0;padding:6px;list-style:none;border:1px solid var(--line);border-radius:10px}
 .files li a{display:flex;align-items:center;gap:12px;min-height:40px;padding:8px 10px;border-radius:9px;color:var(--ink);text-decoration:none}
 .files li a:hover{background:var(--line)}
 .files .icon{display:grid;place-items:center;flex:none;color:var(--muted)}
@@ -53,7 +53,7 @@ main:has(.files){max-width:680px}
 .actions + .help, .help:last-child{margin-bottom:0}
 footer{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--faint)}
 footer a{color:var(--muted);font-weight:600;text-decoration:none}
-.mark{display:grid;place-items:center;width:24px;height:24px;border-radius:7px;color:#fff;background:var(--accent-fill)}
+.mark{display:grid;place-items:center;width:24px;height:24px;border-radius:6px;color:#fff;background:var(--accent-fill)}
 @media (max-width:640px){main{padding:24px}h1{font-size:25px}}
 `;
 

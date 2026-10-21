@@ -1,4 +1,5 @@
-/* freepages: frosted glass over a soft teal/violet glow. */
+/* freepages.dev: plain surfaces on a light grey page, one accent colour (teal).
+   Translucent material only where something floats over content (the header). */
 
 @font-face {
   font-family: 'Bricolage Grotesque';
@@ -21,29 +22,30 @@
   --body: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
 
-  --page: #f3f5f9;
-  --glow-1: rgba(45, 212, 191, 0.45);
-  --glow-2: rgba(167, 139, 250, 0.42);
-  --glow-3: rgba(251, 146, 120, 0.28);
+  --page: #f5f5f7;
 
   --ink: #0b1324;
   --muted: #586174;
   --faint: #687083;
 
-  --glass: rgba(255, 255, 255, 0.58);
-  --glass-strong: rgba(255, 255, 255, 0.78);
-  --glass-edge: rgba(255, 255, 255, 0.75);
-  --glass-line: rgba(15, 23, 42, 0.08);
-  --glass-shadow: 0 12px 40px -12px rgba(30, 41, 59, 0.18);
-  --well: rgba(255, 255, 255, 0.5);
-  --hover: rgba(255, 255, 255, 0.85);
+  /* surfaces: cards are white with a hairline, no shadow; only floating layers cast one */
+  --glass: #ffffff;
+  --glass-strong: #ffffff;
+  --glass-edge: rgba(0, 0, 0, 0.08);
+  --glass-line: rgba(0, 0, 0, 0.08);
+  --glass-shadow: none;
+  --float-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  --bar: rgba(245, 245, 247, 0.82);
+  --well: #f0f0f2;
+  --hover: rgba(0, 0, 0, 0.045);
 
   --teal: #0f766e;
   --chart-1: #0d9488;
   --chart-1-hover: #14b8a6;
   --teal-2: #0d9488;
-  --violet: #6d28d9;
-  --violet-soft: rgba(109, 40, 217, 0.1);
+  /* formerly a second (violet) accent; now the same teal on a neutral fill */
+  --violet: #0f766e;
+  --violet-soft: rgba(0, 0, 0, 0.05);
   --ring: rgba(13, 148, 136, 0.3);
   /* --accent carries white text (5.5:1); --accent-fill is for marks without text */
   --accent: #0f766e;
@@ -59,37 +61,37 @@
   --ok-soft: rgba(204, 251, 241, 0.6);
   --ok-line: rgba(13, 148, 136, 0.3);
 
-  --r-lg: 22px;
-  --r-md: 14px;
-  --r-sm: 10px;
+  /* radii step down with size: containers, inner panels, controls */
+  --r-lg: 14px;
+  --r-md: 10px;
+  --r-sm: 8px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --page: #070b14;
-    --glow-1: rgba(20, 184, 166, 0.22);
-    --glow-2: rgba(124, 58, 237, 0.26);
-    --glow-3: rgba(249, 115, 22, 0.1);
+    --page: #111113;
 
     --ink: #e9edf5;
     --muted: #a0a9ba;
     --faint: #8b95a8;
 
-    --glass: rgba(17, 24, 39, 0.5);
-    --glass-strong: rgba(17, 24, 39, 0.82);
+    --glass: #1c1c1f;
+    --glass-strong: #1c1c1f;
     --glass-edge: rgba(255, 255, 255, 0.09);
-    --glass-line: rgba(255, 255, 255, 0.08);
-    --glass-shadow: 0 16px 48px -16px rgba(0, 0, 0, 0.7);
-    --well: rgba(2, 6, 23, 0.4);
-    --hover: rgba(255, 255, 255, 0.07);
+    --glass-line: rgba(255, 255, 255, 0.09);
+    --glass-shadow: none;
+    --float-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    --bar: rgba(28, 28, 31, 0.82);
+    --well: #242428;
+    --hover: rgba(255, 255, 255, 0.06);
 
     --teal: #2dd4bf;
     --chart-1: #11a89a;
     --chart-1-hover: #2dd4bf;
     --teal-2: #14b8a6;
-    --violet: #c4b5fd;
-    --violet-soft: rgba(167, 139, 250, 0.14);
+    --violet: #2dd4bf;
+    --violet-soft: rgba(255, 255, 255, 0.07);
     --ring: rgba(45, 212, 191, 0.3);
 
     --danger: #fdba74;
@@ -115,18 +117,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* the glow sits on a fixed layer so it stays put on mobile too */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(900px 600px at 8% -10%, var(--glow-1), transparent 60%),
-    radial-gradient(800px 700px at 100% 10%, var(--glow-2), transparent 60%),
-    radial-gradient(700px 500px at 50% 110%, var(--glow-3), transparent 65%);
-}
 
 a { color: var(--teal); text-decoration: none; }
 a:hover { text-decoration: underline; text-underline-offset: 3px; }
@@ -148,10 +138,12 @@ code { font: 0.9em var(--mono); }
   box-shadow: var(--glass-shadow);
 }
 /* Only what floats above the content is frosted; cards and panels are plain surfaces. */
-.topbar .bar, .menu, .dialog {
-  -webkit-backdrop-filter: blur(22px) saturate(170%);
-  backdrop-filter: blur(22px) saturate(170%);
+.topbar .bar {
+  background: var(--bar);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
 }
+.menu, .dialog { box-shadow: var(--float-shadow); border-color: transparent; }
 
 /* ---------- floating header ---------- */
 
@@ -207,8 +199,9 @@ h3 { font-size: 20px; line-height: 1.25; font-weight: 650; }
   border-radius: 999px;
   font-size: 13px; font-weight: 600; color: var(--muted);
 }
-.tag::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--teal-2); box-shadow: 0 0 0 4px var(--ring); }
-.accent-text { color: var(--teal); }
+.tag::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--teal-2); }
+/* the second line of the hero is quieter, not another colour */
+.accent-text { color: var(--muted); }
 
 /* ---------- buttons ---------- */
 
@@ -334,15 +327,15 @@ select option { color: #0b1324; background: #fff; }
   field-sizing: content;
   padding: 8px 6px;
   font: 600 17px/1 var(--mono);
-  color: var(--violet);
-  background: var(--violet-soft);
-  border: 1.5px dashed color-mix(in srgb, var(--violet) 55%, transparent);
-  border-radius: 8px;
+  color: var(--ink);
+  background: var(--glass);
+  border: 1px solid color-mix(in srgb, var(--ink) 22%, transparent);
+  border-radius: 6px;
   cursor: text;
 }
 .address input::placeholder { color: var(--muted); opacity: 1; font-weight: 500; }
-.address input:hover { border-color: var(--violet); }
-.address input:focus { border-style: solid; border-color: var(--violet); background: var(--violet-soft); box-shadow: 0 0 0 3px var(--violet-soft); }
+.address input:hover { border-color: var(--teal-2); }
+.address input:focus { border-color: var(--teal-2); box-shadow: 0 0 0 3px var(--ring); }
 
 .panel { padding: 22px; border-radius: var(--r-lg); display: flex; flex-direction: column; gap: 16px; }
 
@@ -351,9 +344,7 @@ select option { color: #0b1324; background: #fff; }
   padding: 44px 20px 38px;
   border: 1.5px dashed color-mix(in srgb, var(--teal-2) 45%, transparent);
   border-radius: var(--r-md);
-  background:
-    linear-gradient(var(--well), var(--well)),
-    repeating-linear-gradient(-45deg, transparent 0 14px, var(--violet-soft) 14px 15px);
+  background: var(--well);
   cursor: pointer;
   transition: border-color 0.15s, background-color 0.15s, transform 0.2s;
 }
@@ -366,8 +357,7 @@ select option { color: #0b1324; background: #fff; }
   color: #fff;
   border-radius: 18px;
   background: var(--accent-fill);
-  box-shadow: 0 12px 28px -10px rgba(13, 148, 136, 0.7);
-  transform: rotate(-6deg);
+
 }
 .dropzone .title { margin: 0 0 4px; font: 650 22px/1.2 var(--display); letter-spacing: -0.02em; color: var(--ink); }
 .dropzone .hint { margin: 0; font-size: 14px; color: var(--muted); }
@@ -600,7 +590,7 @@ select option { color: #0b1324; background: #fff; }
   position: absolute; top: var(--y, 0); left: var(--x, 0);
   display: flex; flex-direction: column; gap: 1px; padding: 7px 11px; pointer-events: none; white-space: nowrap;
   background: var(--glass-strong); border: 1px solid var(--glass-line); border-radius: 10px;
-  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.35); font-size: 13px;
+  box-shadow: var(--float-shadow); font-size: 13px;
 }
 .chart-tip b { font-size: 15px; }
 .chart-tip span { color: var(--muted); }
@@ -705,9 +695,7 @@ main :is(p, li) a:not(.btn), .consent a { color: var(--teal); text-decoration: u
   background: var(--glass-strong);
   border: 1px solid var(--glass-edge);
   border-radius: 999px;
-  box-shadow: 0 18px 50px -12px rgba(15, 23, 42, 0.35);
-  -webkit-backdrop-filter: blur(18px) saturate(170%);
-  backdrop-filter: blur(18px) saturate(170%);
+  box-shadow: var(--float-shadow);
   opacity: 0;
   transform: translateY(140%) scale(0.92);
   pointer-events: none;
@@ -769,7 +757,7 @@ main :is(p, li) a:not(.btn), .consent a { color: var(--teal); text-decoration: u
 .menu button:hover, .menu button:focus-visible { background: var(--hover); outline: none; }
 .menu button.danger { color: var(--danger); }
 .menu hr { width: 100%; margin: 4px 0; border: 0; border-top: 1px solid var(--glass-line); }
-.row-menu { position: fixed; min-width: 190px; box-shadow: 0 18px 50px -12px rgba(15, 23, 42, 0.35); }
+.row-menu { position: fixed; min-width: 190px; box-shadow: var(--float-shadow); }
 .row-menu button { white-space: nowrap; }
 .menu button.btn-danger { color: var(--danger); }
 .more { display: inline-flex; }

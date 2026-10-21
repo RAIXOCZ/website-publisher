@@ -166,7 +166,7 @@ function manifest() {
     scope: '/',
     display: 'browser',
     theme_color: '#0d9488',
-    background_color: '#f3f5f9',
+    background_color: '#f5f5f7',
     icons: [
       { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
       { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
