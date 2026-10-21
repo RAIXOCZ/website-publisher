@@ -30,10 +30,11 @@ const I18N = {
     'title.admin': 'Správa webů',
     'title.docs': 'Návod – Freepages',
     brand: 'Publikování',
-    'brand.admin': 'správa',
     'nav.mySites': 'Moje weby',
     'nav.docs': 'Návod',
-    'nav.publish': '+ Zveřejnit',
+    'nav.publish': 'Zveřejnit',
+    'nav.admin': 'Správa',
+    'nav.main': 'Hlavní navigace',
     'nav.logout': 'Odhlásit',
     'footer.by': 'Vytvořil',
     'footer.abuse': 'Nahlásit zneužití',
@@ -408,10 +409,11 @@ const I18N = {
     'title.admin': 'Site admin',
     'title.docs': 'Guide – Freepages',
     brand: 'Publisher',
-    'brand.admin': 'admin',
     'nav.mySites': 'My sites',
     'nav.docs': 'Guide',
-    'nav.publish': '+ Publish',
+    'nav.publish': 'Publish',
+    'nav.admin': 'Admin',
+    'nav.main': 'Main navigation',
     'nav.logout': 'Log out',
     'footer.by': 'Made by',
     'footer.abuse': 'Report abuse',
@@ -764,6 +766,12 @@ const I18N = {
   },
 };
 
+// A language the visitor chose is also kept in a cookie, so the server
+// renders pages in it.
+const rememberLang = (lang) => {
+  document.cookie = `fp_lang=${lang}; path=/; max-age=31536000; SameSite=Lax`;
+};
+
 function detectLang() {
   // An explicit ?lang= in the address wins (search engines index those URLs)
   // and is remembered like a choice made with the CS/EN switch.
@@ -774,11 +782,15 @@ function detectLang() {
     } catch {
       /* storage unavailable */
     }
+    rememberLang(fromUrl);
     return fromUrl;
   }
   try {
     const saved = localStorage.getItem(LANG_KEY);
-    if (LANGS.includes(saved)) return saved;
+    if (LANGS.includes(saved)) {
+      if (!document.cookie.includes(`fp_lang=${saved}`)) rememberLang(saved);
+      return saved;
+    }
   } catch {
     /* storage unavailable */
   }
@@ -803,6 +815,7 @@ function setLang(lang) {
   } catch {
     /* storage unavailable */
   }
+  rememberLang(lang);
   const url = new URL(location.href);
   if (url.searchParams.has('lang')) {
     url.searchParams.set('lang', lang);

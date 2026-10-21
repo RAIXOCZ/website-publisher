@@ -8,7 +8,6 @@ async function init() {
   $('#login').hidden = Boolean(config.user);
   $('#forbidden').hidden = !config.user || config.admin;
   $('#panel').hidden = !config.admin;
-  $('#nav').hidden = !config.admin;
   if (config.user && !config.admin) $('#forbidden-text').textContent = t('admin.forbiddenText', { email: config.user.email });
   if (config.admin) await load();
 }

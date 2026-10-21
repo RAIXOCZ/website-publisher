@@ -155,7 +155,6 @@ code { font: 0.9em var(--mono); }
 .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font: 700 19px/1 var(--display); letter-spacing: -0.02em; }
 .brand:hover { text-decoration: none; }
 .brand .tld { color: var(--faint); font-weight: 500; }
-.brand .sub { color: var(--violet); font-weight: 600; font-size: 15px; margin-left: 2px; }
 .logo { width: 30px; height: 30px; flex: none; }
 .bar-right { display: flex; align-items: center; gap: 6px; }
 .nav { display: flex; align-items: center; gap: 2px; }
@@ -891,6 +890,18 @@ textarea:focus { border-color: var(--teal-2); box-shadow: 0 0 0 4px var(--ring);
   .site-card .site-actions { grid-row: auto; grid-column: 1 / -1; justify-content: flex-start; max-width: none; margin-top: 8px; }
 }
 
+@media (max-width: 400px) {
+  /* narrow phones: the switch shows only the other language */
+  .lang button[aria-pressed='true'] { display: none; }
+}
+
+@media (max-width: 350px) {
+  .topbar .bar { gap: 4px; }
+  .bar-right { gap: 2px; }
+  .logo { width: 26px; height: 26px; }
+  .nav a { padding-left: 4px !important; padding-right: 4px !important; }
+}
+
 @media (max-width: 640px) {
   .wrap { padding-left: 12px; padding-right: 12px; }
   .page { gap: 44px; padding-top: 36px; }
@@ -898,7 +909,8 @@ textarea:focus { border-color: var(--teal-2); box-shadow: 0 0 0 4px var(--ring);
   h2 { font-size: 25px; }
   .lead { font-size: 16px; }
   .hide-sm { display: none !important; }
-  .nav a { padding: 7px 8px; }
+  .nav a { padding: 8px 7px; font-size: 14px; }
+  .topbar .bar { gap: 8px; padding-left: 8px; }
   .brand { font-size: 17px; }
   /* only the logo on phones: the name stays readable for screen readers */
   .brand [data-brand] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

@@ -34,7 +34,6 @@ async function init() {
   state.config = await api('/config');
   updateAddress();
   $('.dropzone .hint').innerHTML = t('drop.hint', { limit: `${state.config.siteMaxMb} MB` });
-  $('#nav-account').textContent = t(signedIn() ? 'nav.account' : 'nav.login');
   restoreIdentity();
   if (state.config.user?.blocked) {
     showNotice(t('account.blocked'));

@@ -7,21 +7,7 @@
   <link rel="stylesheet" href="/_app/app.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="wrap">
-      <div class="bar glass">
-        <a class="brand" href="/"><img class="logo" src="/_app/favicon.svg" alt=""><span data-brand>freepages</span></a>
-        <div class="bar-right">
-          <nav class="nav">
-            <a href="/" data-i18n="nav.publish">+ Zveřejnit</a>
-            <a href="/docs" class="hide-sm" data-i18n="nav.docs">Návod</a>
-            <a href="/ucet" data-i18n="nav.account">Účet</a>
-          </nav>
-          <div class="lang" data-lang-switch></div>
-        </div>
-      </div>
-    </div>
-  </header>
+  <!--header-->
 
   <main>
     <div class="wrap">
@@ -91,7 +77,7 @@
 
           <h3>Cookies a úložiště ve vašem prohlížeči</h3>
           <ul>
-            <li>Po přihlášení nebo potvrzení zveřejnění webu nastavíme přihlašovací cookie (fp_user) platnou 30 dní, podle které služba pozná váš účet. Jiné cookies služba nenastavuje (nahrané weby mohou používat vlastní).</li>
+            <li>Po přihlášení nebo potvrzení zveřejnění webu nastavíme přihlašovací cookie (fp_user) platnou 30 dní, podle které služba pozná váš účet. Když zvolíte jazyk přepínačem CS/EN, uložíme ho do cookie fp_lang (platnost 1 rok), aby stránky přišly rovnou v tomto jazyce. Jiné cookies služba nenastavuje (nahrané weby mohou používat vlastní).</li>
             <li>Do lokálního úložiště (localStorage) prohlížeče ukládáme zvolený jazyk. Pokud zaškrtnete volbu „Zapamatovat si mé údaje“, uložíme tam také zadaný e-mail, jméno a příjmení, abyste je nemuseli vyplňovat znovu; po zrušení volby a dalším odeslání je smažeme. U webů s heslem (zveřejněných z povolených IP adres) ukládáme jejich názvy a hesla; prohlížeč je posílá na server jen k ověření, že weby existují a hesla platí. Tato data na serveru neukládáme a smažete je vymazáním dat stránek v prohlížeči.</li>
             <li>Cloudflare může z bezpečnostních důvodů nastavit technické cookies (například __cf_bm nebo cf_clearance) k odlišení lidí od automatizovaných útoků.</li>
             <li>Tyto cookies a lokální úložiště jsou nezbytné pro funkce, o které jste sami požádali (§ 89 odst. 3 zákona č. 127/2005 Sb.), a proto k nim není potřeba souhlas.</li>
@@ -201,7 +187,7 @@
 
           <h3>Cookies and storage in your browser</h3>
           <ul>
-            <li>When you sign in or confirm publishing a site, we set a sign-in cookie (fp_user), valid for 30 days, by which the service recognises your account. The service sets no other cookies (uploaded sites may use their own).</li>
+            <li>When you sign in or confirm publishing a site, we set a sign-in cookie (fp_user), valid for 30 days, by which the service recognises your account. When you choose a language with the CS/EN switch, we keep it in the fp_lang cookie (valid for 1 year) so pages arrive in that language. The service sets no other cookies (uploaded sites may use their own).</li>
             <li>In your browser's local storage we keep your chosen language. If you tick "Remember my details", we also keep the e-mail and name you entered there so you do not have to type them again; if you untick it, they are deleted the next time you submit. For password-protected sites (published from allowed IP addresses) we keep their names and passwords; the browser sends them to the server only to check that the sites exist and the passwords are valid. This data is not stored on the server, and you delete it by clearing the site data in your browser.</li>
             <li>For security reasons, Cloudflare may set technical cookies (for example __cf_bm or cf_clearance) to tell people apart from automated attacks.</li>
             <li>These cookies and the local storage are strictly necessary for features you requested (Section 89(3) of Czech Act No. 127/2005 Coll.), so no consent is required for them.</li>
@@ -247,14 +233,7 @@
     </div>
   </main>
 
-  <footer class="site-footer">
-    <div class="wrap">
-      <div class="footer-row">
-        <p><span data-i18n="footer.by">Vytvořil</span> <a href="https://martin-balcar.cz" target="_blank" rel="noopener">Martin Balcar</a></p>
-        <p class="footer-links"><a href="/podminky" data-i18n="footer.terms">Podmínky</a> · <a href="/soukromi" data-i18n="footer.privacy">Soukromí</a> · <span data-i18n="footer.abuse">Nahlásit zneužití</span>: <a class="abuse-link" href="mailto:martin@freepages.dev">martin@freepages.dev</a></p>
-      </div>
-    </div>
-  </footer>
+  <!--footer-->
 
   <script src="/_app/i18n.js"></script>
   <script src="/_app/common.js"></script>

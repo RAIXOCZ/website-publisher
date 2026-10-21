@@ -12,6 +12,7 @@ const mail = require('./mail');
 const db = require('./db');
 const { serveSite, page } = require('./serve');
 const seo = require('./seo');
+const layout = require('./layout');
 const stats = require('./stats');
 const { langOf, t } = require('./i18n');
 
@@ -70,18 +71,21 @@ const assetVersion = (() => {
 
 const pages = {};
 function appPage(name) {
-  pages[name] ??= fs
-    .readFileSync(path.join(publicDir, name), 'utf8')
-    .replace(/((?:src|href)=")\/_app\/([^"?]+)"/g, `$1/_app/$2?v=${assetVersion}"`);
+  pages[name] ??= fs.readFileSync(path.join(publicDir, name), 'utf8');
   return (req, res) => {
     // ?lang=cs|en gives every page a fixed language for search engines;
     // without it the visitor's browser decides.
+    // The CS/EN switch also leaves a cookie so the page arrives in the chosen language.
     const explicit = seo.LANGS.includes(req.query.lang) ? req.query.lang : null;
-    const lang = explicit || langOf(req);
+    const chosen = /(?:^|;\s*)fp_lang=(cs|en)\b/.exec(req.headers.cookie || '')?.[1];
+    const lang = explicit || chosen || langOf(req);
     res.set('Cache-Control', 'no-cache');
-    if (!explicit) res.vary('Accept-Language');
+    if (!explicit) res.vary('Accept-Language').vary('Cookie');
     if (seo.PRIVATE.has(name)) res.set('X-Robots-Tag', 'noindex');
-    res.type('html').send(seo.render(name, pages[name], { lang, explicit: Boolean(explicit) }));
+    const html = layout
+      .render(name, pages[name], { lang, user: accounts.currentUser(req), admin: accounts.isAdmin(req) })
+      .replace(/((?:src|href)=")\/_app\/([^"?]+)"/g, `$1/_app/$2?v=${assetVersion}"`);
+    res.type('html').send(seo.render(name, html, { lang, explicit: Boolean(explicit) }));
   };
 }
 

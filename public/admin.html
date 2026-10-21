@@ -8,20 +8,7 @@
   <link rel="stylesheet" href="/_app/app.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="wrap">
-      <div class="bar glass">
-        <a class="brand" href="/"><img class="logo" src="/_app/favicon.svg" alt=""><span data-brand>freepages</span><span class="sub hide-sm" data-i18n="brand.admin">správa</span></a>
-        <div class="bar-right">
-          <nav class="nav" id="nav" hidden>
-            <a href="/" class="hide-sm" data-i18n="nav.publish">+ Zveřejnit</a>
-            <a href="#" id="logout" data-i18n="nav.logout">Odhlásit</a>
-          </nav>
-          <div class="lang" data-lang-switch></div>
-        </div>
-      </div>
-    </div>
-  </header>
+  <!--header-->
 
   <main>
     <div class="wrap page">
@@ -62,6 +49,9 @@
               <button type="button" role="tab" data-tab="visits" aria-selected="false"><span data-i18n="stats.title">Návštěvnost</span></button>
               <button type="button" role="tab" data-tab="whitelist" aria-selected="false"><span data-i18n="admin.tabWhitelist">IP whitelist</span> <span class="count" id="count-whitelist">0</span></button>
             </nav>
+            <div class="side-buttons">
+              <button class="btn" type="button" id="logout" data-i18n="nav.logout">Odhlásit</button>
+            </div>
           </aside>
 
           <div class="admin-main">
@@ -154,14 +144,7 @@
     </div>
   </main>
 
-  <footer class="site-footer">
-    <div class="wrap">
-      <div class="footer-row">
-        <p><span data-i18n="footer.by">Vytvořil</span> <a href="https://martin-balcar.cz" target="_blank" rel="noopener">Martin Balcar</a></p>
-        <p class="footer-links"><a href="/podminky" data-i18n="footer.terms">Podmínky</a> · <a href="/soukromi" data-i18n="footer.privacy">Soukromí</a> · <span data-i18n="footer.abuse">Nahlásit zneužití</span>: <a class="abuse-link" href="mailto:martin@freepages.dev">martin@freepages.dev</a></p>
-      </div>
-    </div>
-  </footer>
+  <!--footer-->
 
 
   <script src="/_app/i18n.js"></script>

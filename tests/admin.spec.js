@@ -66,7 +66,8 @@ test('the admin area is only for the admin account, signed in by e-mail link', a
   await expect(page.locator('#delete-admin')).toBeVisible();
   await page.locator('#admin-link').click();
   await expect(page.locator('#panel')).toBeVisible();
-  await expect(page.locator('#nav')).toBeVisible();
+  await expect(page.locator('#logout')).toBeVisible();
+  await expect(page.locator('.nav a[href="/admin"]')).toHaveAttribute('aria-current', 'page');
 });
 
 test('admin rights never come with an API token, and the admin account cannot be deleted', async ({ page, playwright }) => {
@@ -318,8 +319,8 @@ test('password sites can get a new password from the admin', async ({ page, play
   await wl.dispose();
 });
 
-test('"+ Zveřejnit" goes back to the upload page', async ({ page }) => {
+test('"Zveřejnit" goes back to the upload page', async ({ page }) => {
   await login(page);
-  await page.locator('#nav a[href="/"]').click();
+  await page.locator('.nav a[href="/"]').click();
   await expect(page).toHaveURL('/');
 });

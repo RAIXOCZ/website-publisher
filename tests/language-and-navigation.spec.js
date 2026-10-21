@@ -62,8 +62,8 @@ test('header navigation links work', async ({ page }) => {
   await page.locator('.nav a[href="/"]').click();
   await expect(page).toHaveURL('/');
 
-  await page.locator('.nav a[href="#my-sites"]').click();
-  await expect(page).toHaveURL('/#my-sites');
+  await page.locator('.nav a[href="/ucet"]').click();
+  await expect(page).toHaveURL('/ucet');
 
   await page.locator('a.brand').click();
   await expect(page).toHaveURL('/');
@@ -91,6 +91,28 @@ for (const path of ['/', '/docs', '/admin']) {
   });
 }
 
+
+test('every page has the same header, marking the current page', async ({ page }) => {
+  const current = { '/': '/', '/docs': '/docs', '/ucet': '/ucet', '/podminky': null, '/soukromi': null, '/admin': null };
+  for (const [path, href] of Object.entries(current)) {
+    await page.goto(path);
+    const links = page.locator('.topbar .nav a');
+    await expect(links).toHaveText(['Zveřejnit', 'Návod', 'Přihlásit se']);
+    expect(await links.evaluateAll((as) => as.map((a) => a.getAttribute('href')))).toEqual(['/', '/docs', '/ucet']);
+    await expect(page.locator('.topbar .nav [aria-current=page]')).toHaveCount(href ? 1 : 0);
+    if (href) await expect(page.locator('.topbar .nav [aria-current=page]')).toHaveAttribute('href', href);
+    await expect(page.locator('.site-footer a[href="/podminky"]')).toBeVisible();
+  }
+});
+
+test('the header comes in the language chosen with the switch, before any script runs', async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, locale: 'cs-CZ' });
+  await context.addCookies([{ name: 'fp_lang', value: 'en', url: 'http://localhost:4317' }]);
+  const page = await context.newPage();
+  await page.goto('http://localhost:4317/docs');
+  await expect(page.locator('.topbar .nav a')).toHaveText(['Publish', 'Guide', 'Sign in']);
+  await context.close();
+});
 
 test.describe('phone', () => {
   test.use({ viewport: { width: 360, height: 740 } });
