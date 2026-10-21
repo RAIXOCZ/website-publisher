@@ -654,8 +654,11 @@ td .site-url { font: 12px var(--mono); color: var(--muted); overflow-wrap: anywh
 .prose > * { max-width: 720px; }
 .prose h2 { font-size: 22px; margin: 32px 0 8px; }
 .prose h2:first-child { margin-top: 0; }
-.prose h2 { scroll-margin-top: 100px; }
+.prose h2, .prose h3 { scroll-margin-top: 100px; }
+.prose h3 { font-size: 17px; margin: 22px 0 6px; }
 .doc-layout .side-nav { border-top: 0; padding-top: 0; }
+.toc { gap: 4px; }
+.toc .side-title { margin: 0; }
 .doc-layout .side-nav a { font-size: 14px; font-weight: 500; padding: 6px 12px; }
 .prose p, .prose li { color: var(--muted); }
 .prose p { margin: 0 0 12px; }

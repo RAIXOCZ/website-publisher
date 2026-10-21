@@ -110,10 +110,13 @@ test('MCP: requires an API token and refuses foreign browser origins', async ({ 
   expect((await request.get('/mcp')).status()).toBe(405);
 });
 
-test('the account page shows how to connect the MCP server', async ({ page }) => {
+test('the account page links to the guide for API keys', async ({ page }) => {
   const { signIn } = require('./helpers');
   await signIn(page);
-  await page.goto('/ucet');
-  await expect(page.locator('#mcp-example')).toContainText('claude mcp add --transport http freepages http://localhost:4317/mcp');
-  await expect(page.locator('#mcp-example')).toContainText('"Authorization": "Bearer $FREEPAGES_TOKEN"');
+  await page.goto('/ucet#api-klice');
+  await expect(page.locator('#api-klice h2')).toHaveText('API klíče');
+  await expect(page.locator('#cli-how')).toHaveAttribute('href', '/docs#cs-api-klice');
+  await page.goto('/docs');
+  await expect(page.locator('#cs-api-klice')).toHaveText('API klíče');
+  await expect(page.locator('[data-lang=cs] .mcp-url').first()).toHaveText('http://localhost:4317/mcp');
 });

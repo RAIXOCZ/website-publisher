@@ -17,8 +17,7 @@ test('signing in with an e-mail link', async ({ page, browser, request }) => {
   expect(mail.subject).toBe('Přihlášení do Freepages');
   expect(mail.text).toContain('30 minut');
   await page.goto(new URL(mail.params.link).pathname);
-  await expect(page.locator('#confirm-title')).toHaveText('Přihlášení do Freepages');
-  await page.locator('#confirm-button').click();
+  // A sign-in link signs in right away, no button to press.
   await expect(page).toHaveURL('/ucet');
   await expect(page.locator('#account-email')).toContainText(email);
 
@@ -59,12 +58,19 @@ test('the account page shows sites, lets you change your name and rename or dele
   await expect(card).toBeVisible();
   await expect(card.locator('[data-action=edit]')).toHaveAttribute('href', `/?edit=${site}`);
 
+  // Each part of the account is its own page in the side navigation.
+  await page.locator('.account-side a[href="#udaje"]').click();
+  await expect(page).toHaveURL('/ucet#udaje');
+  await expect(card).toBeHidden();
+  await expect(page.locator('.account-side a[href="#udaje"]')).toHaveAttribute('aria-current', 'page');
   await page.locator('#profile input[name=firstName]').fill('Jana');
   await page.locator('#profile input[name=lastName]').fill('Nováková');
   await page.locator('#profile button').click();
   await expect(page.locator('.toast')).toHaveText('Uloženo');
   await expect(page.locator('#account-name')).toHaveText('Jana Nováková');
 
+  await page.goBack();
+  await expect(card).toBeVisible();
   const renamed = unique('renamed');
   await rowAction(card, 'rename');
   const rename = await answerModal(page, renamed);
@@ -83,7 +89,7 @@ test('the account page shows sites, lets you change your name and rename or dele
 
 test('the activity history lists actions with IP addresses but no e-mail addresses', async ({ page }) => {
   const { email } = await signIn(page);
-  await page.goto('/ucet');
+  await page.goto('/ucet#historie');
   const rows = page.locator('#audit tr');
   await expect(rows.first()).toBeVisible();
   const text = await page.locator('#audit').textContent();
@@ -99,15 +105,13 @@ test('the activity history lists actions with IP addresses but no e-mail address
 
 test('API tokens publish and update sites with curl, and can be revoked', async ({ page, playwright }) => {
   await signIn(page);
-  await page.goto('/ucet');
+  await page.goto('/ucet#api-klice');
   await expect(page.locator('#tokens-empty')).toBeVisible();
   await page.locator('#token-form input[name=name]').fill('notebook');
   await page.locator('#token-form button').click();
   await expect(page.locator('#token-new')).toBeVisible();
   const token = (await page.locator('#token-value').textContent()) || '';
   expect(token).toMatch(/^fp_[\w-]{30,}$/);
-  await expect(page.locator('#curl-example')).toContainText(`Authorization: Bearer ${token}`);
-  await expect(page.locator('#curl-example')).toContainText('http://localhost:4317/api/sites');
   await page.locator('#token-copy').click();
   expect(await clipboard(page)).toBe(token);
   await expect(page.locator('#tokens tr')).toHaveCount(1);
@@ -143,7 +147,7 @@ test('API tokens publish and update sites with curl, and can be revoked', async 
 
 test('deleting the account needs the e-mail link; data is kept but the e-mail can sign up again', async ({ page, request }) => {
   const { email, site } = await signIn(page);
-  await page.goto('/ucet');
+  await page.goto('/ucet#smazani');
   await expect(page.locator('#delete-text')).toContainText('90 dní');
   await expect(page.locator('#delete-text')).toContainText('martin@freepages.dev');
   await page.locator('#delete-account').click();

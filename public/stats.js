@@ -28,8 +28,7 @@ function statsPanel(root, { endpoint, siteNames = [] }) {
     </div>
     <div class="chart" role="img"><svg></svg><div class="chart-tip" hidden><b></b><span></span></div><p class="chart-empty" hidden></p></div>
     <ul class="stats-sites"></ul>
-    <div class="stats-table table-wrap" hidden><table><thead><tr><th></th><th class="num"></th></tr></thead><tbody></tbody></table></div>
-    <p class="muted small stats-note"></p>`;
+    <div class="stats-table table-wrap" hidden><table><thead><tr><th></th><th class="num"></th></tr></thead><tbody></tbody></table></div>`;
 
   const select = $('.stats-site', root);
   select.setAttribute('aria-label', t('stats.site'));
@@ -73,7 +72,6 @@ function statsPanel(root, { endpoint, siteNames = [] }) {
   }
   $$('th', root)[0].textContent = t('stats.when');
   $$('th', root)[1].textContent = t('stats.views');
-  $('.stats-note', root).textContent = t('stats.note');
 
   async function load() {
     root.classList.add('loading'); // the previous chart stays while the new data loads
@@ -127,7 +125,6 @@ function statsPanel(root, { endpoint, siteNames = [] }) {
   return { reload: load };
 }
 
-const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
 // Buckets are UTC hours ("2026-10-21T14") or days ("2026-10-21T00"); labels are local.
 const bucketDate = (t) => new Date(`${t}:00:00Z`);

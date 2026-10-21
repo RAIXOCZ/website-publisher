@@ -157,7 +157,12 @@ function htmlEmail(lang, parts, preheader) {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef1f6"><tr><td align="center" style="padding:32px 16px">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px">
     <tr><td style="padding:0 4px 18px">
-      <a href="${escapeHtml(config.PUBLIC_URL)}" style="text-decoration:none"><img src="${escapeHtml(config.PUBLIC_URL)}/icon-192.png" width="36" height="36" alt="" style="vertical-align:middle;border:0;border-radius:9px"><span style="vertical-align:middle;margin-left:10px;font:700 20px/1 ${FONT};color:#0b1324;letter-spacing:-.02em">freepages</span></a>
+      <!-- The logo is drawn with HTML, so the e-mail loads nothing from the web.
+           (Gmail and Outlook do not show SVG in e-mails.) -->
+      <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+        <td width="36" height="36" align="center" valign="middle" style="width:36px;height:36px;background:#0d9488;border-radius:9px;font:700 22px/36px ${FONT};color:#ffffff">&#8593;</td>
+        <td style="padding-left:10px;font:700 20px/1 ${FONT};color:#0b1324;letter-spacing:-.02em">freepages</td>
+      </tr></table>
     </td></tr>
     <tr><td style="background:#ffffff;border-radius:18px;padding:32px 32px 16px;border:1px solid #e3e7ee">
       <h1 style="margin:0 0 18px;font:700 24px/1.25 ${FONT};color:#0b1324;letter-spacing:-.02em">${escapeHtml(parts.title)}</h1>

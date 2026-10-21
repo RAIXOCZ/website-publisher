@@ -53,15 +53,12 @@ test('the admin area is only for the admin account, signed in by e-mail link', a
       })
       .toBe(true);
     await page.goto(new URL(mail.params.link).pathname);
-    const button = page.locator('#confirm-button');
-    await expect(page.locator('#confirm-title')).not.toHaveText('Načítám…');
-    if (!(await button.isVisible())) continue;
-    await button.click();
     await page.waitForURL(/\/ucet$/, { timeout: 3000 }).catch(() => {});
   }
   await expect(page).toHaveURL('/ucet');
   await expect(page.locator('#account-name')).toHaveText('Martin Balcar');
   await expect(page.locator('#admin-link')).toBeVisible();
+  await page.locator('.account-side a[href="#smazani"]').click();
   await expect(page.locator('#delete-account')).toBeHidden();
   await expect(page.locator('#delete-admin')).toBeVisible();
   await page.locator('#admin-link').click();

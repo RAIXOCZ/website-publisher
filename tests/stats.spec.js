@@ -23,7 +23,7 @@ test('page views are counted per site and hour and shown as a chart', async ({ p
   expect(one.unit).toBe('day');
   expect(one.total).toBe(1);
 
-  await page.goto('/ucet');
+  await page.goto('/ucet#navstevnost');
   const visits = page.locator('#visits');
   await expect(visits.locator('[data-stat=total]')).toHaveText('4');
   await expect(visits.locator('.chart .bars path')).toHaveCount(1);

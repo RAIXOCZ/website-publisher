@@ -29,6 +29,10 @@ function $(selector, root = document) {
   return root.querySelector(selector);
 }
 
+function $$(selector, root = document) {
+  return [...root.querySelectorAll(selector)];
+}
+
 function formatBytes(n) {
   if (n == null) return '–';
   const units = ['B', 'KB', 'MB', 'GB'];

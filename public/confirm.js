@@ -1,8 +1,14 @@
 'use strict';
 
-// E-mail links open this page; the action runs only after a click, so link
-// scanners in mail clients cannot use the link up.
+// E-mail links open this page. A sign-in link signs in right away; the
+// other links (publishing, a new account, deleting the account) wait for a
+// click, because confirming them accepts terms or cannot be undone.
 const token = location.pathname.split('/').pop();
+
+async function consume() {
+  const { redirect } = await api('/auth/consume', { method: 'POST', json: { token } });
+  location.replace(redirect);
+}
 
 function fail(message) {
   $('#confirm-title').textContent = t('confirm.invalidTitle');
@@ -15,7 +21,11 @@ function fail(message) {
 async function init() {
   const info = await api(`/auth/token?token=${encodeURIComponent(token)}`);
   if (!info.valid) return fail(t('confirm.invalid'));
-  const kind = { login: 'login', publish: 'publish', register: 'register', 'delete-account': 'delete' }[info.purpose];
+  if (info.purpose === 'login') {
+    $('#confirm-title').textContent = t('confirm.signingIn');
+    return consume();
+  }
+  const kind = { publish: 'publish', register: 'register', 'delete-account': 'delete' }[info.purpose];
   $('#confirm-title').textContent = t(`confirm.${kind}Title`, { name: info.name });
   $('#confirm-text').textContent = t(`confirm.${kind}Text`, { name: info.name });
   const button = $('#confirm-button');
@@ -27,8 +37,7 @@ async function init() {
     button.disabled = true;
     $('#confirm-error').hidden = true;
     try {
-      const { redirect } = await api('/auth/consume', { method: 'POST', json: { token } });
-      location.href = redirect;
+      await consume();
     } catch (err) {
       $('#confirm-error').textContent = err.message;
       $('#confirm-error').hidden = false;

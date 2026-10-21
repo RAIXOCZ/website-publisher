@@ -34,8 +34,7 @@ async function load() {
   $('#blocked-notice').hidden = !user.blocked;
   $('#delete-account').hidden = user.isAdmin;
   $('#delete-admin').hidden = !user.isAdmin;
-  $('#curl-example').textContent = curlExample();
-  $('#mcp-example').textContent = mcpExample();
+  $('#cli-how').href = LANG === 'en' ? '/docs#en-api-keys' : '/docs#cs-api-klice';
   renderSites(sites);
   renderUsage(usage);
   renderVisits(sites);
@@ -131,33 +130,6 @@ $('#profile').addEventListener('submit', async (e) => {
 
 /* ---------- API tokens ---------- */
 
-function curlExample(token = '$FREEPAGES_TOKEN') {
-  const origin = location.origin;
-  return [
-    t('account.curlZip'),
-    `curl -H "Authorization: Bearer ${token}" \\`,
-    '     -F name=muj-web -F overwrite=1 -F f=@web.zip \\',
-    `     ${origin}/api/sites`,
-    '',
-    t('account.curlFolder'),
-    'cd muj-web && args=() && while IFS= read -r f; do args+=(-F "p=${f#./}" -F "f=@$f"); done < <(find . -type f) && \\',
-    `curl -H "Authorization: Bearer ${token}" -F name=muj-web -F overwrite=1 "\${args[@]}" ${origin}/api/sites`,
-  ].join('\n');
-}
-
-// How to connect an AI assistant to the MCP server at /mcp.
-function mcpExample(token = '$FREEPAGES_TOKEN') {
-  const url = `${location.origin}/mcp`;
-  return [
-    t('account.mcpClaude'),
-    `claude mcp add --transport http freepages ${url} \\`,
-    `  --header "Authorization: Bearer ${token}"`,
-    '',
-    t('account.mcpJson'),
-    JSON.stringify({ mcpServers: { freepages: { type: 'http', url, headers: { Authorization: `Bearer ${token}` } } } }, null, 2),
-  ].join('\n');
-}
-
 function renderTokens(tokens) {
   const active = tokens.filter((tok) => !tok.revokedAt);
   $('#tokens-table').hidden = active.length === 0;
@@ -191,8 +163,6 @@ $('#token-form').addEventListener('submit', async (e) => {
     await load();
     $('#token-value').textContent = token;
     $('#token-new').hidden = false;
-    $('#curl-example').textContent = curlExample(token);
-    $('#mcp-example').textContent = mcpExample(token);
   } catch (err) {
     uiError(err);
   }
@@ -254,7 +224,25 @@ $('#register-form').addEventListener('submit', async (e) => {
     button.disabled = false;
   }
 });
-scrollSpy($('.side-nav'));
+
+// Each section of the account is its own page, chosen by the address (#weby,
+// #navstevnost…), so the side navigation and the back button both work.
+const SECTIONS = $$('.account-main > section').map((s) => s.id);
+function showSection() {
+  const id = SECTIONS.includes(location.hash.slice(1)) ? location.hash.slice(1) : SECTIONS[0];
+  for (const section of $$('.account-main > section')) section.hidden = section.id !== id;
+  for (const link of $$('.account-side .side-nav a')) {
+    const current = link.hash.slice(1) === id;
+    link.classList.toggle('active', current);
+    if (current) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  }
+}
+window.addEventListener('hashchange', () => {
+  showSection();
+  window.scrollTo({ top: 0 });
+});
+showSection();
 
 init().catch((err) => {
   document.querySelector('main').textContent = t('err.load', { message: err.message });

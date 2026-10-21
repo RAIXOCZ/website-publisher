@@ -1,7 +1,7 @@
 'use strict';
 
 // MCP server (Model Context Protocol, Streamable HTTP transport) at /mcp.
-// AI assistants connect with an API token from the account page, sent as
+// AI assistants connect with an API key from the account page, sent as
 // "Authorization: Bearer <token>", and can then list, read, publish, rename
 // and delete the account's sites and read their visit statistics. The
 // server is stateless: every POST carries one JSON-RPC message (or a batch)
@@ -268,10 +268,10 @@ async function endpoint(req, res) {
   const origin = req.headers.origin;
   if (origin && origin !== new URL(config.PUBLIC_URL).origin) return res.status(403).json(rpcError(null, -32000, 'Origin not allowed'));
   if (!String(req.headers.authorization || '').startsWith('Bearer ')) {
-    return unauthorized(res, `Send an API token as "Authorization: Bearer <token>". Create one at ${config.PUBLIC_URL}/ucet#cli.`);
+    return unauthorized(res, `Send an API key as "Authorization: Bearer <key>". Create one at ${config.PUBLIC_URL}/ucet#api-klice.`);
   }
   const user = accounts.currentUser(req);
-  if (!user) return unauthorized(res, 'Invalid or revoked API token.');
+  if (!user) return unauthorized(res, 'Invalid or revoked API key.');
 
   const body = req.body;
   const batch = Array.isArray(body);

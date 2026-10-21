@@ -58,7 +58,7 @@
             <a href="#weby" data-i18n="account.sites">Weby</a>
             <a href="#navstevnost" data-i18n="stats.title">Návštěvnost</a>
             <a href="#udaje" data-i18n="account.profile">Osobní údaje</a>
-            <a href="#cli" data-i18n="account.cliShort">Příkazová řádka</a>
+            <a href="#api-klice" data-i18n="account.cliShort">API klíče</a>
             <a href="#historie" data-i18n="account.audit">Historie aktivit</a>
             <a href="#smazani" data-i18n="account.delete">Smazání účtu</a>
           </nav>
@@ -91,9 +91,9 @@
           <p class="muted small" data-i18n-html="account.emailNote">E-mail nelze změnit. Pokud ho potřebujete změnit, napište na <a href="mailto:martin@freepages.dev?subject=Zm%C4%9Bna%20e-mailu">martin@freepages.dev</a>.</p>
         </section>
 
-        <section class="card glass" id="cli">
-          <h2 data-i18n="account.cli">Příkazová řádka (API tokeny)</h2>
-          <p class="muted" data-i18n="account.cliText">S tokenem můžete zveřejňovat a aktualizovat weby přes curl, například ze skriptu nebo CI. Token je jako heslo – nikomu ho nedávejte.</p>
+        <section class="card glass" id="api-klice">
+          <h2 data-i18n="account.cli">API klíče</h2>
+          <p class="muted"><span data-i18n="account.cliText"></span> <a href="/docs#cs-api-klice" id="cli-how" data-i18n="account.cliHow">Jak klíč použít v příkazové řádce a v MCP →</a></p>
           <form class="row stack-sm align-end" id="token-form">
             <label class="labeled grow"><span data-i18n="account.tokenLabel">Název tokenu</span><input type="text" name="name" data-i18n-placeholder="account.tokenExample" placeholder="např. notebook" maxlength="80"></label>
             <button class="btn btn-primary" type="submit" data-i18n="account.tokenCreate">Vytvořit token</button>
@@ -102,10 +102,6 @@
             <p class="field-label" data-i18n="account.tokenOnce">Nový token – zobrazí se jen teď, uložte si ho:</p>
             <div class="field"><code id="token-value"></code><button class="btn btn-sm" id="token-copy" data-i18n="copy">Kopírovat</button></div>
           </div>
-          <pre class="code" id="curl-example"></pre>
-          <h3 class="subhead" data-i18n="account.mcpTitle">MCP server pro AI asistenty</h3>
-          <p class="muted" data-i18n-html="account.mcpText">Připojte Claude, Cursor nebo jiného asistenta, který podporuje MCP. Použijte adresu níže a token jako hlavičku <code>Authorization: Bearer</code>. <a href="/docs#cs-mcp-server-pro-ai-asistenty">Návod</a></p>
-          <pre class="code" id="mcp-example"></pre>
           <table class="tokens" id="tokens-table">
             <thead><tr><th data-i18n="account.thToken">Token</th><th data-i18n="account.thCreated">Vytvořen</th><th data-i18n="account.thUsed">Naposledy použit</th><th></th></tr></thead>
             <tbody id="tokens"></tbody>
