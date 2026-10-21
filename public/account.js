@@ -25,6 +25,7 @@ async function load() {
   $('#profile').lastName.value = user.lastName;
   $('#delete-text').textContent = t('account.deleteText', { days: config.retentionDays, contact: config.contact });
   $('#admin-link').hidden = !config.admin;
+  $('#blocked-notice').hidden = !user.blocked;
   $('#delete-account').hidden = user.isAdmin;
   $('#delete-admin').hidden = !user.isAdmin;
   $('#curl-example').textContent = curlExample();

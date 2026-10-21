@@ -638,6 +638,7 @@ td .site-url { font: 12px var(--mono); color: var(--muted); overflow-wrap: anywh
 /* ---------- notices, editor, previews ---------- */
 
 .notice { padding: 2px 0 2px 14px; border-left: 3px solid var(--ok); color: var(--ok); font-weight: 500; }
+.notice.warn { border-left-color: var(--danger); color: var(--danger); }
 .edit-banner {
   display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
   padding-bottom: 14px;
@@ -831,6 +832,8 @@ tr.dim td { opacity: 0.65; }
   .hide-sm { display: none !important; }
   .nav a { padding: 7px 8px; }
   .brand { font-size: 17px; }
+  /* only the logo on phones: the name stays readable for screen readers */
+  .brand [data-brand] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .address { font-size: 14px; padding-left: 12px; }
   .address input { font-size: 14px; }
   .panel { padding: 14px; }

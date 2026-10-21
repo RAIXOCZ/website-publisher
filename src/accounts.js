@@ -69,8 +69,17 @@ function createUser({ email, firstName, lastName, ip }) {
 }
 
 function publicUser(user) {
-  return user && { id: user.id, email: user.email, firstName: user.first_name, lastName: user.last_name, createdAt: user.created_at, isAdmin: Boolean(user.is_admin) };
+  return user && { id: user.id, email: user.email, firstName: user.first_name, lastName: user.last_name, createdAt: user.created_at, isAdmin: Boolean(user.is_admin), blocked: Boolean(user.blocked_at) };
 }
+
+// The admin can stop an account from adding and editing sites (for
+// example when it uses too much storage); deleting stays possible.
+function setBlocked(userId, blocked, ip) {
+  run('UPDATE users SET blocked_at = ? WHERE id = ? AND is_admin = 0', blocked ? now() : null, userId);
+  audit(blocked ? 'account.blocked_by_admin' : 'account.unblocked_by_admin', { userId, ip });
+}
+
+const isBlocked = (user) => Boolean(user && user.blocked_at && !user.is_admin);
 
 // The account with ADMIN_EMAIL is the administrator. It is created on start;
 // if ADMIN_EMAIL changed and no account uses the new address yet, the
@@ -281,7 +290,7 @@ async function purgeUser(userId) {
 function listUsers() {
   return all(`
     SELECT u.id, u.email, u.first_name AS firstName, u.last_name AS lastName, u.created_at AS createdAt,
-           u.created_ip AS createdIp, u.is_admin AS isAdmin, u.deleted_at AS deletedAt, u.deleted_by AS deletedBy, u.purge_after AS purgeAfter,
+           u.created_ip AS createdIp, u.is_admin AS isAdmin, u.blocked_at AS blockedAt, u.deleted_at AS deletedAt, u.deleted_by AS deletedBy, u.purge_after AS purgeAfter,
            (SELECT COUNT(*) FROM sites s WHERE s.user_id = u.id AND s.deleted_at IS NULL) AS sites,
            (SELECT COUNT(*) FROM sites s WHERE s.user_id = u.id AND s.deleted_at IS NOT NULL) AS deletedSites
     FROM users u ORDER BY u.id DESC`);
@@ -329,6 +338,8 @@ module.exports = {
   publicUser,
   ensureAdmin,
   isAdmin,
+  setBlocked,
+  isBlocked,
   updateNames,
   startSession,
   endSession,

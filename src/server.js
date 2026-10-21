@@ -206,8 +206,10 @@ api.post('/auth/consume', json, async (req, res) => {
   // still works after the owner frees some space.
   const peek = accounts.readEmailToken(String(req.body?.token || ''));
   if (peek?.valid && peek.purpose === 'publish') {
+    const owner = accounts.activeUserByEmail(peek.email);
+    if (accounts.isBlocked(owner)) return fail(req, res, 403, 'uploadsBlocked');
     const dir = sites.pendingDir(peek.payload?.dir);
-    if (dir) await sites.assertQuota(dir, { ownerId: accounts.activeUserByEmail(peek.email)?.id });
+    if (dir) await sites.assertQuota(dir, { ownerId: owner?.id });
   }
   const row = accounts.consumeEmailToken(String(req.body?.token || ''));
   if (!row) return fail(req, res, 410, 'linkExpired');
@@ -315,6 +317,7 @@ api.post('/sites', async (req, res) => {
   const ip = ipOf(req);
   const user = accounts.currentUser(req);
   const isAdmin = accounts.isAdmin(req);
+  if (accounts.isBlocked(user)) return fail(req, res, 403, 'uploadsBlocked');
   if (!user && !isAdmin) {
     if (auth.tooManyAttempts(req)) return fail(req, res, 429, 'tooManyAttempts');
     if (!auth.publishAllowed(req)) return fail(req, res, 429, 'tooManyUploads');
@@ -369,6 +372,7 @@ api.post('/sites', async (req, res) => {
     const email = accounts.normEmail(f.email);
     if (!email) throw new sites.UserError('emailRequired');
     const existing = accounts.activeUserByEmail(email);
+    if (accounts.isBlocked(existing)) throw new sites.UserError('uploadsBlocked', 403);
     const firstName = accounts.cleanName(f.firstName);
     const lastName = accounts.cleanName(f.lastName);
     if (!existing && (!firstName || !lastName)) throw new sites.UserError('nameRequired');
@@ -391,6 +395,7 @@ api.post('/sites', async (req, res) => {
 
 // The files of a site, for editing it in the file tree.
 api.post('/sites/:name/files', json, async (req, res) => {
+  if (accounts.isBlocked(accounts.currentUser(req))) return fail(req, res, 403, 'uploadsBlocked');
   const site = sites.activeSite(req.params.name);
   if (!site) return fail(req, res, 404, 'siteNotFound');
   if (!canManage(req, site, req.body?.password)) return fail(req, res, 403, 'notYourSite');
@@ -412,6 +417,7 @@ api.post('/sites/:name/delete', json, async (req, res) => {
 });
 
 api.post('/sites/:name/rename', json, async (req, res) => {
+  if (accounts.isBlocked(accounts.currentUser(req))) return fail(req, res, 403, 'uploadsBlocked');
   const site = sites.activeSite(req.params.name);
   if (!site) return fail(req, res, 404, 'siteNotFound');
   const user = accounts.currentUser(req);
@@ -495,6 +501,13 @@ admin.post('/users/:id/delete', async (req, res) => {
   if (user.is_admin) return fail(req, res, 400, 'adminAccount');
   await accounts.deleteUser(user.id, { by: 'admin', ip: ipOf(req) });
   res.json({ ok: true });
+});
+admin.post('/users/:id/block', async (req, res) => {
+  const user = adminUser(req, res);
+  if (!user) return;
+  if (user.is_admin) return fail(req, res, 400, 'adminAccount');
+  accounts.setBlocked(user.id, Boolean(req.body?.blocked), ipOf(req));
+  res.json({ ok: true, blocked: Boolean(req.body?.blocked) });
 });
 admin.post('/users/:id/purge', async (req, res) => {
   const user = adminUser(req, res);

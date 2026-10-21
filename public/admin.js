@@ -158,7 +158,11 @@ function renderUsers() {
       if (user.isAdmin) {
         $('.owner-name', tr).insertAdjacentHTML('beforeend', `<span class="chip">${t('admin.adminChip')}</span>`);
       } else {
-        if (!user.deletedAt) actions.push(button(t('row.delete'), 'delete', 'btn-danger'));
+        if (user.blockedAt) $('.owner-name', tr).insertAdjacentHTML('beforeend', `<span class="chip chip-danger">${t('admin.blockedChip')}</span>`);
+        if (!user.deletedAt) {
+          actions.push(user.blockedAt ? button(t('admin.unblock'), 'unblock') : button(t('admin.block'), 'block'));
+          actions.push(button(t('row.delete'), 'delete', 'btn-danger'));
+        }
         actions.push(button(t('admin.purge'), 'purge', 'btn-danger'));
       }
       cell(tr, 3).innerHTML = `<div class="actions-wrap">${actions.join('')}</div>`;
@@ -185,7 +189,12 @@ $('#user-rows').addEventListener('click', async (e) => {
       renderSites();
       return showTab('sites');
     }
-    if (el.dataset.action === 'delete') {
+    if (el.dataset.action === 'block' || el.dataset.action === 'unblock') {
+      const blocked = el.dataset.action === 'block';
+      if (blocked && !(await uiConfirm(t('admin.blockConfirm', { email: label }), { title: t('admin.blockTitle'), ok: t('admin.block'), danger: true }))) return;
+      await api(`/admin/users/${user.id}/block`, { method: 'POST', json: { blocked } });
+      toast(t(blocked ? 'admin.blocked' : 'admin.unblocked', { email: label }));
+    } else if (el.dataset.action === 'delete') {
       if (!(await uiConfirm(t('admin.deleteUserConfirm', { email: label, days: config.retentionDays }), { title: t('admin.deleteUserTitle'), ok: t('delete.ok'), danger: true }))) return;
       await api(`/admin/users/${user.id}/delete`, { method: 'POST' });
       toast(t('admin.userDeleted', { email: label }));

@@ -35,6 +35,10 @@ async function init() {
   updateAddress();
   $('#nav-account').textContent = t(signedIn() ? 'nav.account' : 'nav.login');
   restoreIdentity();
+  if (state.config.user?.blocked) {
+    showNotice(t('account.blocked'));
+    $('#notice').classList.add('warn');
+  }
   renderStaged();
   await renderMySites();
   await handleQuery();

@@ -91,3 +91,19 @@ for (const path of ['/', '/docs', '/admin']) {
   });
 }
 
+
+test.describe('phone', () => {
+  test.use({ viewport: { width: 360, height: 740 } });
+  for (const path of ['/', '/docs', '/podminky', '/soukromi', '/ucet', '/admin']) {
+    test(`the header and page fit the screen on ${path}`, async ({ page }) => {
+      await page.goto(path);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+      const bar = await page.locator('.topbar .bar').boundingBox();
+      const lang = await page.locator('[data-lang-switch]').boundingBox();
+      expect(lang.x + lang.width).toBeLessThanOrEqual(bar.x + bar.width);
+      // Only the logo is shown; the name is still there for screen readers.
+      await expect(page.locator('.brand [data-brand]')).toHaveCSS('position', 'absolute');
+      await expect(page.locator('.brand')).toHaveAccessibleName(/localhost/);
+    });
+  }
+});

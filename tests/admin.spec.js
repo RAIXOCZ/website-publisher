@@ -200,6 +200,46 @@ test('users: history with IPs, delete (unlink, keep data) and purge', async ({ p
   expect(users.some((u) => u.email === email)).toBe(false);
 });
 
+test('the admin can stop an account from adding and editing sites, and allow it again', async ({ page, browser, request }) => {
+  const userPage = await (await browser.newContext({ locale: 'cs-CZ' })).newPage();
+  const { email, site } = await signIn(userPage);
+  const { token } = await (await userPage.request.post('/api/me/tokens', { headers: HEADERS, data: { name: 'cli' } })).json();
+
+  await login(page);
+  await page.locator('[role=tab][data-tab=users]').click();
+  const row = userRow(page, email);
+  await row.locator('[data-action=block]').click();
+  const shown = await answerModal(page, true);
+  expect(shown.title).toBe('Zakázat přidávání a úpravy?');
+  await expect(row).toContainText('úpravy zakázány');
+  await expect(page.locator('.toast')).toHaveText(`Úpravy zakázány: ${email}`);
+
+  // Neither the browser, nor the API token, nor a visitor upload for the e-mail gets through.
+  const cs = { 'Accept-Language': 'cs' };
+  const html = { name: 'index.html', mimeType: 'text/html', buffer: Buffer.from('<h1>x</h1>') };
+  const viaToken = await request.post('/api/sites', { headers: { Authorization: `Bearer ${token}`, ...cs }, multipart: { name: unique('b'), f: html } });
+  expect(viaToken.status()).toBe(403);
+  expect((await viaToken.json()).error).toContain('zakázané');
+  const visitor = await request.post('/api/sites', { headers: { ...HEADERS, ...cs }, multipart: { name: unique('b'), email, f: html } });
+  expect(visitor.status()).toBe(403);
+  expect((await userPage.request.post(`/api/sites/${site}/rename`, { headers: HEADERS, data: { name: unique('r') } })).status()).toBe(403);
+  await userPage.goto('/');
+  await expect(userPage.locator('#notice')).toContainText('zakázané');
+  await userPage.goto('/ucet');
+  await expect(userPage.locator('#blocked-notice')).toBeVisible();
+  await expect(userPage.locator('#audit')).toContainText('Úpravy webů zakázány správcem');
+  // Deleting still works.
+  await userPage.locator(`#sites .site-card[data-name="${site}"] [data-action=delete]`).click();
+  await answerModal(userPage, true);
+  await expect(userPage.locator('#sites-empty')).toBeVisible();
+
+  await row.locator('[data-action=unblock]').click();
+  await expect(row).not.toContainText('úpravy zakázány');
+  const again = await request.post('/api/sites', { headers: { Authorization: `Bearer ${token}` }, multipart: { name: unique('ok'), f: html } });
+  expect(again.status()).toBe(200);
+  await userPage.context().close();
+});
+
 test('IP whitelist can be edited', async ({ page }) => {
   await login(page);
   await page.locator('[role=tab][data-tab=whitelist]').click();
