@@ -171,6 +171,9 @@ function uiDialog({ title = '', text = '', input = null, multiline = false, opti
   if (input !== null) {
     field.focus();
     field.select();
+  } else if (danger && showCancel) {
+    // Enter alone must not delete anything
+    $('[data-ui=cancel]', dialog).focus();
   } else {
     okButton.focus();
   }

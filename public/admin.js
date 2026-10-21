@@ -79,14 +79,16 @@ function renderSites() {
       cell(tr, 2).children[0].textContent = `${filesLabel(site.files)} · ${formatBytes(site.bytes)}`;
       cell(tr, 2).children[2].textContent = t('chip.updated', { ago: timeAgo(site.updatedAt) });
       cell(tr, 2).children[2].title = formatDateTime(site.updatedAt);
-      const actions = [button(t('admin.history'), 'audit')];
+      // Same order as everywhere: edit, the rest, history, delete last.
+      // "Delete permanently" is offered only once a site is deleted.
+      const actions = [];
       if (!site.deletedAt) {
         actions.push(`<a class="btn btn-sm btn-accent" href="/?edit=${encodeURIComponent(site.name)}">${t('row.edit')}</a>`);
         actions.push(button(t('row.rename'), 'rename'));
         if (!site.owner) actions.push(button(t('row.newPw'), 'password'));
-        actions.push(button(t('row.delete'), 'delete', 'btn-danger'));
       }
-      actions.push(button(t('admin.purge'), 'purge', 'btn-danger'));
+      actions.push(button(t('admin.history'), 'audit', 'btn-quiet'));
+      actions.push(site.deletedAt ? button(t('admin.purge'), 'purge', 'btn-danger') : button(t('row.delete'), 'delete', 'btn-danger'));
       cell(tr, 3).innerHTML = `<div class="actions-wrap">${actions.join('')}</div>`;
       return tr;
     }),
@@ -121,12 +123,12 @@ $('#site-rows').addEventListener('click', async (e) => {
       const result = await api(`/admin/sites/${site.id}/reset-password`, { method: 'POST' });
       await uiAlert(t('admin.resetPrompt', { name }), { title: t('admin.resetTitle'), value: result.password });
     } else if (el.dataset.action === 'delete') {
-      const reason = await askReason(t('admin.deleteConfirm', { name, days: config.retentionDays }), Boolean(site.owner), { title: t('delete.title'), ok: t('delete.ok') });
+      const reason = await askReason(t('admin.deleteConfirm', { name, days: config.retentionDays }), Boolean(site.owner), { title: t('delete.title', { name }), ok: t('delete.ok') });
       if (reason === null) return;
       await api(`/admin/sites/${site.id}/delete`, { method: 'POST', json: { reason } });
       toast(t('admin.deleted', { name }));
     } else if (el.dataset.action === 'purge') {
-      if (!(await uiConfirm(t('admin.purgeSiteConfirm', { name }), { title: t('admin.purgeTitle'), ok: t('admin.purge'), danger: true }))) return;
+      if (!(await uiConfirm(t('admin.purgeSiteConfirm'), { title: t('admin.purgeTitle', { name }), ok: t('admin.purge'), danger: true }))) return;
       await api(`/admin/sites/${site.id}/purge`, { method: 'POST' });
       toast(t('admin.purged', { name }));
     }
@@ -165,16 +167,14 @@ function renderUsers() {
       $('td:nth-child(2) span', tr).textContent = formatDateTime(user.createdAt);
       $('td:nth-child(2) code', tr).textContent = user.createdIp || '';
       cell(tr, 2).textContent = user.deletedSites ? `${user.sites} (+${user.deletedSites} ${t('admin.deletedShort')})` : String(user.sites);
-      const actions = [button(t('admin.history'), 'audit'), button(t('admin.sites'), 'sites')];
+      const actions = [button(t('admin.sites'), 'sites')];
+      if (!user.isAdmin && !user.deletedAt) actions.push(user.blockedAt ? button(t('admin.unblock'), 'unblock') : button(t('admin.block'), 'block'));
+      actions.push(button(t('admin.history'), 'audit', 'btn-quiet'));
       if (user.isAdmin) {
         $('.owner-name', tr).insertAdjacentHTML('beforeend', `<span class="chip">${t('admin.adminChip')}</span>`);
       } else {
         if (user.blockedAt) $('.owner-name', tr).insertAdjacentHTML('beforeend', `<span class="chip chip-danger">${t('admin.blockedChip')}</span>`);
-        if (!user.deletedAt) {
-          actions.push(user.blockedAt ? button(t('admin.unblock'), 'unblock') : button(t('admin.block'), 'block'));
-          actions.push(button(t('row.delete'), 'delete', 'btn-danger'));
-        }
-        actions.push(button(t('admin.purge'), 'purge', 'btn-danger'));
+        actions.push(user.deletedAt ? button(t('admin.purge'), 'purge', 'btn-danger') : button(t('row.delete'), 'delete', 'btn-danger'));
       }
       cell(tr, 3).innerHTML = `<div class="actions-wrap">${actions.join('')}</div>`;
       return tr;
@@ -207,12 +207,12 @@ $('#user-rows').addEventListener('click', async (e) => {
       await api(`/admin/users/${user.id}/block`, { method: 'POST', json: { blocked, reason } });
       toast(t(blocked ? 'admin.blocked' : 'admin.unblocked', { email: label }));
     } else if (el.dataset.action === 'delete') {
-      const reason = await askReason(t('admin.deleteUserConfirm', { email: label, days: config.retentionDays }), true, { title: t('admin.deleteUserTitle'), ok: t('delete.ok') });
+      const reason = await askReason(t('admin.deleteUserConfirm', { email: label, days: config.retentionDays }), true, { title: t('admin.deleteUserTitle', { email: label }), ok: t('delete.ok') });
       if (reason === null) return;
       await api(`/admin/users/${user.id}/delete`, { method: 'POST', json: { reason } });
       toast(t('admin.userDeleted', { email: label }));
     } else if (el.dataset.action === 'purge') {
-      if (!(await uiConfirm(t('admin.purgeUserConfirm', { email: label }), { title: t('admin.purgeTitle'), ok: t('admin.purge'), danger: true }))) return;
+      if (!(await uiConfirm(t('admin.purgeUserConfirm'), { title: t('admin.purgeTitle', { name: label }), ok: t('admin.purge'), danger: true }))) return;
       await api(`/admin/users/${user.id}/purge`, { method: 'POST' });
       toast(t('admin.purged', { name: label }));
     }

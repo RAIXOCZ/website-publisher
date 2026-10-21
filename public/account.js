@@ -86,7 +86,7 @@ $('#sites').addEventListener('click', async (e) => {
       toast(t('admin.renamed', { name: site.name }));
     } else if (button.dataset.action === 'delete') {
       const url = $('.site-url', button.closest('.site-card')).href;
-      if (!(await uiConfirm(`${t('confirm.deleteOwn', { name, url })}\n\n${retentionNote(config)}`, { title: t('delete.title'), ok: t('delete.ok'), danger: true }))) return;
+      if (!(await uiConfirm(`${t('confirm.deleteOwn', { name, url })}\n\n${retentionNote(config)}`, { title: t('delete.title', { name }), ok: t('delete.ok'), danger: true }))) return;
       await api(`/sites/${encodeURIComponent(name)}/delete`, { method: 'POST', json: {} });
       toast(t('toast.deleted', { name }));
     }

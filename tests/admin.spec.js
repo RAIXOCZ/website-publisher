@@ -195,7 +195,7 @@ test('users: history with IPs, delete (unlink, keep data) and purge', async ({ p
   await page.locator('#show-deleted-users').check();
   await expect(userRow(page, email)).toContainText('smazáno · správcem');
   await userRow(page, email).locator('[data-action=purge]').click();
-  expect((await answerModal(page, true)).title).toBe('Smazat trvale?');
+  expect((await answerModal(page, true)).title).toMatch(/^Smazat .+ trvale\?$/);
   await expect(userRow(page, email)).toHaveCount(0);
   const { users } = await (await page.request.get('/api/admin/users')).json();
   expect(users.some((u) => u.email === email)).toBe(false);

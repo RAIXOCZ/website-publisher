@@ -1023,7 +1023,6 @@ async function renderMySites() {
   }
   list.replaceChildren(...cards);
   $('#my-count').textContent = cards.length;
-  $('#my-account').hidden = !signedIn();
   $('#add-toggle').hidden = !state.config.whitelisted;
   $('#login-inline').hidden = signedIn();
   $('#my-empty').hidden = cards.length > 0 || !signedIn();
@@ -1048,7 +1047,7 @@ $('#my-list').addEventListener('click', async (e) => {
     return renderMySites();
   }
   if (action === 'delete') {
-    if (!(await uiConfirm(`${t('confirm.deleteOwn', { name, url })}\n\n${retentionNote(state.config)}`, { title: t('delete.title'), ok: t('delete.ok'), danger: true }))) return;
+    if (!(await uiConfirm(`${t('confirm.deleteOwn', { name, url })}\n\n${retentionNote(state.config)}`, { title: t('delete.title', { name }), ok: t('delete.ok'), danger: true }))) return;
     try {
       await api(`/sites/${encodeURIComponent(name)}/delete`, { method: 'POST', json: { password } });
       if (password) forgetSite(name);

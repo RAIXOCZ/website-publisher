@@ -18,7 +18,7 @@
       <section class="studio">
         <label class="address glass" for="name">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-          <span class="prefix" id="url-prefix">https://</span><input type="text" id="name" data-i18n-placeholder="name.placeholder" placeholder="muj-web" autocomplete="off" spellcheck="false" maxlength="63"><span class="suffix" id="url-suffix">/</span>
+          <span class="prefix" id="url-prefix">https://</span><input type="text" id="name" aria-label="Název webu" data-i18n-aria="my.namePlaceholder" data-i18n-placeholder="name.placeholder" placeholder="muj-web" autocomplete="off" spellcheck="false" maxlength="63"><span class="suffix" id="url-suffix">/</span>
         </label>
 
         <div class="panel glass">
@@ -30,7 +30,7 @@
           <div class="alert" id="error" hidden>
             <span id="error-text"></span>
             <form class="row" id="conflict" hidden>
-              <input type="text" id="conflict-password" class="grow" data-i18n-placeholder="conflict.placeholder" placeholder="Heslo k webu" autocomplete="off" spellcheck="false">
+              <input type="text" id="conflict-password" class="grow" aria-label="Heslo k webu" data-i18n-aria="conflict.placeholder" data-i18n-placeholder="conflict.placeholder" placeholder="Heslo k webu" autocomplete="off" spellcheck="false">
               <button class="btn btn-sm btn-primary" type="submit" data-i18n="conflict.replace">Nahradit web</button>
               <button class="btn btn-sm" type="button" id="as-new" data-i18n="conflict.asNew">Zveřejnit jako nový web</button>
               <button class="btn btn-sm" type="button" id="cancel" data-i18n="cancel">Zrušit</button>
@@ -52,8 +52,8 @@
           <div class="staged" id="staged" hidden>
             <div class="staged-main">
               <div class="tree-toolbar">
-                <button class="btn btn-sm" type="button" data-tool="files"><span aria-hidden="true">+</span> <span data-i18n="tool.files">Soubory</span></button>
-                <button class="btn btn-sm" type="button" data-tool="folder"><span aria-hidden="true">+</span> <span data-i18n="tool.folder">Složka</span></button>
+                <button class="btn btn-sm" type="button" data-tool="files"><span data-i18n="tool.files">Přidat soubory</span></button>
+                <button class="btn btn-sm" type="button" data-tool="folder"><span data-i18n="tool.folder">Přidat složku</span></button>
                 <button class="btn btn-sm" type="button" data-tool="mkdir" data-i18n="tool.mkdir">Nová složka</button>
                 <button class="btn btn-sm btn-quiet" type="button" data-tool="replace-all" data-i18n="tool.replaceAll">Nahradit vše složkou</button>
               </div>
@@ -75,14 +75,14 @@
                   <b id="preview-title" data-i18n="preview.ready">Náhled je připravený</b>
                   <span class="muted small" id="preview-time"></span>
                 </div>
-                <a class="btn btn-sm btn-primary" id="preview-open" target="_blank" rel="noopener" data-i18n="preview.open">Otevřít náhled</a>
+                <a class="btn btn-sm" id="preview-open" target="_blank" rel="noopener" data-i18n="preview.open">Otevřít náhled</a>
                 <button class="btn btn-sm" type="button" id="preview-again" hidden data-i18n="preview.again">Vytvořit nový náhled</button>
               </div>
               <form class="identity" id="identity" hidden>
                 <p class="identity-lead" data-i18n="identity.lead">Kam poslat potvrzení? Web zveřejníme, jakmile potvrdíte svůj e-mail. Účet se vytvoří automaticky.</p>
-                <input type="email" name="email" id="id-email" data-i18n-placeholder="identity.email" placeholder="E-mail" autocomplete="email" required>
-                <input type="text" name="firstName" id="id-first" data-i18n-placeholder="identity.first" placeholder="Jméno" autocomplete="given-name" maxlength="80" required>
-                <input type="text" name="lastName" id="id-last" data-i18n-placeholder="identity.last" placeholder="Příjmení" autocomplete="family-name" maxlength="80" required>
+                <label class="labeled"><span data-i18n="identity.email">E-mail</span><input type="email" name="email" id="id-email" data-i18n-placeholder="identity.emailExample" placeholder="jana@example.cz" autocomplete="email" required></label>
+                <label class="labeled"><span data-i18n="identity.first">Jméno</span><input type="text" name="firstName" id="id-first" autocomplete="given-name" maxlength="80" required></label>
+                <label class="labeled"><span data-i18n="identity.last">Příjmení</span><input type="text" name="lastName" id="id-last" autocomplete="family-name" maxlength="80" required></label>
                 <label class="check identity-remember"><input type="checkbox" id="id-remember"> <span data-i18n="identity.remember">Zapamatovat si mé údaje v tomto prohlížeči</span></label>
                 <p class="identity-note"><span data-i18n="identity.have">Už máte účet?</span> <a href="/ucet" data-i18n="identity.login">Přihlaste se</a> <span data-i18n="identity.haveTail">a web se zveřejní hned.</span></p>
               </form>
@@ -91,7 +91,7 @@
                 <button class="btn btn-primary btn-block" id="publish" type="button" data-i18n="publish">Zveřejnit web</button>
                 <div class="side-secondary">
                   <button class="btn" id="preview" type="button" data-i18n="preview.button">Náhled</button>
-                  <button class="btn" id="clear-staged" type="button" data-i18n="staged.clear">Vyprázdnit</button>
+                  <button class="btn" id="clear-staged" type="button" data-i18n="staged.clear">Odebrat vše</button>
                 </div>
               </div>
               <p class="consent" data-i18n-html="consent">Nahráním souhlasíte s <a href="/podminky">podmínkami použití</a>. Jak zacházíme s údaji, popisují <a href="/soukromi">zásady ochrany osobních údajů</a>.</p>
@@ -146,23 +146,22 @@
         <div class="section-head">
           <h2><span data-i18n="my.title">Moje weby</span> <span class="count" id="my-count">0</span></h2>
           <div class="row">
-            <a class="btn" href="/ucet" id="my-account" hidden data-i18n="my.account">Účet a CLI</a>
             <button class="btn" id="add-toggle" hidden data-i18n="my.add">Přidat web s heslem</button>
           </div>
         </div>
 
         <form class="login-inline glass" id="login-inline" hidden>
           <p data-i18n="my.loginText">Weby jsou vázané na váš e-mail. Přihlaste se odkazem, který vám pošleme, a můžete je upravovat a mazat.</p>
-          <div class="row">
-            <input type="email" name="email" class="grow" data-i18n-placeholder="identity.email" placeholder="E-mail" autocomplete="email" required>
-            <button class="btn btn-primary" type="submit" data-i18n="login.send">Poslat přihlašovací odkaz</button>
+          <div class="row stack-sm align-end">
+            <label class="labeled grow"><span data-i18n="identity.email">E-mail</span><input type="email" name="email" data-i18n-placeholder="identity.emailExample" placeholder="jana@example.cz" autocomplete="email" required></label>
+            <button class="btn" type="submit" data-i18n="login.send">Poslat přihlašovací odkaz</button>
           </div>
           <div class="alert" hidden></div>
         </form>
 
         <form class="add-form glass" id="add-form" hidden>
-          <input type="text" name="site" data-i18n-placeholder="my.namePlaceholder" placeholder="Název webu" autocomplete="off" spellcheck="false" required>
-          <input type="text" name="password" data-i18n-placeholder="my.pwPlaceholder" placeholder="Heslo k webu" autocomplete="off" spellcheck="false" required>
+          <label class="labeled"><span data-i18n="my.namePlaceholder">Název webu</span><input type="text" name="site" autocomplete="off" spellcheck="false" required></label>
+          <label class="labeled"><span data-i18n="my.pwPlaceholder">Heslo k webu</span><input type="text" name="password" autocomplete="off" spellcheck="false" required></label>
           <button class="btn btn-primary" type="submit" data-i18n="my.addSubmit">Přidat</button>
           <div class="alert" hidden></div>
         </form>
@@ -218,11 +217,11 @@
       <p class="site-status" hidden></p>
       <div class="site-pw" hidden><span data-i18n="row.pwPrefix">Heslo:</span> <code></code></div>
       <div class="site-actions">
+        <button class="btn btn-sm btn-accent" data-action="edit" data-i18n="row.edit">Upravit</button>
         <button class="btn btn-sm" data-action="copy" data-i18n="row.copyLink">Kopírovat odkaz</button>
         <button class="btn btn-sm" data-action="password" data-i18n="row.password" hidden>Heslo</button>
-        <button class="btn btn-sm btn-accent" data-action="edit" data-i18n="row.edit">Upravit</button>
-        <button class="btn btn-sm btn-danger" data-action="delete" data-i18n="row.delete">Smazat</button>
         <button class="btn btn-sm" data-action="forget" data-i18n="row.forget" hidden>Odebrat ze seznamu</button>
+        <button class="btn btn-sm btn-danger" data-action="delete" data-i18n="row.delete">Smazat</button>
       </div>
     </article>
   </template>

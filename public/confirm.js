@@ -8,6 +8,7 @@ function fail(message) {
   $('#confirm-title').textContent = t('confirm.invalidTitle');
   $('#confirm-text').textContent = message;
   $('#confirm-button').hidden = true;
+  $('#confirm-new').hidden = false;
   $('#confirm-home').hidden = false;
 }
 

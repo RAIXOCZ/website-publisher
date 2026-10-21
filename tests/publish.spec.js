@@ -240,7 +240,7 @@ test.describe('signed in', () => {
     await card.locator('[data-action=delete]').click();
     const shown = await answerModal(page, false);
     await expect(card).toBeVisible();
-    expect(shown.title).toBe('Smazat web?');
+    expect(shown.title).toBe(`Smazat web ${name}?`);
     expect(shown.text).toContain(name);
     expect(shown.text).toContain('90 dní');
     expect(shown.text).toContain('martin@freepages.dev');

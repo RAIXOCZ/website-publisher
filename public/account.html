@@ -17,7 +17,7 @@
           <h2 data-i18n="account.signinTitle">Přihlášení</h2>
           <p class="muted" data-i18n="account.signinText">Zadejte e-mail svého účtu. Pošleme vám odkaz pro přihlášení – žádné heslo není potřeba.</p>
           <form id="signin-form">
-            <input type="email" name="email" data-i18n-placeholder="identity.email" placeholder="E-mail" autocomplete="email" required autofocus>
+            <label class="labeled"><span data-i18n="identity.email">E-mail</span><input type="email" name="email" data-i18n-placeholder="identity.emailExample" placeholder="jana@example.cz" autocomplete="email" required autofocus></label>
             <div class="alert" hidden></div>
             <button class="btn btn-primary" type="submit" data-i18n="login.send">Poslat přihlašovací odkaz</button>
           </form>
@@ -26,10 +26,10 @@
           <h2 data-i18n="register.title">Nový účet</h2>
           <p class="muted" data-i18n="register.text">Účet si můžete založit hned, i bez nahrání webu. Pošleme vám odkaz pro potvrzení e-mailu.</p>
           <form id="register-form">
-            <input type="email" name="email" data-i18n-placeholder="identity.email" placeholder="E-mail" autocomplete="email" required>
+            <label class="labeled"><span data-i18n="identity.email">E-mail</span><input type="email" name="email" data-i18n-placeholder="identity.emailExample" placeholder="jana@example.cz" autocomplete="email" required></label>
             <div class="row">
-              <input type="text" name="firstName" class="grow" data-i18n-placeholder="identity.first" placeholder="Jméno" autocomplete="given-name" maxlength="80" required>
-              <input type="text" name="lastName" class="grow" data-i18n-placeholder="identity.last" placeholder="Příjmení" autocomplete="family-name" maxlength="80" required>
+              <label class="labeled grow"><span data-i18n="identity.first">Jméno</span><input type="text" name="firstName" autocomplete="given-name" maxlength="80" required></label>
+              <label class="labeled grow"><span data-i18n="identity.last">Příjmení</span><input type="text" name="lastName" autocomplete="family-name" maxlength="80" required></label>
             </div>
             <div class="alert" hidden></div>
             <button class="btn" type="submit" data-i18n="register.send">Vytvořit účet</button>
@@ -38,12 +38,14 @@
         </div>
       </section>
 
-      <div class="account" id="account" hidden>
+      <div class="account-page" id="account" hidden>
+      <div class="doc-head"><h1 data-i18n="nav.account">Účet</h1></div>
+      <div class="account">
         <aside class="account-side glass">
           <div class="profile-card">
             <span class="avatar" id="account-avatar" aria-hidden="true"></span>
             <div>
-              <h1 id="account-name"></h1>
+              <h2 id="account-name"></h2>
               <p class="muted small" id="account-email"></p>
             </div>
           </div>
@@ -62,7 +64,7 @@
           </nav>
           <div class="side-buttons">
             <a class="btn" href="/admin" id="admin-link" hidden data-i18n="account.admin">Správa</a>
-            <button class="btn" id="logout" data-i18n="nav.logout">Odhlásit</button>
+            <button class="btn" type="button" id="logout" data-i18n="nav.logout">Odhlásit</button>
           </div>
         </aside>
 
@@ -92,8 +94,8 @@
         <section class="card glass" id="cli">
           <h2 data-i18n="account.cli">Příkazová řádka (API tokeny)</h2>
           <p class="muted" data-i18n="account.cliText">S tokenem můžete zveřejňovat a aktualizovat weby přes curl, například ze skriptu nebo CI. Token je jako heslo – nikomu ho nedávejte.</p>
-          <form class="row" id="token-form">
-            <input type="text" name="name" class="grow" data-i18n-placeholder="account.tokenName" placeholder="Název tokenu, např. notebook" maxlength="80">
+          <form class="row stack-sm align-end" id="token-form">
+            <label class="labeled grow"><span data-i18n="account.tokenLabel">Název tokenu</span><input type="text" name="name" data-i18n-placeholder="account.tokenExample" placeholder="např. notebook" maxlength="80"></label>
             <button class="btn btn-primary" type="submit" data-i18n="account.tokenCreate">Vytvořit token</button>
           </form>
           <div class="token-new" id="token-new" hidden>
@@ -127,6 +129,7 @@
           <div class="notice" id="delete-sent" hidden></div>
         </section>
         </div>
+      </div>
       </div>
     </div>
   </main>

@@ -73,7 +73,7 @@ test('the account page shows sites, lets you change your name and rename or dele
 
   await page.locator(`#sites .site-card[data-name="${renamed}"] [data-action=delete]`).click();
   const confirmDelete = await answerModal(page, true);
-  expect(confirmDelete.title).toBe('Smazat web?');
+  expect(confirmDelete.title).toBe(`Smazat web ${renamed}?`);
   expect(confirmDelete.text).toContain('90 dní');
   await expect(page.locator('#sites-empty')).toBeVisible();
   expect((await request.get(`/${renamed}/`)).status()).toBe(404);

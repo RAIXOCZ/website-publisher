@@ -16,7 +16,7 @@
         <h2 data-i18n="admin.loginTitle">Přihlášení do správy</h2>
         <p class="muted" id="login-text" data-i18n="admin.loginText">Správa je dostupná jen pro účet správce. Přihlaste se e-mailem správce, pošleme vám odkaz.</p>
         <form id="login-form">
-          <input type="email" name="email" data-i18n-placeholder="identity.email" placeholder="E-mail" autocomplete="email" required autofocus>
+          <label class="labeled"><span data-i18n="identity.email">E-mail</span><input type="email" name="email" data-i18n-placeholder="identity.emailExample" placeholder="jana@example.cz" autocomplete="email" required autofocus></label>
           <div class="alert" hidden></div>
           <button class="btn btn-primary" type="submit" data-i18n="login.send">Poslat přihlašovací odkaz</button>
         </form>
@@ -58,9 +58,9 @@
 
         <section class="table-panel glass" data-panel="sites">
           <div class="toolbar">
-            <input type="text" class="filter" data-for="sites" data-i18n-placeholder="admin.filter" placeholder="Hledat…" autocomplete="off">
+            <input type="text" class="filter" data-for="sites" aria-label="Hledat" data-i18n-aria="admin.filterLabel" data-i18n-placeholder="admin.filter" placeholder="Hledat…" autocomplete="off">
             <label class="check"><input type="checkbox" id="show-deleted-sites"> <span data-i18n="admin.showDeleted">Zobrazit smazané</span></label>
-            <span class="stats" id="stats"></span>
+            <span class="toolbar-stats" id="stats"></span>
           </div>
           <div class="table-wrap">
             <table>
@@ -80,7 +80,7 @@
 
         <section class="table-panel glass" data-panel="users" hidden>
           <div class="toolbar">
-            <input type="text" class="filter" data-for="users" data-i18n-placeholder="admin.filter" placeholder="Hledat…" autocomplete="off">
+            <input type="text" class="filter" data-for="users" aria-label="Hledat" data-i18n-aria="admin.filterLabel" data-i18n-placeholder="admin.filter" placeholder="Hledat…" autocomplete="off">
             <label class="check"><input type="checkbox" id="show-deleted-users"> <span data-i18n="admin.showDeleted">Zobrazit smazané</span></label>
           </div>
           <div class="table-wrap">
@@ -105,9 +105,9 @@
 
         <section class="table-panel glass" data-panel="whitelist" hidden>
           <p class="muted" data-i18n="admin.whitelistText">Z těchto IP adres lze zveřejňovat bez účtu a e-mailu. Weby pak chrání heslo (jako dřív).</p>
-          <form class="row" id="whitelist-form">
-            <input type="text" name="ip" class="grow" data-i18n-placeholder="admin.ipPlaceholder" placeholder="IP adresa" required autocomplete="off" spellcheck="false">
-            <input type="text" name="note" class="grow" data-i18n-placeholder="admin.notePlaceholder" placeholder="Poznámka" autocomplete="off">
+          <form class="row stack-sm align-end" id="whitelist-form">
+            <label class="labeled grow"><span data-i18n="admin.ipPlaceholder">IP adresa</span><input type="text" name="ip" placeholder="203.0.113.7" required autocomplete="off" spellcheck="false"></label>
+            <label class="labeled grow"><span data-i18n="admin.notePlaceholder">Poznámka</span><input type="text" name="note" autocomplete="off"></label>
             <button class="btn btn-primary" type="submit" data-i18n="admin.ipAdd">Přidat</button>
           </form>
           <div class="my-ip">
