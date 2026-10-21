@@ -14,6 +14,7 @@ const { serveSite, page } = require('./serve');
 const seo = require('./seo');
 const layout = require('./layout');
 const mcp = require('./mcp');
+const agents = require('./agents');
 const stats = require('./stats');
 const { langOf, t } = require('./i18n');
 
@@ -83,10 +84,20 @@ function appPage(name) {
     res.set('Cache-Control', 'no-cache');
     if (!explicit) res.vary('Accept-Language').vary('Cookie');
     if (seo.PRIVATE.has(name)) res.set('X-Robots-Tag', 'noindex');
+    // Agents asking for Markdown ("Accept: text/markdown") get the page as Markdown.
+    const mdPath = agents.markdownPath(name);
+    if (mdPath) {
+      res.vary('Accept');
+      res.append('Link', [`<${mdPath}?lang=${lang}>; rel="alternate"; type="text/markdown"`, '</llms.txt>; rel="describedby"; type="text/plain"']);
+      if (req.accepts(['text/html', 'text/markdown']) === 'text/markdown') {
+        return res.type('text/markdown; charset=utf-8').send(agents.markdown(name, lang));
+      }
+    }
     const html = layout
       .render(name, pages[name], { lang, user: accounts.currentUser(req), admin: accounts.isAdmin(req) })
       .replace(/((?:src|href)=")\/_app\/([^"?]+)"/g, `$1/_app/$2?v=${assetVersion}"`);
-    res.type('html').send(seo.render(name, html, { lang, explicit: Boolean(explicit) }));
+    const head = mdPath ? `<link rel="alternate" type="text/markdown" href="${mdPath}?lang=${lang}">\n  <link rel="describedby" type="text/plain" href="/llms.txt">\n</head>` : '</head>';
+    res.type('html').send(seo.render(name, html.replace('</head>', head), { lang, explicit: Boolean(explicit) }));
   };
 }
 
@@ -109,6 +120,27 @@ app.get(['/soukromi', '/privacy'], securityHeaders, appPage('privacy.html'));
 app.get(['/ucet', '/account'], securityHeaders, appPage('account.html'));
 app.get('/email/:token', securityHeaders, appPage('confirm.html'));
 app.get('/robots.txt', (req, res) => res.type('text').send(seo.robots()));
+
+// For AI agents: an index, Markdown pages, the MCP server card and the API description.
+// All public, so any origin may read them.
+app.use(['/llms.txt', '/llms-full.txt', '/openapi.json', '/.well-known/mcp'], (req, res, next) => (res.set('Access-Control-Allow-Origin', '*'), next()));
+const pageLang = (req) => {
+  if (seo.LANGS.includes(req.query.lang)) return req.query.lang;
+  const chosen = /(?:^|;\s*)fp_lang=(cs|en)\b/.exec(req.headers.cookie || '')?.[1];
+  return chosen || langOf(req);
+};
+const markdownRoute = (name) => (req, res) => {
+  if (!seo.LANGS.includes(req.query.lang)) res.vary('Accept-Language');
+  res.set('Cache-Control', 'no-cache').type('text/markdown; charset=utf-8').send(agents.markdown(name, pageLang(req)));
+};
+app.get('/llms.txt', (req, res) => res.type('text/plain; charset=utf-8').send(agents.llmsTxt()));
+app.get('/llms-full.txt', (req, res) => res.type('text/plain; charset=utf-8').send(agents.llmsFullTxt()));
+app.get(['/index.md', '/index.html.md'], markdownRoute('index.html'));
+app.get(['/docs.md', '/docs/index.md'], markdownRoute('docs.html'));
+app.get(['/podminky.md', '/terms.md'], markdownRoute('terms.html'));
+app.get(['/soukromi.md', '/privacy.md'], markdownRoute('privacy.html'));
+app.get(['/.well-known/mcp/server-card.json', '/.well-known/mcp.json'], (req, res) => res.json(agents.serverCard()));
+app.get('/openapi.json', (req, res) => res.json(agents.openApi()));
 app.get('/sitemap.xml', (req, res) => res.type('application/xml').send(seo.sitemap()));
 app.get('/site.webmanifest', (req, res) => res.type('application/manifest+json').send(JSON.stringify(seo.manifest())));
 for (const file of seo.ROOT_FILES) {
