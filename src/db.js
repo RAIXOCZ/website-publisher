@@ -42,6 +42,9 @@ CREATE TABLE IF NOT EXISTS sites (
   purged_at TEXT
 );
 CREATE UNIQUE INDEX IF NOT EXISTS sites_name_active ON sites(name) WHERE deleted_at IS NULL;
+-- Lists are read a page at a time, newest first (see sites.listPage).
+CREATE INDEX IF NOT EXISTS sites_updated ON sites(updated_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS sites_user ON sites(user_id, updated_at DESC, id DESC);
 
 -- One-time links sent by e-mail (login, publish confirmation, account deletion).
 CREATE TABLE IF NOT EXISTS email_tokens (
@@ -102,6 +105,7 @@ CREATE TABLE IF NOT EXISTS site_views (
   views INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (site_id, hour)
 );
+CREATE INDEX IF NOT EXISTS site_views_hour ON site_views(hour);
 
 -- Apps (MCP clients) that registered themselves for OAuth sign-in.
 CREATE TABLE IF NOT EXISTS oauth_clients (
@@ -168,4 +172,18 @@ function transaction(fn) {
   }
 }
 
-module.exports = { open, one, all, run, transaction, now, inMinutes, inDays };
+// Lists are paged with an opaque cursor: the sort key of the last row sent.
+const encodeCursor = (value) => Buffer.from(JSON.stringify(value)).toString('base64url');
+function decodeCursor(cursor) {
+  if (!cursor) return null;
+  try {
+    return JSON.parse(Buffer.from(String(cursor), 'base64url').toString('utf8'));
+  } catch {
+    return null;
+  }
+}
+// A LIKE pattern for "contains", with the user's % and _ taken literally.
+const likeContains = (q) => `%${String(q).replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+const pageSize = (n, max = 100) => Math.min(max, Math.max(1, Number(n) || 50));
+
+module.exports = { open, one, all, run, transaction, now, inMinutes, inDays, encodeCursor, decodeCursor, likeContains, pageSize };

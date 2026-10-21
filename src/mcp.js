@@ -42,8 +42,14 @@ const TOOLS = [
   {
     name: 'list_sites',
     title: 'List sites',
-    description: 'Lists the sites of the account with their addresses, size and last update, and the storage used.',
-    inputSchema: { type: 'object', properties: {} },
+    description: 'Lists the sites of the account (newest change first, 100 at a time) with their addresses, size and last update, and the storage used. Use search to find sites by name and cursor to get the next page.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        search: { type: 'string', description: 'Part of a site name.' },
+        cursor: { type: 'string', description: 'nextCursor from the previous call.' },
+      },
+    },
     annotations: { readOnlyHint: true },
   },
   {
@@ -188,9 +194,11 @@ async function readFile(user, args) {
 async function callTool(name, args, user, ip) {
   switch (name) {
     case 'list_sites': {
-      const list = sites.sitesOfUser(user.id).map((s) => ({ name: s.name, url: s.url, files: s.files, bytes: s.bytes, updatedAt: s.updatedAt }));
-      const result = { sites: list, usage: sites.usage(user.id) };
-      return [list.length ? list.map((s) => `${s.name}: ${s.url} (${s.files} files, ${s.bytes} bytes)`).join('\n') : 'The account has no sites yet.', result];
+      const page = sites.listPage({ ownerId: user.id, q: args.search || '', cursor: args.cursor || null, limit: 100 });
+      const list = page.items.map((s) => ({ name: s.name, url: s.url, files: s.files, bytes: s.bytes, updatedAt: s.updatedAt }));
+      const result = { sites: list, total: page.total, nextCursor: page.next, usage: sites.usage(user.id) };
+      const more = page.next ? `\n(${page.total} sites in total; call list_sites with cursor "${page.next}" for more.)` : '';
+      return [list.length ? list.map((s) => `${s.name}: ${s.url} (${s.files} files, ${s.bytes} bytes)`).join('\n') + more : 'No sites found.', result];
     }
     case 'list_files': {
       const site = ownSite(user, args.site);
@@ -221,9 +229,8 @@ async function callTool(name, args, user, ip) {
       return [`Deleted ${site.name}. Its data is deleted permanently after ${config.RETENTION_DAYS} days.`, { ok: true, retentionDays: config.RETENTION_DAYS }];
     }
     case 'get_visits': {
-      const mine = sites.sitesOfUser(user.id);
-      const chosen = args.site ? [ownSite(user, args.site)] : mine;
-      const result = stats.series(chosen.map((s) => s.id), ['24h', '7d', '30d'].includes(args.range) ? args.range : '7d');
+      const scope = args.site ? { siteId: ownSite(user, args.site).id } : { userId: user.id };
+      const result = stats.series(scope, ['24h', '7d', '30d'].includes(args.range) ? args.range : '7d');
       const busiest = result.buckets.reduce((best, b) => (b.views > (best?.views ?? 0) ? b : best), null);
       return [`${result.total} page views${busiest ? `, the busiest ${result.unit} ${busiest.t} (${busiest.views})` : ''}.`, result];
     }

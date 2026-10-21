@@ -42,6 +42,14 @@ async function rowAction(row, action) {
   await item.click();
 }
 
+// Picks an option in one of the app's searchable pickers (opening it first if needed).
+async function choose(root, value, { search = '' } = {}) {
+  const pop = root.locator('.picker-pop');
+  if (!(await pop.isVisible())) await root.locator('.picker-button').click();
+  if (search) await root.locator('.picker-search').fill(search);
+  await root.locator(`[role=option][data-value="${value}"]`).click();
+}
+
 /* ---------- e-mail (the test servers run with MAIL_DEV_OUTBOX=1) ---------- */
 
 // The newest e-mail of `kind` sent to `email`; waits for it to arrive.
@@ -166,6 +174,7 @@ async function clipboard(page) {
 
 module.exports = {
   rowAction,
+  choose,
   FIXTURES,
   ADMIN_EMAIL,
   PASSWORD_RE,

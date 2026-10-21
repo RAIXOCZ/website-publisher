@@ -363,7 +363,13 @@ api.post('/auth/consume', json, async (req, res) => {
 
 api.get('/me', requireUser, (req, res) => {
   const user = accounts.currentUser(req);
-  res.json({ user: accounts.publicUser(user), sites: sites.sitesOfUser(user.id), tokens: accounts.listApiTokens(user.id), usage: sites.usage(user.id) });
+  res.json({ user: accounts.publicUser(user), siteCount: sites.countSites(user.id), tokens: accounts.listApiTokens(user.id), usage: sites.usage(user.id) });
+});
+
+// The account's sites, a page at a time (?q= searches the name, ?cursor= continues).
+const listQuery = (req) => ({ q: String(req.query.q || '').slice(0, 200), cursor: req.query.cursor || null, limit: req.query.limit });
+api.get('/me/sites', requireUser, (req, res) => {
+  res.json(sites.listPage({ ownerId: accounts.currentUser(req).id, ...listQuery(req) }));
 });
 
 api.post('/me', requireUser, json, (req, res) => {
@@ -377,13 +383,16 @@ api.post('/me', requireUser, json, (req, res) => {
 
 // Visits of the signed-in user's sites: all of them, or one (?site=name).
 api.get('/me/stats', requireUser, (req, res) => {
-  const mine = sites.sitesOfUser(accounts.currentUser(req).id);
-  const chosen = req.query.site ? mine.filter((s) => s.name === req.query.site) : mine;
-  res.json(stats.series(chosen.map((s) => s.id), String(req.query.range || '24h')));
+  const user = accounts.currentUser(req);
+  const range = String(req.query.range || '24h');
+  if (!req.query.site) return res.json(stats.series({ userId: user.id }, range));
+  const site = sites.activeSite(String(req.query.site));
+  if (!site || site.user_id !== user.id) return fail(req, res, 404, 'siteNotFound');
+  res.json(stats.series({ siteId: site.id }, range));
 });
 
 api.get('/me/audit', requireUser, (req, res) => {
-  res.json({ events: accounts.auditForUser(accounts.currentUser(req).id, { hideEmails: true }) });
+  res.json(accounts.auditForUser(accounts.currentUser(req).id, { hideEmails: true, cursor: req.query.cursor }));
 });
 
 api.post('/me/tokens', requireUser, json, (req, res) => {
@@ -582,12 +591,18 @@ const adminUser = (req, res) => {
   return user;
 };
 
+// Lists for the admin, a page at a time: ?q= searches, ?deleted=active|deleted|all.
+const deletedFilter = (req) => (['active', 'deleted', 'all'].includes(req.query.deleted) ? req.query.deleted : 'active');
 admin.get('/sites', (req, res) =>
-  res.json({ sites: sites.listAll(), storage: { used: sites.storageUsed(), limit: config.TOTAL_MAX_GB * 1024 ** 3 } }),
+  res.json({
+    ...sites.listPage({ admin: true, deleted: deletedFilter(req), ...listQuery(req) }),
+    active: sites.countSites(),
+    storage: { used: sites.storageUsed(), limit: config.TOTAL_MAX_GB * 1024 ** 3 },
+  }),
 );
 admin.get('/sites/:id/audit', (req, res) => {
   const site = adminSite(req, res);
-  if (site) res.json({ site: sites.publicSite(site), events: accounts.auditForSite(site.id) });
+  if (site) res.json({ site: sites.publicSite(site), ...accounts.auditForSite(site.id, { cursor: req.query.cursor }) });
 });
 // Tells the owner about a measure taken by the admin, with the reasons the
 // admin wrote (only when there are some).
@@ -632,14 +647,16 @@ admin.post('/sites/:id/reset-password', (req, res) => {
 });
 
 admin.get('/stats', (req, res) => {
-  const active = sites.listAll().filter((s) => !s.deletedAt);
-  const chosen = req.query.site ? active.filter((s) => s.name === req.query.site) : active;
-  res.json(stats.series(chosen.map((s) => s.id), String(req.query.range || '24h')));
+  const range = String(req.query.range || '24h');
+  if (!req.query.site) return res.json(stats.series({}, range));
+  const site = sites.activeSite(String(req.query.site));
+  if (!site) return fail(req, res, 404, 'siteNotFound');
+  res.json(stats.series({ siteId: site.id }, range));
 });
-admin.get('/users', (req, res) => res.json({ users: accounts.listUsers() }));
+admin.get('/users', (req, res) => res.json({ ...accounts.listUsersPage({ deleted: deletedFilter(req), ...listQuery(req) }), active: accounts.countUsers() }));
 admin.get('/users/:id/audit', (req, res) => {
   const user = adminUser(req, res);
-  if (user) res.json({ user: accounts.publicUser(user), events: accounts.auditForUser(user.id, { hideEmails: false }) });
+  if (user) res.json({ user: accounts.publicUser(user), ...accounts.auditForUser(user.id, { hideEmails: false, cursor: req.query.cursor }) });
 });
 admin.post('/users/:id/delete', async (req, res) => {
   const user = adminUser(req, res);

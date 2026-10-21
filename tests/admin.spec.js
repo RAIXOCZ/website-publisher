@@ -75,7 +75,7 @@ test('admin rights never come with an API token, and the admin account cannot be
   expect(res.status()).toBe(403);
   await curl.dispose();
 
-  const { users } = await (await page.request.get('/api/admin/users')).json();
+  const { items: users } = await (await page.request.get(`/api/admin/users?q=${encodeURIComponent(ADMIN_EMAIL)}`)).json();
   const admin = users.find((u) => u.email === ADMIN_EMAIL);
   expect(admin.isAdmin).toBe(1);
   expect(admin.firstName).toBe('Martin');
@@ -201,7 +201,7 @@ test('users: history with IPs, delete (unlink, keep data) and purge', async ({ p
   await rowAction(userRow(page, email), 'purge');
   expect((await answerModal(page, true)).title).toMatch(/^Smazat .+ trvale\?$/);
   await expect(userRow(page, email)).toHaveCount(0);
-  const { users } = await (await page.request.get('/api/admin/users')).json();
+  const { items: users } = await (await page.request.get(`/api/admin/users?deleted=all&q=${encodeURIComponent(email)}`)).json();
   expect(users.some((u) => u.email === email)).toBe(false);
 });
 

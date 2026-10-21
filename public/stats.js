@@ -2,7 +2,8 @@
 
 // Visits panel: page views per hour (24 h, 7 days) or per day (30 days) as
 // a column chart, for all sites or one. Used on the account page and in the
-// admin panel; `endpoint` is /me/stats or /admin/stats.
+// admin panel; `endpoint` is /me/stats or /admin/stats, `sites` the paged
+// site list the picker searches (/me/sites or /admin/sites).
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const VIEW_ICONS = {
@@ -10,12 +11,12 @@ const VIEW_ICONS = {
   table: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M3.5 15h17M10 10v9.5"/></svg>',
 };
 
-function statsPanel(root, { endpoint, siteNames = [] }) {
+function statsPanel(root, { endpoint, sites, siteCount = 2 }) {
   const state = { site: '', range: '24h', data: null };
   root.classList.add('stats');
   root.innerHTML = `
     <div class="stats-filters">
-      <select class="stats-site" aria-label=""></select>
+      <div class="stats-site"></div>
       <div class="segmented stats-ranges" role="group"></div>
       <div class="segmented view-switch" role="group">
         <button type="button" data-view="chart" aria-pressed="true">${VIEW_ICONS.chart}</button>
@@ -30,14 +31,19 @@ function statsPanel(root, { endpoint, siteNames = [] }) {
     <ul class="stats-sites"></ul>
     <div class="stats-table table-wrap" hidden><table><thead><tr><th></th><th class="num"></th></tr></thead><tbody></tbody></table></div>`;
 
-  const select = $('.stats-site', root);
-  select.setAttribute('aria-label', t('stats.site'));
-  select.append(new Option(t('stats.allSites'), ''));
-  for (const name of siteNames) select.append(new Option(name, name));
-  select.hidden = siteNames.length < 2;
-  select.addEventListener('change', () => {
-    state.site = select.value;
-    load();
+  // Which site: searched and loaded page by page, so any number of sites works.
+  $('.stats-site', root).hidden = siteCount < 2;
+  comboPicker($('.stats-site', root), {
+    label: t('stats.site'),
+    allLabel: t('stats.allSites'),
+    load: async (q, cursor) => {
+      const page = await api(`${sites}?${new URLSearchParams({ q, ...(cursor ? { cursor } : {}) })}`);
+      return { items: page.items.map((s) => ({ value: s.name, label: s.name })), next: page.next };
+    },
+    onChange: (value) => {
+      state.site = value;
+      load();
+    },
   });
 
   const segmented = $('.stats-ranges', root);

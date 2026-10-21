@@ -72,8 +72,10 @@
         <section class="card glass" id="weby">
           <h2 data-i18n="account.sites">Weby</h2>
           <div class="notice warn" id="blocked-notice" hidden data-i18n="account.blocked">Přidávání a úpravy webů jsou pro váš účet zakázané. Weby můžete dál mazat; podrobnosti vám sdělí správce na martin@freepages.dev.</div>
+          <input type="search" class="list-search" id="sites-search" hidden aria-label="Hledat weby" data-i18n-aria="list.search" data-i18n-placeholder="list.search" placeholder="Hledat weby" autocomplete="off" spellcheck="false">
           <div class="site-list" id="sites"></div>
-          <div class="empty" id="sites-empty" hidden data-i18n-html="account.sitesEmpty">Zatím nemáte žádné weby. <a href="/">Zveřejnit první →</a></div>
+          <p class="empty" id="sites-none" hidden data-i18n="picker.none">Nic nenalezeno.</p>
+          <div class="empty" id="sites-empty" hidden data-i18n-html="account.sitesEmpty">Zatím nemáte žádné weby. <a href="/">Zveřejnit první web</a></div>
         </section>
 
         <section class="card glass" id="navstevnost">
@@ -93,7 +95,7 @@
 
         <section class="card glass" id="api-klice">
           <h2 data-i18n="account.cli">API klíče</h2>
-          <p class="muted"><span data-i18n="account.cliText"></span> <a href="/docs#cs-api-klice" id="cli-how" data-i18n="account.cliHow">Jak klíč použít v příkazové řádce a v MCP →</a></p>
+          <p class="muted"><span data-i18n="account.cliText"></span> <a href="/docs#cs-api-klice" id="cli-how" data-i18n="account.cliHow">Jak klíč použít v příkazové řádce a v MCP</a></p>
           <form class="row stack-sm align-end" id="token-form">
             <label class="labeled grow"><span data-i18n="account.tokenLabel">Název tokenu</span><input type="text" name="name" data-i18n-placeholder="account.tokenExample" placeholder="např. notebook" maxlength="80"></label>
             <button class="btn btn-primary" type="submit" data-i18n="account.tokenCreate">Vytvořit token</button>

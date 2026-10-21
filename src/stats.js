@@ -41,17 +41,30 @@ const RANGES = { '24h': { hours: 24, unit: 'hour' }, '7d': { hours: 24 * 7, unit
  * Views of the given sites over a range: one bucket per hour (24h, 7d) or
  * per day (30d), oldest first, plus the views of each site.
  */
-function series(siteIds, range = '24h') {
+/**
+ * Page views for a chart: of one site ({ siteId }), of one account's sites
+ * ({ userId }) or of all active sites ({}). Filtering happens in SQL, so it
+ * works the same for one site or a hundred thousand.
+ */
+function series(scope = {}, range = '24h') {
   flush();
   const { hours, unit } = RANGES[range] || RANGES['24h'];
   const now = new Date();
   now.setUTCMinutes(0, 0, 0);
   const from = new Date(now.getTime() - (hours - 1) * 3600_000);
-  if (!siteIds.length) return { range, unit, buckets: emptyBuckets(from, now, unit), sites: [], total: 0 };
-  const marks = siteIds.map(() => '?').join(',');
+  let filter = 's.deleted_at IS NULL';
+  const args = [];
+  if (scope.siteId) {
+    filter = 's.id = ?';
+    args.push(scope.siteId);
+  } else if (scope.userId) {
+    filter += ' AND s.user_id = ?';
+    args.push(scope.userId);
+  }
   const rows = all(
-    `SELECT hour, SUM(views) AS views FROM site_views WHERE site_id IN (${marks}) AND hour >= ? GROUP BY hour`,
-    ...siteIds, hourKey(from),
+    `SELECT v.hour, SUM(v.views) AS views FROM site_views v JOIN sites s ON s.id = v.site_id
+     WHERE v.hour >= ? AND ${filter} GROUP BY v.hour`,
+    hourKey(from), ...args,
   );
   const buckets = emptyBuckets(from, now, unit);
   const index = new Map(buckets.map((b, i) => [b.t, i]));
@@ -60,10 +73,11 @@ function series(siteIds, range = '24h') {
     const i = index.get(key);
     if (i !== undefined) buckets[i].views += row.views;
   }
+  // The most visited sites of the period (a few; the chart has the total).
   const perSite = all(
-    `SELECT s.name, COALESCE(SUM(v.views), 0) AS views FROM sites s LEFT JOIN site_views v ON v.site_id = s.id AND v.hour >= ?
-     WHERE s.id IN (${marks}) GROUP BY s.id ORDER BY views DESC, s.name`,
-    hourKey(from), ...siteIds,
+    `SELECT s.name, SUM(v.views) AS views FROM site_views v JOIN sites s ON s.id = v.site_id
+     WHERE v.hour >= ? AND ${filter} GROUP BY s.id ORDER BY views DESC, s.name LIMIT 10`,
+    hourKey(from), ...args,
   );
   return { range, unit, buckets, sites: perSite, total: buckets.reduce((sum, b) => sum + b.views, 0) };
 }

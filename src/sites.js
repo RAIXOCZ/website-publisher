@@ -9,7 +9,7 @@ const { Readable } = require('stream');
 const Busboy = require('busboy');
 const yauzl = require('yauzl');
 const config = require('./config');
-const { one, all, run, now, inMinutes, inDays } = require('./db');
+const { one, all, run, now, inMinutes, inDays, encodeCursor, decodeCursor, likeContains, pageSize } = require('./db');
 const accounts = require('./accounts');
 
 const NAME_RE = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
@@ -615,24 +615,68 @@ async function rename(site, to, { ip, by = 'owner' }) {
   return publicSite(siteById(site.id));
 }
 
-function sitesOfUser(userId) {
-  return all('SELECT * FROM sites WHERE user_id = ? AND deleted_at IS NULL ORDER BY updated_at DESC', userId).map(publicSite);
+
+const adminSite = (row) => ({
+  ...publicSite(row),
+  status: row.deleted_at ? 'deleted' : 'active',
+  deletedAt: row.deleted_at,
+  deletedBy: row.deleted_by,
+  purgeAfter: row.purge_after,
+  owner: row.user_id ? { id: row.user_id, email: row.owner_email, firstName: row.owner_first, lastName: row.owner_last } : null,
+});
+
+/**
+ * One page of sites, newest change first, for lists that load more as you
+ * scroll. `ownerId` limits it to one account; `q` searches the name (and,
+ * for the admin, the owner's e-mail and name); `deleted` is 'active'
+ * (default), 'deleted' or 'all'. Returns { items, next, total }.
+ */
+function listPage({ ownerId = null, q = '', deleted = 'active', cursor = null, limit = 50, admin = false } = {}) {
+  const where = ['s.purged_at IS NULL'];
+  const args = [];
+  if (ownerId) {
+    where.push('s.user_id = ?');
+    args.push(ownerId);
+  }
+  if (deleted === 'active') where.push('s.deleted_at IS NULL');
+  else if (deleted === 'deleted') where.push('s.deleted_at IS NOT NULL');
+  const term = String(q || '').trim().toLowerCase();
+  if (term) {
+    const like = likeContains(term);
+    if (admin) {
+      where.push("(s.name LIKE ? ESCAPE '\\' OR lower(u.email) LIKE ? ESCAPE '\\' OR lower(u.first_name || ' ' || u.last_name) LIKE ? ESCAPE '\\')");
+      args.push(like, like, like);
+    } else {
+      where.push("s.name LIKE ? ESCAPE '\\'");
+      args.push(like);
+    }
+  }
+  const filter = where.join(' AND ');
+  const total = one(`SELECT COUNT(*) AS n FROM sites s LEFT JOIN users u ON u.id = s.user_id WHERE ${filter}`, ...args).n;
+  const after = decodeCursor(cursor);
+  const size = pageSize(limit);
+  const rows = all(
+    `SELECT s.*, u.email AS owner_email, u.first_name AS owner_first, u.last_name AS owner_last
+     FROM sites s LEFT JOIN users u ON u.id = s.user_id
+     WHERE ${filter} ${after ? 'AND (s.updated_at < ? OR (s.updated_at = ? AND s.id < ?))' : ''}
+     ORDER BY s.updated_at DESC, s.id DESC LIMIT ?`,
+    ...args, ...(after ? [after[0], after[0], after[1]] : []), size + 1,
+  );
+  const more = rows.length > size;
+  const page = rows.slice(0, size);
+  const last = page.at(-1);
+  return {
+    items: page.map(admin ? adminSite : publicSite),
+    next: more && last ? encodeCursor([last.updated_at, last.id]) : null,
+    total,
+  };
 }
 
-function listAll() {
-  return all(`
-    SELECT s.*, u.email AS owner_email, u.first_name AS owner_first, u.last_name AS owner_last
-    FROM sites s LEFT JOIN users u ON u.id = s.user_id
-    WHERE s.purged_at IS NULL
-    ORDER BY s.deleted_at IS NOT NULL, s.updated_at DESC`).map((row) => ({
-    ...publicSite(row),
-    status: row.deleted_at ? 'deleted' : 'active',
-    deletedAt: row.deleted_at,
-    deletedBy: row.deleted_by,
-    purgeAfter: row.purge_after,
-    owner: row.user_id ? { id: row.user_id, email: row.owner_email, firstName: row.owner_first, lastName: row.owner_last } : null,
-  }));
-}
+/** How many active sites there are (all, or of one account). */
+const countSites = (ownerId = null) =>
+  ownerId
+    ? one('SELECT COUNT(*) AS n FROM sites WHERE user_id = ? AND deleted_at IS NULL', ownerId).n
+    : one('SELECT COUNT(*) AS n FROM sites WHERE deleted_at IS NULL').n;
 
 /* ---------- start-up ---------- */
 
@@ -706,6 +750,6 @@ module.exports = {
   softDelete,
   purgeSite,
   rename,
-  sitesOfUser,
-  listAll,
+  listPage,
+  countSites,
 };

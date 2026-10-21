@@ -52,8 +52,8 @@ async function handleQuery() {
     showNotice(t('notice.accountDeleted', { days: state.config.retentionDays, contact: state.config.contact }));
   }
   if (params.has('published') && signedIn()) {
-    const { sites } = await api('/me');
-    const site = sites.find((s) => s.name === params.get('published'));
+    const { items } = await api(`/me/sites?q=${encodeURIComponent(params.get('published'))}`);
+    const site = items.find((s) => s.name === params.get('published'));
     if (site) done({ ...site, hasIndex: true });
   }
   if (params.has('edit')) startEdit(params.get('edit'), ownedPassword(params.get('edit')));
@@ -463,17 +463,18 @@ function newFolder(parent) {
 // "Move to…": a folder picker in place of the row's buttons (works on touch screens too).
 function showMoveMenu(row) {
   const { path, kind } = row.dataset;
-  const select = document.createElement('select');
-  select.className = 'tree-move';
-  select.setAttribute('aria-label', t('tree.move', { name: path }));
+  const holder = document.createElement('div');
+  holder.className = 'tree-move';
   const targets = ['', ...allFolders(state.tree)].filter((dest) => dest !== parentOf(path) && !(kind === 'dir' && isInside(dest, path)));
-  select.append(new Option(t('tree.moveTo'), '', true, true));
-  select.options[0].disabled = true;
-  for (const dest of targets) select.append(new Option(dest ? `${dest}/` : t('tree.root'), dest || '/'));
-  select.addEventListener('change', () => moveEntry(path, kind, select.value === '/' ? '' : select.value));
-  select.addEventListener('blur', () => renderStaged());
-  $('.tree-actions', row).replaceChildren(select);
-  select.focus();
+  const picker = comboPicker(holder, {
+    label: t('tree.move', { name: path }),
+    placeholder: t('tree.moveTo'),
+    load: localPages(targets.map((dest) => ({ value: dest || '/', label: dest ? `${dest}/` : t('tree.root') }))),
+    onChange: (value) => moveEntry(path, kind, value === '/' ? '' : value),
+    onClose: () => renderStaged(),
+  });
+  $('.tree-actions', row).replaceChildren(holder);
+  picker.open();
 }
 
 /* ---------- the ⋯ menu of a tree row ---------- */
@@ -661,7 +662,7 @@ async function startEdit(name, password = null) {
     return showError(err.message);
   }
   resetStaging();
-  state.edit = { name, password };
+  state.edit = { name, password, bytes: data.site.bytes };
   state.files = data.files.map((f) => ({ path: f.path, from: f.path, size: f.size }));
   els.name.value = name;
   els.name.disabled = true;
@@ -971,7 +972,7 @@ function renderLimits(size) {
   accountLimit.hidden = !usage?.limit;
   if (usage?.limit) {
     // Editing or replacing a site frees its current size first.
-    const replaced = state.edit ? state.sites?.find((s) => s.name === state.edit.name)?.bytes || 0 : 0;
+    const replaced = state.edit?.bytes || 0;
     const after = usage.used - replaced + size;
     const accountOver = after > usage.limit;
     over ||= accountOver;
@@ -983,16 +984,39 @@ function renderLimits(size) {
   $('#publish').disabled = over;
 }
 
+// The account's sites, a page at a time as the list is scrolled.
+let accountTotal = 0;
+const accountSites = infiniteList({
+  list: $('#my-list'),
+  load: (cursor) =>
+    signedIn()
+      ? api(`/me/sites?${new URLSearchParams({ q: $('#my-search').value.trim(), ...(cursor ? { cursor } : {}) })}`)
+      : Promise.resolve({ items: [], next: null, total: 0 }),
+  render: (site) => siteCard({ name: site.name, url: site.url, info: site }),
+  onPage: (page) => {
+    accountTotal = page.total;
+    updateMyCount();
+  },
+});
+$('#my-search').addEventListener('input', debounce(() => accountSites.reset()));
+
+function updateMyCount() {
+  const owned = $('#my-owned').children.length;
+  const searching = Boolean($('#my-search').value.trim());
+  $('#my-count').textContent = accountTotal + owned;
+  $('#my-empty').hidden = accountTotal + owned > 0 || !signedIn() || searching;
+  $('#my-none').hidden = accountTotal > 0 || !searching;
+}
+
 async function renderMySites() {
-  const list = $('#my-list');
-  const cards = [];
   if (signedIn()) {
-    const { sites, usage } = await api('/me');
-    state.usage = usage;
-    state.sites = sites;
-    for (const site of sites) cards.push(siteCard({ name: site.name, url: site.url, info: site }));
+    const me = await api('/me');
+    state.usage = me.usage;
+    $('#my-search').hidden = me.siteCount < 6 && !$('#my-search').value;
   }
+  // Sites published with a password (allowed IP addresses) are remembered by this browser.
   const owned = signedIn() && !state.config.whitelisted ? [] : loadOwned();
+  const cards = [];
   if (owned.length) {
     let status = {};
     try {
@@ -1013,17 +1037,21 @@ async function renderMySites() {
       cards.push(card);
     }
   }
-  list.replaceChildren(...cards);
-  $('#my-count').textContent = cards.length;
+  $('#my-owned').replaceChildren(...cards);
   $('#add-toggle').hidden = !state.config.whitelisted;
   $('#login-inline').hidden = signedIn();
-  $('#my-empty').hidden = cards.length > 0 || !signedIn();
+  if (signedIn()) await accountSites.reset();
+  else {
+    accountTotal = 0;
+    updateMyCount();
+  }
 }
 
-$('#my-list').addEventListener('click', async (e) => {
+$('#my-sites').addEventListener('click', async (e) => {
   const button = e.target.closest('button[data-action]');
   if (!button) return;
   const row = button.closest('.site-card');
+  if (!row) return;
   const name = row.dataset.name;
   const password = row.dataset.password ? ownedPassword(name) : null;
   const url = $('.site-url', row).href;

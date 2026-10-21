@@ -1,7 +1,7 @@
 // @ts-check
 const fs = require('fs');
 const { test, expect } = require('./test');
-const { rowAction, FIXTURES, HEADERS, unique, uniqueEmail, pick, pickAndPublish, mailToken, signIn, publishViaApi, answerModal, clipboard } = require('./helpers');
+const { rowAction, choose, FIXTURES, HEADERS, unique, uniqueEmail, pick, pickAndPublish, mailToken, signIn, publishViaApi, answerModal, clipboard } = require('./helpers');
 
 test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
 
@@ -356,7 +356,7 @@ test.describe('editing a site', () => {
     await page.locator('.tree-input').fill('o-nas.html');
     await page.locator('.tree-input').press('Enter');
     await menu(page, 'o-nas.html', 'move');
-    await row(page, 'o-nas.html').locator('select').selectOption('files');
+    await choose(row(page, 'o-nas.html').locator('.tree-move'), 'files');
     await expect(row(page, 'files/o-nas.html')).toBeVisible();
     await page.locator('#publish').click();
     await expect(page.locator('#result')).toBeVisible();
@@ -615,12 +615,12 @@ test.describe('file tree before publishing', () => {
     await page.goto('/');
     await pick(page, page.locator('#pick-folder'), FIXTURES.site);
     await menu(page, 'about.html', 'move');
-    const select = row(page, 'about.html').locator('select');
-    await expect(select.locator('option')).toHaveText(['Přesunout do…', 'css/', 'files/']);
-    await select.selectOption('files');
+    const picker = row(page, 'about.html').locator('.tree-move');
+    await expect(picker.locator('[role=option]')).toHaveText(['css/', 'files/']);
+    await choose(picker, 'files');
     await expect(row(page, 'files/about.html')).toBeVisible();
     await menu(page, 'files/about.html', 'move');
-    await row(page, 'files/about.html').locator('select').selectOption('/');
+    await choose(row(page, 'files/about.html').locator('.tree-move'), '/');
     await expect(row(page, 'about.html')).toBeVisible();
   });
 

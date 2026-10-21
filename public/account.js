@@ -21,7 +21,7 @@ async function load() {
     if (err.status === 401) return init();
     throw err;
   }
-  const { user, sites, tokens, usage } = me;
+  const { user, siteCount, tokens, usage } = me;
   $('#account-name').textContent = `${user.firstName} ${user.lastName}`.trim() || user.email;
   $('#account-avatar').textContent = (user.firstName || user.email)[0].toUpperCase();
   $('#account-email').textContent = user.email;
@@ -35,41 +35,49 @@ async function load() {
   $('#delete-account').hidden = user.isAdmin;
   $('#delete-admin').hidden = !user.isAdmin;
   $('#cli-how').href = LANG === 'en' ? '/docs#en-api-keys' : '/docs#cs-api-klice';
-  renderSites(sites);
+  $('#sites-search').hidden = siteCount < 6 && !$('#sites-search').value;
   renderUsage(usage);
-  renderVisits(sites);
+  renderVisits(siteCount);
   renderTokens(tokens);
-  await renderAudit();
+  await Promise.all([siteList.reset(), auditList.reset()]);
 }
 
 /* ---------- sites ---------- */
 
-function renderSites(sites) {
-  $('#sites-empty').hidden = sites.length > 0;
-  $('#sites').replaceChildren(
-    ...sites.map((site) => {
-      const card = document.createElement('article');
-      card.className = 'site-card glass';
-      card.dataset.name = site.name;
-      card.dataset.initial = site.name[0];
-      card.innerHTML = `<div><h3></h3><a class="site-url" target="_blank" rel="noopener"></a></div>
-        <div class="chips site-meta"></div>
-        <div class="site-actions">
-          <a class="btn btn-sm btn-accent" data-action="edit"></a>
-          <button class="btn btn-sm" data-action="copy"></button>
-          ${moreMenu([[t('row.rename'), 'rename'], '-', [t('row.delete'), 'delete', 'btn-danger']])}
-        </div>`;
-      $('h3', card).textContent = site.name;
-      $('.site-url', card).textContent = site.url;
-      $('.site-url', card).href = site.url;
-      $('[data-action=edit]', card).textContent = t('row.edit');
-      $('[data-action=copy]', card).textContent = t('row.copyLink');
-      $('[data-action=edit]', card).href = `/?edit=${encodeURIComponent(site.name)}`;
-      const chips = [filesLabel(site.files), formatBytes(site.bytes), t('chip.updated', { ago: timeAgo(site.updatedAt) })];
-      $('.site-meta', card).replaceChildren(...chips.map((text) => Object.assign(document.createElement('span'), { className: 'chip', textContent: text })));
-      return card;
-    }),
-  );
+// Loaded a page at a time while scrolling; the search asks the server.
+const siteList = infiniteList({
+  list: $('#sites'),
+  load: (cursor) => api(`/me/sites?${new URLSearchParams({ q: $('#sites-search').value.trim(), ...(cursor ? { cursor } : {}) })}`),
+  render: siteCard,
+  onPage: (page, items) => {
+    const searching = Boolean($('#sites-search').value.trim());
+    $('#sites-empty').hidden = items.length > 0 || searching;
+    $('#sites-none').hidden = items.length > 0 || !searching;
+  },
+});
+$('#sites-search').addEventListener('input', debounce(() => siteList.reset()));
+
+function siteCard(site) {
+  const card = document.createElement('article');
+  card.className = 'site-card glass';
+  card.dataset.name = site.name;
+  card.dataset.initial = site.name[0];
+  card.innerHTML = `<div><h3></h3><a class="site-url" target="_blank" rel="noopener"></a></div>
+    <div class="chips site-meta"></div>
+    <div class="site-actions">
+      <a class="btn btn-sm btn-accent" data-action="edit"></a>
+      <button class="btn btn-sm" data-action="copy"></button>
+      ${moreMenu([[t('row.rename'), 'rename'], '-', [t('row.delete'), 'delete', 'btn-danger']])}
+    </div>`;
+  $('h3', card).textContent = site.name;
+  $('.site-url', card).textContent = site.url;
+  $('.site-url', card).href = site.url;
+  $('[data-action=edit]', card).textContent = t('row.edit');
+  $('[data-action=copy]', card).textContent = t('row.copyLink');
+  $('[data-action=edit]', card).href = `/?edit=${encodeURIComponent(site.name)}`;
+  const chips = [filesLabel(site.files), formatBytes(site.bytes), t('chip.updated', { ago: timeAgo(site.updatedAt) })];
+  $('.site-meta', card).replaceChildren(...chips.map((text) => Object.assign(document.createElement('span'), { className: 'chip', textContent: text })));
+  return card;
 }
 
 $('#sites').addEventListener('click', async (e) => {
@@ -104,14 +112,11 @@ function renderUsage({ used, limit }) {
   $('.usage .meter').hidden = !limit;
 }
 
-// The visits chart; rebuilt only when the list of sites changes.
+// The visits chart, built once; its site picker searches the account's sites.
 let visits = null;
-let visitSites = '';
-function renderVisits(sites) {
-  const names = sites.map((s) => s.name);
-  if (visits && names.join() === visitSites) return visits.reload();
-  visitSites = names.join();
-  visits = statsPanel($('#visits'), { endpoint: '/me/stats', siteNames: names });
+function renderVisits(siteCount) {
+  if (visits) return visits.reload();
+  visits = statsPanel($('#visits'), { endpoint: '/me/stats', sites: '/me/sites', siteCount });
 }
 
 /* ---------- profile ---------- */
@@ -171,20 +176,23 @@ $('#token-copy').addEventListener('click', () => copy($('#token-value').textCont
 
 /* ---------- audit log ---------- */
 
-async function renderAudit() {
-  const { events } = await api('/me/audit');
-  $('#audit').replaceChildren(
-    ...events.map((event) => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = '<td class="num"></td><td></td><td></td><td class="num"><code></code></td>';
-      tr.children[0].textContent = formatDateTime(event.at);
-      tr.children[1].textContent = actionLabel(event.action);
-      tr.children[2].textContent = event.site || '';
-      $('code', tr).textContent = event.ip || '';
-      return tr;
-    }),
-  );
-}
+const auditList = infiniteList({
+  list: $('#audit'),
+  after: $('#audit').closest('.table-wrap'),
+  load: async (cursor) => {
+    const page = await api(`/me/audit${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`);
+    return { items: page.events, next: page.next };
+  },
+  render: (event) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td class="num"></td><td></td><td></td><td class="num"><code></code></td>';
+    tr.children[0].textContent = formatDateTime(event.at);
+    tr.children[1].textContent = actionLabel(event.action);
+    tr.children[2].textContent = event.site || '';
+    $('code', tr).textContent = event.ip || '';
+    return tr;
+  },
+});
 
 /* ---------- account deletion ---------- */
 

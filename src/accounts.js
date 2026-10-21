@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const fsp = require('fs/promises');
 const path = require('path');
 const config = require('./config');
-const { one, all, run, transaction, now, inMinutes, inDays } = require('./db');
+const { one, all, run, transaction, now, inMinutes, inDays, encodeCursor, decodeCursor, likeContains, pageSize } = require('./db');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const sha256 = (s) => crypto.createHash('sha256').update(String(s)).digest('hex');
@@ -39,19 +39,19 @@ function parseAudit(row, { hideEmails }) {
 }
 
 // A user's own history leaves out e-mail addresses.
-function auditForUser(userId, { hideEmails = true, limit = 500 } = {}) {
-  return all(
-    `SELECT * FROM audit_log WHERE user_id = ? OR site_id IN (SELECT id FROM sites WHERE user_id = ?)
-     ORDER BY id DESC LIMIT ?`,
-    userId, userId, limit,
-  ).map((r) => parseAudit(r, { hideEmails }));
+// History is read a page at a time, newest first: { events, next }.
+function auditPage(where, args, { hideEmails, cursor, limit }) {
+  const before = decodeCursor(cursor);
+  const size = pageSize(limit);
+  const rows = all(`SELECT * FROM audit_log WHERE (${where}) ${before ? 'AND id < ?' : ''} ORDER BY id DESC LIMIT ?`, ...args, ...(before ? [before] : []), size + 1);
+  const page = rows.slice(0, size);
+  return { events: page.map((r) => parseAudit(r, { hideEmails })), next: rows.length > size ? encodeCursor(page.at(-1).id) : null };
 }
 
-function auditForSite(siteId, { limit = 500 } = {}) {
-  return all('SELECT * FROM audit_log WHERE site_id = ? ORDER BY id DESC LIMIT ?', siteId, limit).map((r) =>
-    parseAudit(r, { hideEmails: false }),
-  );
-}
+const auditForUser = (userId, { hideEmails = true, cursor = null, limit = 50 } = {}) =>
+  auditPage('user_id = ? OR site_id IN (SELECT id FROM sites WHERE user_id = ?)', [userId, userId], { hideEmails, cursor, limit });
+
+const auditForSite = (siteId, { cursor = null, limit = 50 } = {}) => auditPage('site_id = ?', [siteId], { hideEmails: false, cursor, limit });
 
 /* ---------- users ---------- */
 
@@ -287,14 +287,36 @@ async function purgeUser(userId) {
 
 /* ---------- admin listing ---------- */
 
-function listUsers() {
-  return all(`
+/**
+ * One page of accounts, newest first, searched by e-mail, name or the IP
+ * they were created from. `deleted` is 'active' (default), 'deleted' or 'all'.
+ */
+function listUsersPage({ q = '', deleted = 'active', cursor = null, limit = 50 } = {}) {
+  const where = ['1 = 1'];
+  const args = [];
+  if (deleted === 'active') where.push('u.deleted_at IS NULL');
+  else if (deleted === 'deleted') where.push('u.deleted_at IS NOT NULL');
+  const term = String(q || '').trim().toLowerCase();
+  if (term) {
+    const like = likeContains(term);
+    where.push("(lower(u.email) LIKE ? ESCAPE '\\' OR lower(u.first_name || ' ' || u.last_name) LIKE ? ESCAPE '\\' OR u.created_ip LIKE ? ESCAPE '\\')");
+    args.push(like, like, like);
+  }
+  const filter = where.join(' AND ');
+  const total = one(`SELECT COUNT(*) AS n FROM users u WHERE ${filter}`, ...args).n;
+  const before = decodeCursor(cursor);
+  const size = pageSize(limit);
+  const rows = all(`
     SELECT u.id, u.email, u.first_name AS firstName, u.last_name AS lastName, u.created_at AS createdAt,
            u.created_ip AS createdIp, u.is_admin AS isAdmin, u.blocked_at AS blockedAt, u.deleted_at AS deletedAt, u.deleted_by AS deletedBy, u.purge_after AS purgeAfter,
            (SELECT COUNT(*) FROM sites s WHERE s.user_id = u.id AND s.deleted_at IS NULL) AS sites,
            (SELECT COUNT(*) FROM sites s WHERE s.user_id = u.id AND s.deleted_at IS NOT NULL) AS deletedSites
-    FROM users u ORDER BY u.id DESC`);
+    FROM users u WHERE ${filter} ${before ? 'AND u.id < ?' : ''} ORDER BY u.id DESC LIMIT ?`, ...args, ...(before ? [before] : []), size + 1);
+  const page = rows.slice(0, size);
+  return { items: page, next: rows.length > size ? encodeCursor(page.at(-1).id) : null, total };
 }
+
+const countUsers = () => one('SELECT COUNT(*) AS n FROM users WHERE deleted_at IS NULL').n;
 
 /* ---------- housekeeping ---------- */
 
@@ -357,6 +379,7 @@ module.exports = {
   removeWhitelist,
   deleteUser,
   purgeUser,
-  listUsers,
+  listUsersPage,
+  countUsers,
   cleanup,
 };

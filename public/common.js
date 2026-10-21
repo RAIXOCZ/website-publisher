@@ -433,3 +433,197 @@ window.addEventListener('scroll', () => {
   const menu = document.querySelector('.row-menu:not([hidden])');
   if (menu) placeRowMenu(menu.previousElementSibling, menu);
 }, { passive: true });
+
+/* ---------- long lists: load more while scrolling ---------- */
+
+function debounce(fn, ms = 250) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), ms);
+  };
+}
+
+/**
+ * A list that loads the next page when its end scrolls into view, so it
+ * stays fast with any number of items. `load(cursor)` resolves to
+ * { items, next, total }; `render(item)` returns an element for `list`.
+ * reset() starts over (e.g. after the search changed); find(pred) looks
+ * among the items loaded so far.
+ */
+function infiniteList({ list, load, render, empty = null, after = list, onPage = null }) {
+  const sentinel = document.createElement('div');
+  sentinel.className = 'list-sentinel';
+  sentinel.setAttribute('aria-hidden', 'true');
+  after.after(sentinel);
+  let items = [];
+  let next = null; // null: first page, undefined: no more
+  let loading = false;
+  let generation = 0;
+  let started = false; // nothing loads before the first reset()
+
+  const nearView = () => sentinel.offsetParent !== null && sentinel.getBoundingClientRect().top < window.innerHeight + 600;
+
+  async function more() {
+    if (!started || loading || next === undefined) return;
+    loading = true;
+    sentinel.classList.add('loading');
+    const gen = generation;
+    try {
+      const page = await load(next);
+      if (gen !== generation) return;
+      items.push(...page.items);
+      list.append(...page.items.map(render));
+      next = page.next ?? undefined;
+      if (empty) empty.hidden = items.length > 0;
+      onPage?.(page, items);
+    } catch (err) {
+      if (gen === generation) uiError(err);
+      next = undefined;
+    } finally {
+      if (gen === generation) {
+        loading = false;
+        sentinel.classList.remove('loading');
+      }
+    }
+    // A short page may not fill the screen: keep going until it does.
+    if (gen === generation && next !== undefined && nearView()) more();
+  }
+
+  new IntersectionObserver((entries) => entries.some((e) => e.isIntersecting) && more(), { rootMargin: '600px 0px' }).observe(sentinel);
+
+  function reset() {
+    started = true;
+    generation++;
+    loading = false;
+    next = null;
+    items = [];
+    list.replaceChildren();
+    return more();
+  }
+  return { reset, more, find: (pred) => items.find(pred), get items() { return items; } };
+}
+
+/* ---------- a searchable picker for long lists ---------- */
+
+let pickerCount = 0;
+let optionCount = 0;
+
+/**
+ * A select-like button whose options are searched and loaded page by page.
+ * `load(query, cursor)` resolves to { items: [{ value, label }], next };
+ * `allLabel` is the first option (value ''), or `placeholder` the button's
+ * text before a pick. onChange(value) runs on a pick, onClose() when the
+ * list closes without one.
+ */
+function comboPicker(root, { label, allLabel = '', placeholder = '', load, onChange, onClose = null }) {
+  const id = `picker-${++pickerCount}`;
+  root.classList.add('picker');
+  root.innerHTML = `
+    <button type="button" class="picker-button" aria-haspopup="listbox" aria-expanded="false"><span class="picker-value"></span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+    <div class="picker-pop" hidden>
+      <input type="search" class="picker-search" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="${id}">
+      <ul class="picker-list" role="listbox" id="${id}"></ul>
+      <p class="picker-empty muted small" hidden></p>
+    </div>`;
+  const button = $('.picker-button', root);
+  const pop = $('.picker-pop', root);
+  const search = $('.picker-search', root);
+  const listEl = $('.picker-list', root);
+  button.setAttribute('aria-label', label);
+  search.setAttribute('aria-label', label);
+  search.placeholder = t('picker.search');
+  $('.picker-empty', root).textContent = t('picker.none');
+  let value = '';
+  let active = -1;
+  $('.picker-value', root).textContent = allLabel || placeholder;
+
+  const option = (item) => {
+    const li = document.createElement('li');
+    li.setAttribute('role', 'option');
+    li.id = `${id}-${++optionCount}`;
+    li.dataset.value = item.value;
+    li.textContent = item.label;
+    li.setAttribute('aria-selected', String(item.value === value));
+    return li;
+  };
+  const list = infiniteList({
+    list: listEl,
+    after: listEl,
+    empty: $('.picker-empty', root),
+    load: async (cursor) => {
+      const q = search.value.trim();
+      const page = await load(q, cursor);
+      // "All" leads the unfiltered list.
+      if (!cursor && !q && allLabel) page.items = [{ value: '', label: allLabel }, ...page.items];
+      return page;
+    },
+    render: option,
+  });
+
+  const options = () => [...listEl.children];
+  function highlight(i) {
+    const all = options();
+    if (!all.length) return;
+    active = (i + all.length) % all.length;
+    all.forEach((li, n) => li.classList.toggle('active', n === active));
+    all[active].scrollIntoView({ block: 'nearest' });
+    search.setAttribute('aria-activedescendant', all[active].id);
+  }
+  let openedAt = 0;
+  function open() {
+    openedAt = performance.now();
+    pop.hidden = false;
+    button.setAttribute('aria-expanded', 'true');
+    search.value = '';
+    active = -1;
+    list.reset();
+    search.focus();
+  }
+  function close(focus = true, picked = false) {
+    if (pop.hidden) return;
+    pop.hidden = true;
+    button.setAttribute('aria-expanded', 'false');
+    if (focus) button.focus();
+    if (!picked) onClose?.();
+  }
+  function pick(li) {
+    value = li.dataset.value;
+    $('.picker-value', root).textContent = li.textContent;
+    close(true, true);
+    onChange(value);
+  }
+
+  button.addEventListener('click', () => (pop.hidden ? open() : close()));
+  search.addEventListener('input', debounce(() => {
+    active = -1;
+    list.reset();
+  }, 200));
+  search.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') highlight(active + 1);
+    else if (e.key === 'ArrowUp') highlight(active - 1);
+    else if (e.key === 'Enter' && active >= 0) pick(options()[active]);
+    else if (e.key === 'Escape') close();
+    else return;
+    e.preventDefault();
+  });
+  listEl.addEventListener('click', (e) => {
+    const li = e.target.closest('[role=option]');
+    if (li) pick(li);
+  });
+  document.addEventListener('click', (e) => {
+    // (not the click that opened it, when it was opened from elsewhere)
+    if (!pop.hidden && !root.contains(e.target) && e.timeStamp > openedAt) close(false);
+  });
+  return { open, get value() { return value; } };
+}
+
+/** load() for comboPicker over a list already in memory: filtered, 100 at a time. */
+function localPages(options) {
+  return async (q, cursor) => {
+    const term = q.toLowerCase();
+    const matches = term ? options.filter((o) => o.label.toLowerCase().includes(term)) : options;
+    const start = Number(cursor) || 0;
+    return { items: matches.slice(start, start + 100), next: start + 100 < matches.length ? String(start + 100) : null };
+  };
+}
