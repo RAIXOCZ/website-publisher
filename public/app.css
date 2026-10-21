@@ -338,13 +338,17 @@ select option { color: #0b1324; background: #fff; }
 .address input:focus { border-color: var(--teal-2); box-shadow: 0 0 0 3px var(--ring); }
 
 .panel { padding: 22px; border-radius: var(--r-lg); display: flex; flex-direction: column; gap: 16px; }
+/* With nothing but the drop zone, the drop zone itself is the container: no card around it. */
+.panel:not(:has(> #staged:not([hidden]), > #progress:not([hidden]), > #result:not([hidden]))) {
+  padding: 0; background: none; border-color: transparent;
+}
 
 .dropzone {
   display: flex; flex-direction: column; align-items: center; text-align: center;
   padding: 44px 20px 38px;
   border: 1.5px dashed color-mix(in srgb, var(--teal-2) 45%, transparent);
-  border-radius: var(--r-md);
-  background: var(--well);
+  border-radius: var(--r-lg);
+  background: var(--glass);
   cursor: pointer;
   transition: border-color 0.15s, background-color 0.15s, transform 0.2s;
 }
