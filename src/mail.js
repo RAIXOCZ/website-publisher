@@ -189,7 +189,7 @@ function htmlEmail(lang, parts, preheader) {
            (Gmail and Outlook do not show SVG in e-mails.) -->
       <table role="presentation" cellpadding="0" cellspacing="0"><tr>
         <td width="36" height="36" align="center" valign="middle" style="width:36px;height:36px;background:#0d9488;border-radius:9px;font:700 22px/36px ${FONT};color:#ffffff">&#8593;</td>
-        <td style="padding-left:10px;font:700 20px/1 ${FONT};color:#0b1324;letter-spacing:-.02em">freepages</td>
+        <td style="padding-left:10px;font:700 20px/1 ${FONT};color:#0b1324;letter-spacing:-.02em">freepages.dev</td>
       </tr></table>
     </td></tr>
     <tr><td style="background:#ffffff;border-radius:18px;padding:32px 32px 16px;border:1px solid #e3e7ee">

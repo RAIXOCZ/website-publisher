@@ -3,8 +3,8 @@ const { test, expect } = require('./test');
 const { FIXTURES, pick, pickAndPublish } = require('./helpers');
 
 const PAGES = [
-  { cs: '/podminky', en: '/terms', csTitle: 'Podmínky použití', enTitle: 'Terms of use' },
-  { cs: '/soukromi', en: '/privacy', csTitle: 'Zásady ochrany osobních údajů', enTitle: 'Privacy policy' },
+  { cs: '/podminky', en: '/terms', csTitle: 'Podmínky použití', enTitle: 'terms of use' },
+  { cs: '/soukromi', en: '/privacy', csTitle: 'Zásady ochrany osobních údajů', enTitle: 'privacy policy' },
 ];
 
 for (const p of PAGES) {
