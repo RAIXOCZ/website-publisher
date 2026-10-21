@@ -34,7 +34,7 @@
   --glass-strong: rgba(255, 255, 255, 0.78);
   --glass-edge: rgba(255, 255, 255, 0.75);
   --glass-line: rgba(15, 23, 42, 0.08);
-  --glass-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset, 0 12px 40px -12px rgba(30, 41, 59, 0.18);
+  --glass-shadow: 0 12px 40px -12px rgba(30, 41, 59, 0.18);
   --well: rgba(255, 255, 255, 0.5);
   --hover: rgba(255, 255, 255, 0.85);
 
@@ -80,7 +80,7 @@
     --glass-strong: rgba(17, 24, 39, 0.82);
     --glass-edge: rgba(255, 255, 255, 0.09);
     --glass-line: rgba(255, 255, 255, 0.08);
-    --glass-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 16px 48px -16px rgba(0, 0, 0, 0.7);
+    --glass-shadow: 0 16px 48px -16px rgba(0, 0, 0, 0.7);
     --well: rgba(2, 6, 23, 0.4);
     --hover: rgba(255, 255, 255, 0.07);
 
@@ -409,7 +409,8 @@ select option { color: #0b1324; background: #fff; }
 .tree-row {
   display: flex; align-items: center; gap: 6px;
   min-height: 36px;
-  padding: 3px 6px 3px calc(6px + var(--depth, 0) * 18px);
+  /* the root's content starts at the left edge, each folder level adds 18px */
+  padding: 3px 6px 3px calc(6px + max(var(--depth, 0) - 1, 0) * 18px);
   border: 1px dashed transparent;
   border-radius: 8px;
   font-size: 14px;
@@ -419,6 +420,7 @@ select option { color: #0b1324; background: #fff; }
 .tree-row.dragging { opacity: 0.45; }
 .tree-row.drop-target { border-color: var(--teal-2); background: var(--ok-soft); }
 .tree-root { font-weight: 650; color: var(--muted); }
+.tree-root .twisty-space { display: none; }
 .twisty, .twisty-space { flex: none; width: 22px; height: 22px; }
 .twisty {
   display: grid; place-items: center; padding: 0;
@@ -703,7 +705,7 @@ main :is(p, li) a:not(.btn), .consent a { color: var(--teal); text-decoration: u
   background: var(--glass-strong);
   border: 1px solid var(--glass-edge);
   border-radius: 999px;
-  box-shadow: 0 18px 50px -12px rgba(15, 23, 42, 0.35), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+  box-shadow: 0 18px 50px -12px rgba(15, 23, 42, 0.35);
   -webkit-backdrop-filter: blur(18px) saturate(170%);
   backdrop-filter: blur(18px) saturate(170%);
   opacity: 0;
@@ -747,7 +749,10 @@ main :is(p, li) a:not(.btn), .consent a { color: var(--teal); text-decoration: u
   color: var(--teal); background: var(--ok-soft); border-radius: 6px;
 }
 .tree-empty .tree-meta { font-style: italic; }
-.tree-input { width: 100%; max-width: 280px; padding: 3px 8px !important; font-size: 14px !important; border-color: var(--teal-2) !important; }
+.tree-input { width: 100%; max-width: 280px; padding: 3px 8px !important; font-size: 14px !important; border-color: var(--teal-2) !important; border-radius: 7px !important; }
+/* the name box clips its text; while renaming, the field and its focus ring must fit */
+.tree-name:has(.tree-input) { flex: 1; overflow: visible; padding: 3px 0; }
+.tree-input:focus { box-shadow: 0 0 0 3px var(--ring) !important; }
 
 .menu {
   position: absolute; left: var(--x, 0); top: var(--y, 0); z-index: 50;
@@ -776,10 +781,6 @@ main :is(p, li) a:not(.btn), .consent a { color: var(--teal); text-decoration: u
 .preview-box { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .preview-box .grow { display: flex; flex-direction: column; min-width: 0; }
 .preview-box .small { overflow-wrap: anywhere; }
-.preview-dot { width: 10px; height: 10px; flex: none; border-radius: 50%; background: var(--teal-2); box-shadow: 0 0 0 4px var(--ring); animation: pulse 1.6s ease-in-out infinite; }
-.preview-box.expired .preview-dot { background: var(--faint); box-shadow: none; animation: none; }
-@keyframes pulse { 50% { box-shadow: 0 0 0 7px transparent; } }
-@media (prefers-reduced-motion: reduce) { .preview-dot { animation: none; } }
 
 .identity {
   display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
@@ -983,7 +984,7 @@ textarea:focus { border-color: var(--teal-2); box-shadow: 0 0 0 4px var(--ring);
   .address input { font-size: 14px; }
   .panel { padding: 14px; }
   .add-form { grid-template-columns: 1fr; }
-  .tree-row { padding-left: calc(4px + var(--depth, 0) * 12px); }
+  .tree-row { padding-left: calc(4px + max(var(--depth, 0) - 1, 0) * 14px); }
   .tree-meta { display: none; }
   .tree-actions { opacity: 1 !important; margin-left: auto; gap: 4px; }
   /* touch targets of at least 40px on phones */

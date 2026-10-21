@@ -755,7 +755,7 @@ app.use((req, res, next) => {
 
 app.use((req, res) => {
   const lang = langOf(req);
-  res.status(404).type('html').send(page(lang, t(lang, 'pageNotFoundTitle'), `<h1>${t(lang, 'pageNotFound')}</h1>`));
+  res.status(404).type('html').send(page(lang, t(lang, 'pageNotFoundTitle'), `<h1>${t(lang, 'pageNotFound')}</h1><p>${t(lang, 'appPageNotFoundText')}</p>`, { code: '404' }));
 });
 
 // Errors: user-facing messages for expected problems, a generic one otherwise.
