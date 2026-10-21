@@ -228,7 +228,7 @@ function render(lang, kind, params) {
     ...(parts.quote ? [`${parts.quote.label}:\n${parts.quote.text}`] : []),
     ...(parts.button ? [`${parts.button}: ${parts.href}`] : []),
     ...parts.after,
-    `—\nfreepages.dev · ${config.PUBLIC_URL}`,
+    `freepages.dev, ${config.PUBLIC_URL}`,
   ].join('\n\n');
   return { subject: parts.subject, text, html: htmlEmail(lang === 'en' ? 'en' : 'cs', parts, parts.body[0]) };
 }

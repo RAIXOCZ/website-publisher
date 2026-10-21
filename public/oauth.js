@@ -48,7 +48,7 @@ async function init() {
   } catch (err) {
     return fail(err.message);
   }
-  document.title = `${t('oauth.title', { name: request.client.name })} – freepages.dev`;
+  document.title = `${t('oauth.title', { name: request.client.name })} | freepages.dev`;
   $('#oauth-title').textContent = t('oauth.title', { name: request.client.name });
   $('#oauth-text').textContent = t('oauth.text', { name: request.client.name, host: request.client.host });
   $('#oauth-body').hidden = false;

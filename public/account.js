@@ -180,7 +180,7 @@ async function renderAudit() {
       tr.children[0].textContent = formatDateTime(event.at);
       tr.children[1].textContent = actionLabel(event.action);
       tr.children[2].textContent = event.site || '';
-      $('code', tr).textContent = event.ip || '–';
+      $('code', tr).textContent = event.ip || '';
       return tr;
     }),
   );

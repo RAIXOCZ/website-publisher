@@ -34,7 +34,7 @@ function $$(selector, root = document) {
 }
 
 function formatBytes(n) {
-  if (n == null) return '–';
+  if (n == null) return '';
   const units = ['B', 'KB', 'MB', 'GB'];
   let i = 0;
   while (n >= 1024 && i < units.length - 1) {
@@ -45,7 +45,7 @@ function formatBytes(n) {
 }
 
 function timeAgo(iso) {
-  if (!iso) return '–';
+  if (!iso) return '';
   const s = (Date.now() - new Date(iso).getTime()) / 1000;
   if (s < 60) return t('time.now');
   if (s < 3600) return t('time.minutes', { n: Math.floor(s / 60) });
@@ -67,7 +67,7 @@ function slugify(input) {
     .replace(/-+$/, '');
 }
 
-// Czech plurals: 1 soubor, 2–4 soubory, 5+ souborů.
+// Czech plurals: 1 soubor, 2 až 4 soubory, 5+ souborů.
 function plural(n, cs, en) {
   if (LANG === 'en') return `${n} ${n === 1 ? en[0] : en[1]}`;
   return `${n} ${n === 1 ? cs[0] : n >= 2 && n <= 4 ? cs[1] : cs[2]}`;
@@ -361,7 +361,7 @@ function retentionNote(config) {
 }
 
 function formatDateTime(iso) {
-  return iso ? new Date(iso).toLocaleString(LANG, { dateStyle: 'medium', timeStyle: 'short' }) : '–';
+  return iso ? new Date(iso).toLocaleString(LANG, { dateStyle: 'medium', timeStyle: 'short' }) : '';
 }
 
 // Human-readable audit action, e.g. "site.published" → "Web zveřejněn".

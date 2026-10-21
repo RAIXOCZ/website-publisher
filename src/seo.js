@@ -15,12 +15,12 @@ const PAGES = {
   'index.html': {
     path: '/',
     cs: {
-      title: 'freepages.dev – zveřejněte web zdarma jedním přetažením',
+      title: 'freepages.dev: zveřejněte web zdarma jedním přetažením',
       description: () =>
         `Zveřejněte statický web zdarma: přetáhněte složku s webem a za pár sekund běží na vlastní adrese ${exampleHost('muj-web')} s HTTPS. Náhledy, úpravy v prohlížeči i nahrávání přes curl.`,
     },
     en: {
-      title: 'freepages.dev – publish a website for free in one drop',
+      title: 'freepages.dev: publish a website for free in one drop',
       description: () =>
         `Publish a static website for free: drop the folder with your site and seconds later it runs at its own address ${exampleHost('my-site')} with HTTPS. Previews, in-browser editing and uploads via curl.`,
     },
@@ -29,27 +29,27 @@ const PAGES = {
   'docs.html': {
     path: '/docs',
     cs: {
-      title: 'Návod – freepages.dev',
+      title: 'Návod | freepages.dev',
       description: () => 'Jak zveřejnit statický web na freepages.dev: co má složka obsahovat, nahrání .zip, úpravy a náhledy webu, nahrávání přes curl s API tokenem a pravidla pro názvy.',
     },
     en: {
-      title: 'Guide – freepages.dev',
+      title: 'Guide | freepages.dev',
       description: () => 'How to publish a static website on freepages.dev: what the folder should contain, .zip uploads, editing and previews, uploading with curl and an API token, and name rules.',
     },
   },
   'terms.html': {
     path: '/podminky',
-    cs: { title: 'Podmínky použití – freepages.dev', description: () => 'Podmínky použití služby freepages.dev pro bezplatné zveřejňování statických webů.' },
-    en: { title: 'Terms of use – freepages.dev', description: () => 'Terms of use of freepages.dev, the free static website publishing service.' },
+    cs: { title: 'Podmínky použití | freepages.dev', description: () => 'Podmínky použití služby freepages.dev pro bezplatné zveřejňování statických webů.' },
+    en: { title: 'Terms of use | freepages.dev', description: () => 'Terms of use of freepages.dev, the free static website publishing service.' },
   },
   'privacy.html': {
     path: '/soukromi',
     cs: {
-      title: 'Zásady ochrany osobních údajů – freepages.dev',
+      title: 'Zásady ochrany osobních údajů | freepages.dev',
       description: () => 'Jak freepages.dev zpracovává osobní údaje: účty, historie aktivit, doba uchování, příjemci a vaše práva podle GDPR.',
     },
     en: {
-      title: 'Privacy policy – freepages.dev',
+      title: 'Privacy policy | freepages.dev',
       description: () => 'How freepages.dev processes personal data: accounts, activity history, retention, recipients and your rights under the GDPR.',
     },
   },

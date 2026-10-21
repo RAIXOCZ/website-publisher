@@ -96,7 +96,7 @@ function pageMarkdown(name, lang) {
 function homeMarkdown(lang) {
   const example = sites.siteUrl(lang === 'en' ? 'my-site' : 'muj-web');
   if (lang === 'en') {
-    return `# freepages.dev – publish a website for free in one drop
+    return `# freepages.dev: publish a website for free in one drop
 
 freepages.dev publishes static websites. Drop a folder (or a .zip) with HTML, CSS, JavaScript and images, and seconds later it runs at its own address, such as ${example}, with HTTPS.
 
@@ -104,10 +104,11 @@ freepages.dev publishes static websites. Drop a folder (or a .zip) with HTML, CS
 - Guide: ${config.PUBLIC_URL}/docs.md
 - Limits: ${config.SITE_MAX_MB} MB per site, ${config.ACCOUNT_MAX_MB} MB per account
 - For agents: an MCP server at ${config.PUBLIC_URL}/mcp and an HTTP API at ${config.PUBLIC_URL}/api/sites (see ${config.PUBLIC_URL}/llms.txt)
-- Terms: ${config.PUBLIC_URL}/podminky.md?lang=en · Privacy: ${config.PUBLIC_URL}/soukromi.md?lang=en
+- Terms: ${config.PUBLIC_URL}/podminky.md?lang=en
+- Privacy: ${config.PUBLIC_URL}/soukromi.md?lang=en
 `;
   }
-  return `# freepages.dev – zveřejněte web zdarma jedním přetažením
+  return `# freepages.dev: zveřejněte web zdarma jedním přetažením
 
 freepages.dev zveřejňuje statické weby. Přetáhněte složku (nebo .zip) s HTML, CSS, JavaScriptem a obrázky a za pár sekund web běží na vlastní adrese, například ${example}, s HTTPS.
 
@@ -115,7 +116,8 @@ freepages.dev zveřejňuje statické weby. Přetáhněte složku (nebo .zip) s H
 - Návod: ${config.PUBLIC_URL}/docs.md
 - Limity: ${config.SITE_MAX_MB} MB na web, ${config.ACCOUNT_MAX_MB} MB na účet
 - Pro agenty: MCP server na ${config.PUBLIC_URL}/mcp a HTTP API na ${config.PUBLIC_URL}/api/sites (viz ${config.PUBLIC_URL}/llms.txt)
-- Podmínky: ${config.PUBLIC_URL}/podminky.md · Soukromí: ${config.PUBLIC_URL}/soukromi.md
+- Podmínky: ${config.PUBLIC_URL}/podminky.md
+- Soukromí: ${config.PUBLIC_URL}/soukromi.md
 `;
 }
 

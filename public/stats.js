@@ -23,8 +23,8 @@ function statsPanel(root, { endpoint, siteNames = [] }) {
       </div>
     </div>
     <div class="stats-tiles">
-      <div class="stat-tile"><span class="stat-label"></span><b class="stat-value" data-stat="total">–</b></div>
-      <div class="stat-tile"><span class="stat-label"></span><b class="stat-value" data-stat="peak">–</b></div>
+      <div class="stat-tile"><span class="stat-label"></span><b class="stat-value" data-stat="total">0</b></div>
+      <div class="stat-tile"><span class="stat-label"></span><b class="stat-value" data-stat="peak">0</b></div>
     </div>
     <div class="chart" role="img"><svg></svg><div class="chart-tip" hidden><b></b><span></span></div><p class="chart-empty" hidden></p></div>
     <ul class="stats-sites"></ul>
@@ -90,7 +90,7 @@ function statsPanel(root, { endpoint, siteNames = [] }) {
     const peak = buckets.reduce((best, b) => (b.views > (best?.views ?? 0) ? b : best), null);
     $('[data-stat=total]', root).textContent = total.toLocaleString(LANG);
     $$('.stat-label', root)[1].textContent = t(unit === 'day' ? 'stats.peakDay' : 'stats.peakHour');
-    $('[data-stat=peak]', root).textContent = peak ? bucketLabel(peak.t, unit) : '–';
+    $('[data-stat=peak]', root).textContent = peak ? bucketLabel(peak.t, unit) : '';
     drawChart($('.chart', root), buckets, unit);
 
     // Views per site, when all sites are shown.

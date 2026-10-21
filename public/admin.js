@@ -60,7 +60,7 @@ function renderSites() {
       const tr = document.createElement('tr');
       tr.dataset.id = site.id;
       if (site.deletedAt) tr.classList.add('dim');
-      tr.innerHTML = '<td><div class="site-name"><span></span> </div><a class="site-url" target="_blank" rel="noopener"></a><p class="site-size muted small"><span></span> · <span></span></p></td><td></td><td class="actions"></td>';
+      tr.innerHTML = '<td><div class="site-name"><span></span> </div><a class="site-url" target="_blank" rel="noopener"></a><p class="site-size muted small"><span></span>, <span></span></p></td><td></td><td class="actions"></td>';
       $('.site-name span', tr).textContent = site.name;
       $('.site-name', tr).insertAdjacentHTML('beforeend', statusChip(site));
       if (site.deletedAt) $('.site-url', tr).remove();
@@ -77,7 +77,7 @@ function renderSites() {
       }
       // Size, and below it when the site last changed.
       const size = $('.site-size', tr).children;
-      size[0].textContent = `${filesLabel(site.files)} · ${formatBytes(site.bytes)}`;
+      size[0].textContent = `${filesLabel(site.files)}, ${formatBytes(site.bytes)}`;
       size[1].textContent = t('chip.updated', { ago: timeAgo(site.updatedAt) });
       size[1].title = formatDateTime(site.updatedAt);
       // An edit button and history; the rest is under "⋯", delete last.
@@ -105,7 +105,7 @@ function renderSites() {
   $('#storage-text').textContent = `${formatBytes(data.storage.used)} / ${formatBytes(data.storage.limit)}`;
   $('#storage-bar').style.width = `${(share * 100).toFixed(1)}%`;
   $('#storage-bar').classList.toggle('full', share >= 0.8);
-  $('#stats').textContent = `${sitesLabel(active.length)} · ${t('usage.total', { used: formatBytes(data.storage.used), limit: formatBytes(data.storage.limit) })}`;
+  $('#stats').textContent = `${sitesLabel(active.length)}, ${t('usage.total', { used: formatBytes(data.storage.used), limit: formatBytes(data.storage.limit) })}`;
 }
 
 $('#site-rows').addEventListener('click', async (e) => {
@@ -180,7 +180,7 @@ function renderUsers() {
       tr.dataset.id = user.id;
       if (user.deletedAt) tr.classList.add('dim');
       tr.innerHTML = '<td><div class="owner"><div class="owner-name"><b></b></div><span class="muted small"></span></div></td><td class="num"><span></span><br><code class="muted small"></code></td><td class="num hide-sm"></td><td class="actions"></td>';
-      $('b', tr).textContent = `${user.firstName} ${user.lastName}`.trim() || '–';
+      $('b', tr).textContent = `${user.firstName} ${user.lastName}`.trim() || '';
       $('.owner-name', tr).insertAdjacentHTML('beforeend', statusChip(user));
       $('.owner .muted', tr).textContent = user.email;
       $('td:nth-child(2) span', tr).textContent = formatDateTime(user.createdAt);
@@ -254,12 +254,12 @@ function showAudit(title, subtitle, events) {
     cell(tr, 0).textContent = formatDateTime(event.at);
     cell(tr, 1).textContent = actionLabel(event.action);
     cell(tr, 2).textContent = event.site || '';
-    $('code', tr).textContent = event.ip || '–';
+    $('code', tr).textContent = event.ip || '';
     const detail = event.detail || {};
     cell(tr, 4).textContent = Object.entries(detail)
       .filter(([, v]) => v != null && v !== '')
       .map(([k, v]) => `${k}: ${k === 'bytes' ? formatBytes(v) : v}`)
-      .join(' · ');
+      .join(', ');
     return tr;
   });
   if (!rows.length) {

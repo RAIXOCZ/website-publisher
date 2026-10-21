@@ -685,7 +685,7 @@ main :is(p, li) a:not(.btn), .consent a { color: var(--teal); text-decoration: u
   color: var(--faint);
 }
 .site-footer p { margin: 0; }
-.footer-links { color: var(--faint); }
+.footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 20px; color: var(--faint); }
 .site-footer a { color: var(--muted); font-weight: 600; text-decoration: none; transition: color 0.15s; }
 .site-footer a:hover { color: var(--teal); }
 

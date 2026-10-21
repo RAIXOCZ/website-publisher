@@ -264,7 +264,7 @@ test.describe('preview', () => {
     await row(page, 'about.html').dragTo(row(page, 'css'));
     await page.locator('#preview').click();
     await expect(page.locator('#preview-box')).toBeVisible();
-    await expect(page.locator('#preview-time')).toHaveText(/preview-[a-z0-9]{6}\/ · vyprší za [45]:\d\d/);
+    await expect(page.locator('#preview-time')).toHaveText(/preview-[a-z0-9]{6}\/, vyprší za [45]:\d\d/);
     const url = await page.locator('#preview-open').getAttribute('href');
     expect(url).toMatch(/^http:\/\/localhost:4317\/preview-[a-z0-9]{6}\/$/);
     expect(await (await request.get(url)).text()).toContain('Sample site');

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title data-i18n="title.docs">Návod – Publikování webů</title>
+  <title data-i18n="title.docs">Návod | freepages.dev</title>
   <link rel="stylesheet" href="/_app/app.css">
 </head>
 <body>
@@ -71,9 +71,9 @@ curl -H "Authorization: Bearer $FREEPAGES_TOKEN" \
      -F name=muj-web -F overwrite=1 -F f=@web.zip \
      <span class="api-example">…</span></pre>
         <ul>
-          <li><code>name</code> – název webu. Bez <code>overwrite=1</code> dostane web při obsazeném názvu příponu, s ním nahradí váš existující web.</li>
-          <li><code>f</code> – soubory. Jeden <code>.zip</code> se rozbalí; více souborů pošlete jako dvojice <code>-F p=cesta/soubor.html -F f=@soubor.html</code> (cesta <code>p</code> vždy před souborem).</li>
-          <li><code>preview=1</code> – místo zveřejnění vytvoří 5minutový náhled; adresa je v odpovědi. Nový náhled vašeho účtu smaže ten předchozí.</li>
+          <li><code>name</code>: název webu. Bez <code>overwrite=1</code> dostane web při obsazeném názvu příponu, s ním nahradí váš existující web.</li>
+          <li><code>f</code>: soubory. Jeden <code>.zip</code> se rozbalí; více souborů pošlete jako dvojice <code>-F p=cesta/soubor.html -F f=@soubor.html</code> (cesta <code>p</code> vždy před souborem).</li>
+          <li><code>preview=1</code>: místo zveřejnění vytvoří 5minutový náhled; adresa je v odpovědi. Nový náhled vašeho účtu smaže ten předchozí.</li>
           <li>Odpověď je JSON s adresou webu (<code>url</code>). Chyby vrací <code>{"error": "…"}</code> s HTTP kódem 4xx.</li>
         </ul>
 
@@ -183,9 +183,9 @@ curl -H "Authorization: Bearer $FREEPAGES_TOKEN" \
      -F name=my-site -F overwrite=1 -F f=@site.zip \
      <span class="api-example">…</span></pre>
         <ul>
-          <li><code>name</code> – the site name. Without <code>overwrite=1</code> a taken name gets a suffix; with it, your existing site is replaced.</li>
-          <li><code>f</code> – files. A single <code>.zip</code> is extracted; send several files as pairs <code>-F p=path/file.html -F f=@file.html</code> (the path <code>p</code> always before the file).</li>
-          <li><code>preview=1</code> – creates a 5-minute preview instead of publishing; its address is in the response. A new preview of your account deletes the previous one.</li>
+          <li><code>name</code>: the site name. Without <code>overwrite=1</code> a taken name gets a suffix; with it, your existing site is replaced.</li>
+          <li><code>f</code>: files. A single <code>.zip</code> is extracted; send several files as pairs <code>-F p=path/file.html -F f=@file.html</code> (the path <code>p</code> always before the file).</li>
+          <li><code>preview=1</code>: creates a 5-minute preview instead of publishing; its address is in the response. A new preview of your account deletes the previous one.</li>
           <li>The response is JSON with the site's address (<code>url</code>). Errors return <code>{"error": "…"}</code> with a 4xx HTTP status.</li>
         </ul>
 

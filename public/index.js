@@ -343,7 +343,7 @@ function renderStaged() {
   $('#staged').hidden = !hasContent || !els.progress.hidden || !els.result.hidden || !$('#pending').hidden;
   els.dropzone.hidden = hasContent || !els.progress.hidden || !els.result.hidden || !$('#pending').hidden;
   const totalSize = files.reduce((sum, f) => sum + sizeOf(f), 0);
-  $('#staged-summary').textContent = `${filesLabel(files.length)} · ${formatBytes(totalSize)}`;
+  $('#staged-summary').textContent = `${filesLabel(files.length)}, ${formatBytes(totalSize)}`;
   renderLimits(totalSize);
   $('[data-tool="replace-all"]').hidden = !state.edit;
   $('#clear-staged').hidden = Boolean(state.edit); // "Cancel editing" in the banner does that
@@ -365,7 +365,7 @@ function renderStaged() {
         if (dir.count > 20) state.collapsed.add(dir.path); // big folders start collapsed
       }
       const empty = dir.count === 0;
-      const meta = empty ? t('tree.emptyDir') : `${filesLabel(dir.count)} · ${formatBytes(dir.size)}`;
+      const meta = empty ? t('tree.emptyDir') : `${filesLabel(dir.count)}, ${formatBytes(dir.size)}`;
       rows.push(treeRow({ kind: 'dir', path: dir.path, name: `${dir.name}/`, meta, depth, empty }));
       if (!state.collapsed.has(dir.path)) walkNode(dir, depth + 1);
     }
@@ -863,7 +863,7 @@ async function upload(files, name, { replace = false, password = '', base = '', 
   hidePreview();
   setStage('upload');
   $('#progress-title').textContent = t('progress.uploadingName', { name });
-  $('#progress-files').textContent = `${filesLabel(files.length)} · ${formatBytes(files.reduce((s, f) => s + sizeOf(f), 0))}`;
+  $('#progress-files').textContent = `${filesLabel(files.length)}, ${formatBytes(files.reduce((s, f) => s + sizeOf(f), 0))}`;
   els.bar.style.width = '0%';
   $('#progress-pct').textContent = '0%';
 

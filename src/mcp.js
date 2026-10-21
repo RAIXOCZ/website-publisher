@@ -190,7 +190,7 @@ async function callTool(name, args, user, ip) {
     case 'list_sites': {
       const list = sites.sitesOfUser(user.id).map((s) => ({ name: s.name, url: s.url, files: s.files, bytes: s.bytes, updatedAt: s.updatedAt }));
       const result = { sites: list, usage: sites.usage(user.id) };
-      return [list.length ? list.map((s) => `${s.name} – ${s.url} (${s.files} files, ${s.bytes} bytes)`).join('\n') : 'The account has no sites yet.', result];
+      return [list.length ? list.map((s) => `${s.name}: ${s.url} (${s.files} files, ${s.bytes} bytes)`).join('\n') : 'The account has no sites yet.', result];
     }
     case 'list_files': {
       const site = ownSite(user, args.site);

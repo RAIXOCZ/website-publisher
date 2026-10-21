@@ -54,7 +54,7 @@ function footer({ lang }) {
     <div class="wrap">
       <div class="footer-row">
         <p><span data-i18n="footer.by">${l.by}</span> <a href="https://martin-balcar.cz" target="_blank" rel="noopener">Martin Balcar</a></p>
-        <p class="footer-links"><a href="/podminky" data-i18n="footer.terms">${l.terms}</a> · <a href="/soukromi" data-i18n="footer.privacy">${l.privacy}</a> · <span data-i18n="footer.abuse">${l.abuse}</span>: <a class="abuse-link" href="mailto:${abuse}">${abuse}</a></p>
+        <p class="footer-links"><a href="/podminky" data-i18n="footer.terms">${l.terms}</a> <a href="/soukromi" data-i18n="footer.privacy">${l.privacy}</a> <span><span data-i18n="footer.abuse">${l.abuse}</span>: <a class="abuse-link" href="mailto:${abuse}">${abuse}</a></span></p>
       </div>
     </div>
   </footer>`;
