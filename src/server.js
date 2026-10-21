@@ -16,6 +16,8 @@ const layout = require('./layout');
 const mcp = require('./mcp');
 const agents = require('./agents');
 const oauth = require('./oauth');
+const assets = require('./assets');
+const compression = require('compression');
 const stats = require('./stats');
 const { langOf, t } = require('./i18n');
 
@@ -27,6 +29,7 @@ app.use((req, res, next) => {
   res.set('Report-Abuse', config.ABUSE_EMAIL);
   next();
 });
+app.use(compression());
 
 const hostOf = (req) => (req.headers.host || '').toLowerCase().replace(/:\d+$/, '');
 
@@ -94,17 +97,31 @@ function appPage(name) {
         return res.type('text/markdown; charset=utf-8').send(agents.markdown(name, lang));
       }
     }
-    const html = layout
-      .render(name, pages[name], { lang, user: accounts.currentUser(req), admin: accounts.isAdmin(req) })
+    // Texts and values are filled in here, so the page does not change (or jump) when its scripts run.
+    let html = assets
+      .translate(agents.fillPlaceholders(layout.render(name, pages[name], { lang, user: accounts.currentUser(req), admin: accounts.isAdmin(req) }), lang), lang)
       .replace(/((?:src|href)=")\/_app\/([^"?]+)"/g, `$1/_app/$2?v=${assetVersion}"`);
-    const head = mdPath ? `<link rel="alternate" type="text/markdown" href="${mdPath}?lang=${lang}">\n  <link rel="describedby" type="text/plain" href="/llms.txt">\n</head>` : '</head>';
+    // What the page's script would show or hide first, decided here already.
+    const user = accounts.currentUser(req);
+    const signedIn = Boolean(user && req._via === 'session');
+    const show = (h, id, visible) => h.replace(new RegExp(`(id="${id}"[^>]*?) hidden`), visible ? '$1' : '$1 hidden');
+    if (name === 'account.html') html = show(show(html, 'signin', !signedIn), 'account', signedIn);
+    if (name === 'index.html') html = show(html, 'login-inline', !signedIn && !accounts.isWhitelisted(ipOf(req)));
+    // The display font starts loading with the page; Czech needs its latin-ext part too.
+    const fonts = ['latin', ...(lang === 'cs' ? ['latin-ext'] : [])]
+      .map((part) => `<link rel="preload" href="/_app/font/bricolage-grotesque-${part}-wght-normal.woff2?v=${assetVersion}" as="font" type="font/woff2" crossorigin>`)
+      .join('\n  ');
+    const head = `${fonts}\n  ${mdPath ? `<link rel="alternate" type="text/markdown" href="${mdPath}?lang=${lang}">\n  <link rel="describedby" type="text/plain" href="/llms.txt">\n` : ''}</head>`;
     res.type('html').send(seo.render(name, html.replace('</head>', head), { lang, explicit: Boolean(explicit) }));
   };
 }
 
+assets.versionFonts(assetVersion);
+const assetCache = (req) => (req.query.v === assetVersion ? 'public, max-age=31536000, immutable' : 'no-cache');
 app.use(
   '/_app',
   securityHeaders,
+  assets.serveMinified(assetCache),
   express.static(publicDir, {
     index: false,
     setHeaders: (res) => {

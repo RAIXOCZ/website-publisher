@@ -14,6 +14,13 @@ const LABELS = {
 // The navigation item each page belongs to.
 const CURRENT = { 'index.html': '/', 'docs.html': '/docs', 'account.html': '/ucet', 'admin.html': '/admin' };
 
+// The brand is the domain the service runs on ("freepages.dev").
+function brand() {
+  const host = new URL(config.PUBLIC_URL).hostname.replace(/^www\./, '');
+  const dot = host.indexOf('.');
+  return dot > 0 ? `${host.slice(0, dot)}<span class="tld">${host.slice(dot)}</span>` : host;
+}
+
 function header(name, { lang, user, admin }) {
   const l = LABELS[lang];
   const current = CURRENT[name];
@@ -28,12 +35,12 @@ function header(name, { lang, user, admin }) {
   return `<header class="topbar">
     <div class="wrap">
       <div class="bar glass">
-        <a class="brand" href="/"><img class="logo" src="/_app/favicon.svg" alt=""><span data-brand>freepages</span></a>
+        <a class="brand" href="/"><img class="logo" src="/_app/favicon.svg" alt="" width="30" height="30"><span data-brand>${brand()}</span></a>
         <div class="bar-right">
           <nav class="nav" aria-label="${l.main}" data-i18n-aria="nav.main">
             ${items.filter(Boolean).join('\n            ')}
           </nav>
-          <div class="lang" data-lang-switch></div>
+          <div class="lang" data-lang-switch role="group" aria-label="Jazyk / Language">${['cs', 'en'].map((l) => `<button type="button" data-set-lang="${l}" aria-pressed="${l === lang}">${l.toUpperCase()}</button>`).join('')}</div>
         </div>
       </div>
     </div>

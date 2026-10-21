@@ -905,18 +905,11 @@ function applyI18n(root = document) {
 applyI18n();
 
 // CS / EN toggle.
-for (const holder of document.querySelectorAll('[data-lang-switch]')) {
-  holder.setAttribute('role', 'group');
-  holder.setAttribute('aria-label', 'Jazyk / Language');
-  for (const lang of LANGS) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.dataset.setLang = lang;
-    button.textContent = lang.toUpperCase();
-    button.setAttribute('aria-pressed', String(lang === LANG));
-    button.addEventListener('click', () => lang !== LANG && setLang(lang));
-    holder.append(button);
-  }
+// The server renders the buttons; this marks the current one and makes them work.
+for (const button of document.querySelectorAll('[data-lang-switch] [data-set-lang]')) {
+  const lang = button.dataset.setLang;
+  button.setAttribute('aria-pressed', String(lang === LANG));
+  button.addEventListener('click', () => lang !== LANG && setLang(lang));
 }
 
 // The brand is simply the domain this runs on.

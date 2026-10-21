@@ -657,6 +657,8 @@ td .site-url { font: 12px var(--mono); color: var(--muted); overflow-wrap: anywh
 .prose h2 { font-size: 22px; margin: 32px 0 8px; }
 .prose h2:first-child { margin-top: 0; }
 .prose h2, .prose h3 { scroll-margin-top: 100px; }
+/* links inside text are underlined, not told apart by colour alone */
+.prose a, .lead a, .muted a, .notice a, .empty a, .alert a { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
 .prose h3 { font-size: 17px; margin: 22px 0 6px; }
 .doc-layout .side-nav { border-top: 0; padding-top: 0; }
 .toc { gap: 4px; }

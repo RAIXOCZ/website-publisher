@@ -32,9 +32,9 @@ const decode = (s) =>
     .replace(/&amp;/g, '&');
 
 // The values the page's script would fill in.
-function fillPlaceholders(html) {
+function fillPlaceholders(html, lang = null) {
   const values = {
-    'url-example': sites.siteUrl('{name}'),
+    'url-example': sites.siteUrl(lang ? (lang === 'en' ? 'site-name' : 'nazev-webu') : '{name}'),
     'api-example': `${config.PUBLIC_URL}/api/sites`,
     'mcp-url': `${config.PUBLIC_URL}/mcp`,
     'max-upload': `${config.MAX_UPLOAD_MB} MB`,
@@ -42,7 +42,7 @@ function fillPlaceholders(html) {
     'account-max': `${config.ACCOUNT_MAX_MB} MB`,
   };
   return html.replace(/<(span|code|b) class="([\w-]+)">[^<]*<\/\1>/g, (match, tag, cls) =>
-    cls in values ? `<${tag}>${values[cls]}</${tag}>` : match,
+    cls in values ? `<${tag}${lang ? ` class="${cls}"` : ''}>${values[cls]}</${tag}>` : match,
   );
 }
 
@@ -272,4 +272,4 @@ function openApi() {
   };
 }
 
-module.exports = { markdown, markdownPath, llmsTxt, llmsFullTxt, serverCard, openApi, toMarkdown };
+module.exports = { fillPlaceholders, markdown, markdownPath, llmsTxt, llmsFullTxt, serverCard, openApi, toMarkdown };
