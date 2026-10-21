@@ -661,7 +661,7 @@ td .site-url { font: 12px var(--mono); color: var(--muted); overflow-wrap: anywh
 main :is(p, li) a:not(.btn), .consent a { color: var(--teal); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
 .prose h3 { font-size: 17px; margin: 22px 0 6px; }
 .doc-layout .side-nav { border-top: 0; padding-top: 0; }
-.toc { gap: 4px; }
+.side-panel.toc { gap: 6px; }
 .toc .side-title { margin: 0; }
 .doc-layout .side-nav a { font-size: 14px; font-weight: 500; padding: 6px 12px; }
 .prose p, .prose li { color: var(--muted); }

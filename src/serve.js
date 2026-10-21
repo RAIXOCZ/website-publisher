@@ -59,7 +59,7 @@ function page(lang, title, body, { code = '', actions = null } = {}) {
   return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex"><title>${escapeHtml(title)}</title><style>${STYLE}</style></head><body>
 <main>${code ? `<p class="code">${escapeHtml(code)}</p>` : ''}${body}${buttons ? `<div class="actions">${buttons}</div>` : ''}</main>
-<footer><span class="mark">${LOGO}</span><span>${t(lang, 'errors.hostedOn')} <a href="${escapeHtml(app)}/">${escapeHtml(new URL(app).host)}</a> · <a href="${escapeHtml(app)}/docs">${t(lang, 'errors.docs')}</a></span></footer>
+<footer><span class="mark">${LOGO}</span><span>${t(lang, 'errors.hostedOn')} <a href="${escapeHtml(app)}/">${escapeHtml(new URL(app).host)}</a></span></footer>
 </body></html>`;
 }
 
