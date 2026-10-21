@@ -60,7 +60,7 @@ function renderSites() {
       const tr = document.createElement('tr');
       tr.dataset.id = site.id;
       if (site.deletedAt) tr.classList.add('dim');
-      tr.innerHTML = '<td><div class="site-name"><span></span> </div><a class="site-url" target="_blank" rel="noopener"></a></td><td></td><td class="num hide-sm"><span></span><br><span class="muted small"></span></td><td class="actions"></td>';
+      tr.innerHTML = '<td><div class="site-name"><span></span> </div><a class="site-url" target="_blank" rel="noopener"></a><p class="site-size muted small"><span></span> · <span></span></p></td><td></td><td class="actions"></td>';
       $('.site-name span', tr).textContent = site.name;
       $('.site-name', tr).insertAdjacentHTML('beforeend', statusChip(site));
       if (site.deletedAt) $('.site-url', tr).remove();
@@ -76,9 +76,10 @@ function renderSites() {
         cell(tr, 1).innerHTML = `<span class="chip">${t('admin.passwordSite')}</span>`;
       }
       // Size, and below it when the site last changed.
-      cell(tr, 2).children[0].textContent = `${filesLabel(site.files)} · ${formatBytes(site.bytes)}`;
-      cell(tr, 2).children[2].textContent = t('chip.updated', { ago: timeAgo(site.updatedAt) });
-      cell(tr, 2).children[2].title = formatDateTime(site.updatedAt);
+      const size = $('.site-size', tr).children;
+      size[0].textContent = `${filesLabel(site.files)} · ${formatBytes(site.bytes)}`;
+      size[1].textContent = t('chip.updated', { ago: timeAgo(site.updatedAt) });
+      size[1].title = formatDateTime(site.updatedAt);
       // Same order as everywhere: edit, the rest, history, delete last.
       // "Delete permanently" is offered only once a site is deleted.
       const actions = [];
@@ -89,7 +90,7 @@ function renderSites() {
       }
       actions.push(button(t('admin.history'), 'audit', 'btn-quiet'));
       actions.push(site.deletedAt ? button(t('admin.purge'), 'purge', 'btn-danger') : button(t('row.delete'), 'delete', 'btn-danger'));
-      cell(tr, 3).innerHTML = `<div class="actions-wrap">${actions.join('')}</div>`;
+      cell(tr, 2).innerHTML = `<div class="actions-wrap">${actions.join('')}</div>`;
       return tr;
     }),
   );

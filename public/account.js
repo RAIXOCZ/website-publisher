@@ -24,7 +24,9 @@ async function load() {
   const { user, sites, tokens, usage } = me;
   $('#account-name').textContent = `${user.firstName} ${user.lastName}`.trim() || user.email;
   $('#account-avatar').textContent = (user.firstName || user.email)[0].toUpperCase();
-  $('#account-email').textContent = t('account.since', { email: user.email, date: new Date(user.createdAt).toLocaleDateString(LANG) });
+  $('#account-email').textContent = user.email;
+  $('#account-email').title = user.email;
+  $('#account-since').textContent = t('account.since', { date: new Date(user.createdAt).toLocaleDateString(LANG) });
   $('#profile').firstName.value = user.firstName;
   $('#profile').lastName.value = user.lastName;
   $('#delete-text').textContent = t('account.deleteText', { days: config.retentionDays, contact: config.contact });

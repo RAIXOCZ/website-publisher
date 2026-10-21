@@ -234,8 +234,8 @@ h3 { font-size: 20px; line-height: 1.25; font-weight: 650; }
 /* Buttons, from loudest to quietest: .btn-primary (the one main action of a
    screen), .btn-accent (the main action of an item in a list), .btn (other
    actions), .btn-quiet (minor). Destructive ones are .btn-danger. */
-.btn-accent { color: var(--teal); border-color: color-mix(in srgb, var(--teal-2) 45%, transparent); }
-.btn-accent:hover { color: var(--teal); background: var(--ok-soft); border-color: var(--teal-2); }
+.btn-accent { color: var(--teal); background: color-mix(in srgb, var(--accent-fill) 13%, transparent); border-color: transparent; }
+.btn-accent:hover { color: var(--teal); background: color-mix(in srgb, var(--accent-fill) 22%, transparent); border-color: transparent; }
 .btn-danger { color: var(--danger); }
 .btn-danger:hover { background: var(--danger-soft); border-color: var(--danger-line); }
 .btn-sm { padding: 6px 11px; font-size: 13px; border-radius: 9px; }
@@ -447,10 +447,17 @@ select option { color: #0b1324; background: #fff; }
 
 
 .progress p { margin: 0 0 10px; }
-.meter { height: 10px; border-radius: 6px; background: var(--well); border: 1px solid var(--glass-line); overflow: hidden; }
-.meter > div { height: 100%; width: 0; background: var(--accent-fill); transition: width 0.15s; }
+.meter {
+  height: 14px; padding: 2px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 9%, transparent);
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.12);
+  overflow: hidden;
+}
+/* the fill always shows a small start, so an empty meter still reads as one */
+.meter > div { height: 100%; width: 0; min-width: 10px; border-radius: 999px; background: var(--accent-fill); transition: width 0.15s; }
 .meter > div.full { background: var(--danger-fill); }
-.meter.mini { height: 6px; margin-top: 8px; }
+.meter.mini { height: 10px; padding: 2px; margin-top: 8px; }
 .side-summary .small { margin-top: 4px; }
 .side-summary .over { color: var(--danger); font-weight: 600; }
 .usage { display: flex; flex-direction: column; gap: 8px; }
@@ -630,7 +637,10 @@ td.num { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular
 td.actions { text-align: right; }
 td.actions .btn { margin: 3px 0 3px 4px; }
 /* row actions stack in a narrow column, so tables fit next to the side panel */
-.actions-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.actions-wrap { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; max-width: 250px; margin-left: auto; }
+.admin-main td:first-child { min-width: 170px; }
+.admin-main td.actions { width: 260px; }
+.site-size { margin: 4px 0 0; }
 .actions-wrap .btn { margin: 0; }
 .site-name { font-weight: 650; }
 td .site-url { font: 12px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
@@ -781,10 +791,11 @@ td .site-url { font: 12px var(--mono); color: var(--muted); overflow-wrap: anywh
   padding: 20px; border-radius: var(--r-lg);
 }
 .account-main { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
-.profile-card { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.profile-card { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; min-width: 0; }
 .profile-card > div { min-width: 0; }
 .profile-card h2 { font-size: 22px; line-height: 1.2; overflow-wrap: anywhere; }
-.profile-card p { margin: 2px 0 0; overflow-wrap: anywhere; }
+.profile-card p { margin: 2px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-card > div { width: 100%; }
 .avatar {
   display: grid; place-items: center; flex: none;
   width: 48px; height: 48px; border-radius: 50%;
@@ -799,7 +810,7 @@ td .site-url { font: 12px var(--mono); color: var(--muted); overflow-wrap: anywh
   transition: background-color 0.15s, color 0.15s;
 }
 .side-nav a:hover, .side-nav button:hover { text-decoration: none; color: var(--ink); background: var(--hover); }
-.side-nav .active, .side-nav [aria-selected='true'] { color: var(--teal); background: var(--hover); box-shadow: inset 3px 0 0 var(--accent-fill); }
+.side-nav .active, .side-nav [aria-selected='true'] { color: var(--teal); background: color-mix(in srgb, var(--accent-fill) 13%, transparent); }
 .side-buttons { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid var(--glass-line); }
 .card { scroll-margin-top: 100px; }
 .card { padding: 22px; border-radius: var(--r-lg); display: flex; flex-direction: column; gap: 14px; }
@@ -895,12 +906,10 @@ textarea:focus { border-color: var(--teal-2); box-shadow: 0 0 0 4px var(--ring);
   .auth-col form .row { flex-wrap: wrap; }
   .with-side > *, .account > * { min-width: 0; }
   .actions-wrap { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
-  [data-panel=sites] th:nth-child(3), [data-panel=sites] td:nth-child(3) { display: none; }
   .toc { display: none; }
   .side-panel, .account-side { position: static; }
   .side-nav { flex-direction: row; flex-wrap: wrap; gap: 4px; }
   .side-nav a, .side-nav button { white-space: nowrap; }
-  .side-nav .active, .side-nav [aria-selected='true'] { box-shadow: inset 0 -3px 0 var(--accent-fill); }
   .staged { grid-template-columns: 1fr; }
   .staged-side { position: static; padding-left: 0; padding-top: 18px; border-left: 0; border-top: 1px solid var(--glass-line); }
   .how { grid-template-columns: 1fr; }

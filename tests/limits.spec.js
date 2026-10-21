@@ -60,8 +60,8 @@ test('the account page shows how much of the limit the sites use', async ({ page
     expect((await request.post('/api/sites', { headers: own, multipart: { name, f: siteOf(900) } })).status()).toBe(200);
   }
   await page.goto('/ucet');
-  await expect(page.locator('#usage-text')).toHaveText(/^Využito 1\.\d MB z 2\.0 MB$/);
-  await expect(page.locator('#usage-limit')).toHaveText('jeden web nejvýše 1.0 MB');
+  await expect(page.locator('#usage-text')).toHaveText(/^1\.\d MB z 2\.0 MB$/);
+  await expect(page.locator('#usage-limit')).toHaveText('Jeden web může mít nejvýše 1.0 MB.');
   const width = await page.locator('#usage-bar').evaluate((el) => parseFloat(el.style.width));
   expect(width).toBeGreaterThan(80);
   await expect(page.locator('#usage-bar')).toHaveClass(/full/);
