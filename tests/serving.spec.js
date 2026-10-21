@@ -194,7 +194,7 @@ test.describe('sites without index.html', () => {
     const name = unique('many');
     await publish(request, name, [['a.html', 'a'], ['b.html', 'b']]);
     const html = await (await request.get(`/${name}/`, { headers: { 'Accept-Language': 'cs' } })).text();
-    expect(html).toContain('nemá úvodní stránku');
+    expect(html).toContain('Složka bez úvodní stránky');
     expect(html).toContain('a.html');
   });
 });

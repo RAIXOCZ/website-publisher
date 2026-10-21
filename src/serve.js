@@ -38,10 +38,19 @@ a{color:var(--accent);text-decoration:underline;text-underline-offset:3px;text-d
 .btn:hover{border-color:var(--accent-fill)}
 .btn.primary{color:#fff;background:#0f766e;border-color:transparent}
 .btn.primary:hover{background:#115e59}
-ul{margin:16px 0 0;padding:0;list-style:none;border-top:1px solid var(--line)}
-li{border-bottom:1px solid var(--line)}
-li a{display:block;padding:9px 4px;font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;text-decoration:none;overflow-wrap:anywhere}
-li a:hover{text-decoration:underline}
+main:has(.files){max-width:680px}
+.path{margin:-4px 0 14px}
+.path code{display:inline-block;padding:3px 10px;border-radius:8px;background:var(--line);font-size:14px}
+.files{margin:18px 0 0;padding:6px;list-style:none;border:1px solid var(--line);border-radius:14px}
+.files li a{display:flex;align-items:center;gap:12px;min-height:40px;padding:8px 10px;border-radius:9px;color:var(--ink);text-decoration:none}
+.files li a:hover{background:var(--line)}
+.files .icon{display:grid;place-items:center;flex:none;color:var(--muted)}
+.files .icon.dir{color:var(--accent)}
+.files .name{flex:1;min-width:0;font:15px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+.files .size{flex:none;font-size:13px;color:var(--faint)}
+.files .empty{padding:10px;color:var(--faint)}
+.help{margin:18px 0 0;font-size:15px}
+.actions + .help, .help:last-child{margin-bottom:0}
 footer{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--faint)}
 footer a{color:var(--muted);font-weight:600;text-decoration:none}
 .mark{display:grid;place-items:center;width:24px;height:24px;border-radius:7px;color:#fff;background:var(--accent-fill)}
@@ -52,9 +61,11 @@ footer a{color:var(--muted);font-weight:600;text-decoration:none}
  * A page of the service itself. `body` is trusted HTML; `actions` are
  * [label, href, primary] links shown as buttons.
  */
-function page(lang, title, body, { code = '', actions = null } = {}) {
+function page(lang, title, body, { code = '', actions = null, help = true } = {}) {
   const app = config.PUBLIC_URL;
-  const links = actions ?? [[t(lang, 'errors.publish'), `${app}/`, true], [t(lang, 'errors.docs'), `${app}/docs`]];
+  const links = actions ?? [[t(lang, 'errors.publish'), `${app}/`, true]];
+  // The guide is a link in a sentence, not another button.
+  if (help) body += `<p class="help">${t(lang, 'errors.help', { docs: `${app}/docs` })}</p>`;
   const buttons = links.map(([label, href, primary]) => `<a class="btn${primary ? ' primary' : ''}" href="${escapeHtml(href)}">${escapeHtml(label)}</a>`).join('');
   return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex"><title>${escapeHtml(title)}</title><style>${STYLE}</style></head><body>
@@ -90,21 +101,32 @@ function send(res, file, sandboxed) {
   });
 }
 
+const ICON_DIR = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
+const ICON_FILE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>';
+const ICON_UP = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
+const formatSize = (n) => (n < 1024 ? `${n} B` : n < 1024 ** 2 ? `${(n / 1024).toFixed(1)} kB` : `${(n / 1024 ** 2).toFixed(1)} MB`);
+
+// A folder without a start page: its files, folders first.
 async function listing(req, res, dir, urlPath, siteName) {
   const lang = langOf(req);
   const entries = (await fsp.readdir(dir, { withFileTypes: true }))
     .filter((e) => !e.name.startsWith('.'))
     .sort((a, b) => (b.isDirectory() - a.isDirectory()) || a.name.localeCompare(b.name));
-  const items = entries
-    .map((e) => {
-      const name = e.name + (e.isDirectory() ? '/' : '');
-      return `<li><a href="${escapeHtml(encodeURIComponent(e.name))}${e.isDirectory() ? '/' : ''}">${escapeHtml(name)}</a></li>`;
-    })
-    .join('');
-  const up = urlPath !== '/' ? '<li><a href="../">../</a></li>' : '';
+  const rows = await Promise.all(
+    entries.map(async (e) => {
+      const isDir = e.isDirectory();
+      const size = isDir ? '' : formatSize((await statOrNull(path.join(dir, e.name)))?.size ?? 0);
+      return `<li><a href="${escapeHtml(encodeURIComponent(e.name))}${isDir ? '/' : ''}"><span class="icon${isDir ? ' dir' : ''}">${isDir ? ICON_DIR : ICON_FILE}</span><span class="name">${escapeHtml(e.name)}${isDir ? '/' : ''}</span><span class="size">${size}</span></a></li>`;
+    }),
+  );
+  const up = urlPath !== '/' ? `<li><a href="../"><span class="icon">${ICON_UP}</span><span class="name">${t(lang, 'listingUp')}</span><span class="size"></span></a></li>` : '';
   res.set('Cache-Control', 'no-cache');
-  res.type('html').send(page(lang, `${siteName}${urlPath}`, `<h1>${escapeHtml(siteName)}<code>${escapeHtml(urlPath)}</code></h1>
-<p>${t(lang, 'listingText')}</p><ul>${up}${items}</ul>`, { actions: [[t(lang, 'errors.docs'), `${config.PUBLIC_URL}/docs`]] }));
+  const body = `<h1>${t(lang, 'listingTitle')}</h1>
+<p class="path"><code>${escapeHtml(siteName)}${escapeHtml(urlPath)}</code></p>
+<p>${t(lang, 'listingText')}</p>
+<ul class="files">${up}${rows.join('') || `<li class="empty">${t(lang, 'listingEmpty')}</li>`}</ul>
+<p class="help">${t(lang, 'listingHelp', { docs: `${config.PUBLIC_URL}/docs` })}</p>`;
+  res.type('html').send(page(lang, `${siteName}${urlPath}`, body, { actions: [], help: false }));
 }
 
 async function notFound(req, res, root, sandboxed, siteHome = '/') {
@@ -116,7 +138,8 @@ async function notFound(req, res, root, sandboxed, siteHome = '/') {
   const lang = langOf(req);
   res.status(404).type('html').send(page(lang, t(lang, 'pageNotFoundTitle'), `<h1>${t(lang, 'pageNotFound')}</h1><p>${t(lang, 'pageNotFoundText')}</p>`, {
     code: '404',
-    actions: [[t(lang, 'errors.siteHome'), siteHome], [t(lang, 'errors.docs'), `${config.PUBLIC_URL}/docs`]],
+    actions: [[t(lang, 'errors.siteHome'), siteHome, true]],
+    help: false,
   }));
 }
 

@@ -56,6 +56,7 @@ const MESSAGES = {
     // Pages shown to visitors of published sites
     pageNotFoundText: 'Tato stránka na webu neexistuje. Možná byla přesunuta nebo smazána, nebo je v adrese překlep.',
     appPageNotFoundText: 'Tato stránka neexistuje. Zkontrolujte adresu.',
+    'errors.help': 'Jak zveřejnit vlastní web, popisuje <a href="{docs}">návod</a>.',
     'errors.publish': 'Zveřejnit web',
     'errors.docs': 'Návod',
     'errors.siteHome': 'Na úvod webu',
@@ -64,7 +65,11 @@ const MESSAGES = {
     pageNotFound: 'Stránka nenalezena',
     noSuchSite: 'Web neexistuje',
     noSuchSiteText: 'Na adrese <code>{name}</code> zatím nic není zveřejněno. Web s tímto názvem si můžete zveřejnit sami.',
-    listingText: 'Tato složka nemá úvodní stránku, zde jsou její soubory:',
+    listingTitle: 'Složka bez úvodní stránky',
+    listingText: 'Tady není <code>index.html</code>, proto ukazujeme soubory ve složce. Přidejte do ní <code>index.html</code> a zobrazí se místo tohoto seznamu.',
+    listingHelp: 'Pokud chcete vědět, jak web připravit a co má obsahovat, podívejte se do <a href="{docs}">návodu</a>.',
+    listingUp: 'O úroveň výš',
+    listingEmpty: 'Složka je prázdná.',
   },
   en: {
     missingHeader: 'Missing request header.',
@@ -117,6 +122,7 @@ const MESSAGES = {
     siteExists: 'Site "{name}" already exists.',
     pageNotFoundText: 'This page does not exist on the site. It may have been moved or deleted, or the address has a typo.',
     appPageNotFoundText: 'This page does not exist. Check the address.',
+    'errors.help': 'How to publish your own site is described in the <a href="{docs}">guide</a>.',
     'errors.publish': 'Publish a site',
     'errors.docs': 'Guide',
     'errors.siteHome': 'Go to the site',
@@ -125,7 +131,11 @@ const MESSAGES = {
     pageNotFound: 'Page not found',
     noSuchSite: 'No such site',
     noSuchSiteText: 'Nothing is published at <code>{name}</code> yet. You can publish a site with this name yourself.',
-    listingText: 'This folder has no start page, here are its files:',
+    listingTitle: 'Folder without a start page',
+    listingText: 'There is no <code>index.html</code> here, so we show the files in the folder. Add an <code>index.html</code> and it will appear instead of this list.',
+    listingHelp: 'If you want to know how to prepare a site and what it should contain, see the <a href="{docs}">guide</a>.',
+    listingUp: 'Up one level',
+    listingEmpty: 'The folder is empty.',
   },
 };
 
