@@ -15,6 +15,7 @@ const seo = require('./seo');
 const layout = require('./layout');
 const mcp = require('./mcp');
 const agents = require('./agents');
+const oauth = require('./oauth');
 const stats = require('./stats');
 const { langOf, t } = require('./i18n');
 
@@ -141,6 +142,26 @@ app.get(['/podminky.md', '/terms.md'], markdownRoute('terms.html'));
 app.get(['/soukromi.md', '/privacy.md'], markdownRoute('privacy.html'));
 app.get(['/.well-known/mcp/server-card.json', '/.well-known/mcp.json'], (req, res) => res.json(agents.serverCard()));
 app.get('/openapi.json', (req, res) => res.json(agents.openApi()));
+
+// OAuth for MCP clients: discovery, self-registration, the sign-in page and
+// the token exchange. Apps call these from anywhere, so CORS is open.
+app.use(['/.well-known/oauth-authorization-server', '/.well-known/oauth-protected-resource', '/oauth/token', '/oauth/register'], (req, res, next) => {
+  res.set({ 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Authorization, Content-Type, MCP-Protocol-Version', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' });
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  next();
+});
+app.get(['/.well-known/oauth-authorization-server', '/.well-known/oauth-authorization-server/mcp', '/.well-known/openid-configuration'], (req, res) => res.json(oauth.metadata().authorizationServer));
+app.get(['/.well-known/oauth-protected-resource', '/.well-known/oauth-protected-resource/mcp'], (req, res) => res.json(oauth.metadata().protectedResource));
+app.post('/oauth/register', express.json({ limit: '20kb' }), (req, res) => {
+  if (!auth.publishAllowed(req)) return res.status(429).json({ error: 'slow_down', error_description: 'Too many registrations from this address.' });
+  const { status, body } = oauth.register(req.body);
+  res.status(status).json(body);
+});
+app.post('/oauth/token', express.urlencoded({ extended: false, limit: '20kb' }), express.json({ limit: '20kb' }), (req, res) => {
+  const { status, body } = oauth.token(req.body || {}, ipOf(req));
+  res.status(status).set('Cache-Control', 'no-store').json(body);
+});
+app.get('/oauth/authorize', securityHeaders, appPage('oauth.html'));
 app.get('/sitemap.xml', (req, res) => res.type('application/xml').send(seo.sitemap()));
 app.get('/site.webmanifest', (req, res) => res.type('application/manifest+json').send(JSON.stringify(seo.manifest())));
 for (const file of seo.ROOT_FILES) {
@@ -300,6 +321,15 @@ api.post('/auth/consume', json, async (req, res) => {
     const site = await sites.createSite({ requested: row.payload.name, dir, userId: user.id, ip });
     accounts.startSession(res, user.id);
     return res.json({ redirect: `/?published=${encodeURIComponent(site.name)}`, site });
+  }
+
+  if (row.purpose === 'oauth') {
+    let user = accounts.activeUserByEmail(row.email);
+    if (!user) user = accounts.createUser({ email: row.email, firstName: row.payload?.firstName, lastName: row.payload?.lastName, ip });
+    accounts.audit('email.verified', { userId: user.id, ip, detail: { email: row.email } });
+    if (!oauth.approve(row.payload?.request, user, ip)) return fail(req, res, 410, 'linkExpired');
+    accounts.startSession(res, user.id);
+    return res.json({ done: true, client: row.payload?.name });
   }
 
   if (row.purpose === 'delete-account') {
@@ -636,6 +666,59 @@ if (config.MAIL_DEV_OUTBOX) {
   api.get('/dev/outbox', (req, res) => res.json({ messages: mail.outbox }));
 }
 
+/* ---------- OAuth sign-in page (/oauth/authorize) ---------- */
+
+api.post('/oauth/requests', json, (req, res) => {
+  const result = oauth.startRequest(req.body || {}, ipOf(req));
+  if (result.error) return fail(req, res, 400, `oauth.${result.error}`);
+  const user = accounts.currentUser(req);
+  res.json({ ...result, user: user && req._via === 'session' ? { email: user.email } : null });
+});
+
+api.get('/oauth/requests/:id', (req, res) => {
+  const { status } = oauth.requestStatus(req.params.id);
+  res.json({ status, redirect: status === 'approved' ? oauth.takeRedirect(req.params.id) : null });
+});
+
+// Signed in in this browser: one click.
+api.post('/oauth/requests/:id/approve', (req, res) => {
+  const user = accounts.currentUser(req);
+  if (!user || req._via !== 'session') return fail(req, res, 401, 'loginRequired');
+  const redirect = oauth.approve(req.params.id, user, ipOf(req));
+  if (!redirect) return fail(req, res, 410, 'linkExpired');
+  res.json({ redirect });
+});
+
+api.post('/oauth/requests/:id/deny', (req, res) => {
+  const redirect = oauth.deny(req.params.id);
+  if (!redirect) return fail(req, res, 410, 'linkExpired');
+  res.json({ redirect });
+});
+
+// Not signed in: a link by e-mail approves the request (and creates the
+// account when there is none yet).
+api.post('/oauth/requests/:id/email', json, async (req, res) => {
+  const request = oauth.activeRequest(req.params.id);
+  if (!request || request.status !== 'pending') return fail(req, res, 410, 'linkExpired');
+  const email = accounts.normEmail(req.body?.email);
+  if (!email) return fail(req, res, 400, 'emailInvalid');
+  const user = accounts.activeUserByEmail(email);
+  const firstName = accounts.cleanName(req.body?.firstName);
+  const lastName = accounts.cleanName(req.body?.lastName);
+  if (!user && (!firstName || !lastName)) return res.status(400).json({ error: t(langOf(req), 'oauth.needName'), needName: true });
+  if (!emailAllowed(`ip:${ipOf(req)}`, `to:${email}`)) return fail(req, res, 429, 'tooManyEmails');
+  const client = oauth.clientById(request.client_id);
+  const token = accounts.createEmailToken({
+    purpose: 'oauth', email, userId: user?.id ?? null, ip: ipOf(req), minutes: oauth.REQUEST_MINUTES,
+    payload: { request: request.id, name: client.name, firstName, lastName },
+  });
+  await sendMail(req, {
+    to: email, kind: user ? 'oauth' : 'oauthRegister', userId: user?.id ?? null,
+    params: { link: emailLink(token), client: client.name, minutes: oauth.REQUEST_MINUTES, terms: `${config.PUBLIC_URL}/podminky` },
+  });
+  res.json({ sent: true, email });
+});
+
 api.use((req, res) => fail(req, res, 404, 'notFound'));
 app.use('/api', api);
 mcp.mount(app, express);
@@ -675,6 +758,7 @@ sites.init().then(() => {
     accounts
       .cleanup()
       .then(() => stats.cleanup())
+      .then(() => oauth.cleanup())
       .catch((err) => console.error('cleanup failed:', err));
   housekeeping();
   setInterval(housekeeping, 60_000).unref();

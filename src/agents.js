@@ -141,7 +141,7 @@ Each site is a set of static files; index.html is the home page, addresses work 
 
 ## For agents
 
-- [MCP server](${u}/mcp): Streamable HTTP endpoint. Tools: list_sites, list_files, read_file, publish_site, create_preview, rename_site, delete_site, get_visits. Authenticate with "Authorization: Bearer <API key>"; the user creates the key at ${u}/ucet#api-klice.
+- [MCP server](${u}/mcp): Streamable HTTP endpoint. Tools: list_sites, list_files, read_file, publish_site, create_preview, rename_site, delete_site, get_visits. Sign-in: OAuth 2.1 with PKCE and dynamic client registration (${u}/.well-known/oauth-authorization-server); the user enters an e-mail and confirms by a link, which also creates an account when needed. Alternatively "Authorization: Bearer <API key>" with a key from ${u}/ucet#api-klice.
 - [MCP server card](${u}/.well-known/mcp/server-card.json): how to connect, in JSON.
 - [HTTP API (OpenAPI)](${u}/openapi.json): publish with a multipart POST to ${u}/api/sites, same API key.
 - [Guide: API keys, curl and MCP](${u}/docs.md?lang=en): examples for the command line and for MCP clients.
@@ -173,8 +173,10 @@ function serverCard() {
     transport: { type: 'streamable-http', endpoint: `${config.PUBLIC_URL}/mcp` },
     authentication: {
       required: true,
-      schemes: ['bearer'],
-      description: `An API key from ${config.PUBLIC_URL}/ucet#api-klice, sent as "Authorization: Bearer <key>".`,
+      schemes: ['oauth2', 'bearer'],
+      authorizationServer: config.PUBLIC_URL,
+      protectedResourceMetadata: `${config.PUBLIC_URL}/.well-known/oauth-protected-resource`,
+      description: `OAuth 2.1 sign-in (the user confirms by e-mail), or an API key from ${config.PUBLIC_URL}/ucet#api-klice sent as "Authorization: Bearer <key>".`,
     },
     capabilities: { tools: { listChanged: false } },
     tools: require('./mcp').TOOLS.map(({ name, title, description }) => ({ name, title, description })),

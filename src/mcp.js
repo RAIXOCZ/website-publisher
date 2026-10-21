@@ -259,7 +259,8 @@ async function handle(message, req, user) {
 }
 
 function unauthorized(res, message) {
-  res.set('WWW-Authenticate', 'Bearer realm="freepages"');
+  // Points MCP clients to OAuth sign-in (see oauth.js).
+  res.set('WWW-Authenticate', `Bearer realm="freepages", resource_metadata="${config.PUBLIC_URL}/.well-known/oauth-protected-resource"`);
   res.status(401).json(rpcError(null, -32001, message));
 }
 

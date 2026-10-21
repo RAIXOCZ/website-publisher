@@ -51,6 +51,20 @@ const TEMPLATES = {
       danger: true,
       after: ['Data smažeme natrvalo za {days} dní, dřív na požádání na {contact}.', 'Pokud jste o smazání nežádali, e-mail ignorujte.'],
     },
+    oauth: {
+      subject: 'Povolit přístup pro {client}',
+      title: 'Povolit přístup pro {client}',
+      body: ['Aplikace {client} chce přístup k vašemu účtu Freepages. Bude moci zveřejňovat, upravovat a mazat vaše weby.'],
+      button: 'Povolit přístup',
+      after: ['Odkaz platí {minutes} minut. Přístup kdykoli zrušíte v Účtu v části API klíče.', 'Pokud jste o to nežádali, e-mail ignorujte. Bez potvrzení aplikace přístup nedostane.'],
+    },
+    oauthRegister: {
+      subject: 'Vytvořit účet a povolit přístup pro {client}',
+      title: 'Vytvořit účet pro {client}',
+      body: ['Aplikace {client} chce pro vás vytvořit účet Freepages a zveřejňovat, upravovat a mazat v něm weby.'],
+      button: 'Vytvořit účet a povolit přístup',
+      after: ['Odkaz platí {minutes} minut. Potvrzením přijímáte podmínky použití: {terms}', 'Pokud jste o to nežádali, e-mail ignorujte. Účet bez potvrzení nevznikne.'],
+    },
     measure: {
       subject: 'Opatření k vašemu účtu Freepages',
       title: 'Opatření k vašemu účtu',
@@ -98,6 +112,20 @@ const TEMPLATES = {
       button: 'Delete account',
       danger: true,
       after: ['Data is deleted permanently after {days} days, sooner on request to {contact}.', 'If you did not ask for this, ignore this e-mail.'],
+    },
+    oauth: {
+      subject: 'Allow access for {client}',
+      title: 'Allow access for {client}',
+      body: ['The app {client} wants access to your Freepages account. It will be able to publish, edit and delete your sites.'],
+      button: 'Allow access',
+      after: ['The link is valid for {minutes} minutes. You can revoke access at any time under API keys in your account.', 'If you did not ask for this, ignore this e-mail. The app gets no access without your confirmation.'],
+    },
+    oauthRegister: {
+      subject: 'Create an account and allow access for {client}',
+      title: 'Create an account for {client}',
+      body: ['The app {client} wants to create a Freepages account for you and publish, edit and delete sites in it.'],
+      button: 'Create account and allow access',
+      after: ['The link is valid for {minutes} minutes. Confirming accepts the terms of use: {terms}', 'If you did not ask for this, ignore this e-mail. No account is created without your confirmation.'],
     },
     measure: {
       subject: 'A measure concerning your Freepages account',

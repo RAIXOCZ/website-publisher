@@ -56,7 +56,7 @@ const PAGES = {
 };
 
 // Pages that must never show up in search results.
-const PRIVATE = new Set(['account.html', 'admin.html', 'confirm.html']);
+const PRIVATE = new Set(['account.html', 'admin.html', 'confirm.html', 'oauth.html']);
 
 const escape = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const url = (path, lang) => `${config.PUBLIC_URL}${path}${lang ? `?lang=${lang}` : ''}`;

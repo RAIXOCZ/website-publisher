@@ -77,8 +77,11 @@ curl -H "Authorization: Bearer $FREEPAGES_TOKEN" \
         </ul>
 
         <h3>MCP server pro AI asistenty</h3>
-        <p>Web může zveřejnit i AI asistent (Claude, Cursor, VS Code a další). Připojíte ho adresou <code class="mcp-url">…/mcp</code> a API klíčem:</p>
+        <p>Web může zveřejnit i AI asistent (Claude, Cursor, VS Code a další). V aplikaci přidejte MCP server s adresou <code class="mcp-url">…/mcp</code>. Aplikace se přihlásí sama: otevře okno, kde zadáte e-mail, a přístup potvrdíte odkazem v e-mailu (pokud účet ještě nemáte, tím ho i vytvoříte). Jste-li v prohlížeči přihlášení, stačí kliknout na <b>Povolit přístup</b>.</p>
         <pre><span class="muted"># Claude Code</span>
+claude mcp add --transport http freepages <span class="mcp-url">…/mcp</span></pre>
+        <p>Aplikace bez přihlašování (OAuth) připojíte API klíčem v hlavičce:</p>
+        <pre><span class="muted"># Claude Code s API klíčem</span>
 claude mcp add --transport http freepages <span class="mcp-url">…/mcp</span> \
   --header "Authorization: Bearer $FREEPAGES_TOKEN"</pre>
         <pre><span class="muted"># Cursor, VS Code a další (JSON konfigurace)</span>
@@ -185,8 +188,11 @@ curl -H "Authorization: Bearer $FREEPAGES_TOKEN" \
         </ul>
 
         <h3>MCP server for AI assistants</h3>
-        <p>An AI assistant (Claude, Cursor, VS Code and others) can publish sites too. Connect it with the address <code class="mcp-url">…/mcp</code> and an API key:</p>
+        <p>An AI assistant (Claude, Cursor, VS Code and others) can publish sites too. Add an MCP server with the address <code class="mcp-url">…/mcp</code> in the app. The app signs in by itself: it opens a window where you enter your e-mail, and you confirm access with a link in the e-mail (which also creates your account if you do not have one). If you are signed in in the browser, just click <b>Allow access</b>.</p>
         <pre><span class="muted"># Claude Code</span>
+claude mcp add --transport http freepages <span class="mcp-url">…/mcp</span></pre>
+        <p>Apps without sign-in (OAuth) connect with an API key in a header:</p>
+        <pre><span class="muted"># Claude Code with an API key</span>
 claude mcp add --transport http freepages <span class="mcp-url">…/mcp</span> \
   --header "Authorization: Bearer $FREEPAGES_TOKEN"</pre>
         <pre><span class="muted"># Cursor, VS Code and others (JSON configuration)</span>

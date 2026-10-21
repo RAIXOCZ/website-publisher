@@ -103,6 +103,29 @@ CREATE TABLE IF NOT EXISTS site_views (
   PRIMARY KEY (site_id, hour)
 );
 
+-- Apps (MCP clients) that registered themselves for OAuth sign-in.
+CREATE TABLE IF NOT EXISTS oauth_clients (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  redirect_uris TEXT NOT NULL,  -- JSON array
+  created_at TEXT NOT NULL
+);
+
+-- An app asking for access; the user approves it in the browser or by e-mail.
+CREATE TABLE IF NOT EXISTS oauth_requests (
+  id TEXT PRIMARY KEY,
+  client_id TEXT NOT NULL,
+  redirect_uri TEXT NOT NULL,
+  code_challenge TEXT NOT NULL,
+  state TEXT,
+  user_id INTEGER,
+  status TEXT NOT NULL DEFAULT 'pending',  -- pending, approved, denied, used
+  code_hash TEXT,
+  ip TEXT,
+  created_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS ip_whitelist (
   ip TEXT PRIMARY KEY,
   note TEXT NOT NULL DEFAULT '',

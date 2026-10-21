@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Připojit aplikaci – Freepages</title>
+  <link rel="stylesheet" href="/_app/app.css">
+</head>
+<body>
+  <!--header-->
+
+  <main>
+    <div class="wrap page">
+      <section class="login glass confirm" id="oauth">
+        <h2 id="oauth-title" data-i18n="confirm.loading">Načítám…</h2>
+        <p class="muted" id="oauth-text"></p>
+
+        <div id="oauth-signed" hidden>
+          <p id="oauth-signed-as"></p>
+          <div class="row">
+            <button class="btn btn-primary" type="button" id="oauth-allow" data-i18n="oauth.allow">Povolit přístup</button>
+            <button class="btn" type="button" id="oauth-deny" data-i18n="oauth.deny">Zamítnout</button>
+          </div>
+          <button class="btn btn-quiet btn-sm mt" type="button" id="oauth-other" data-i18n="oauth.otherAccount">Použít jiný účet</button>
+        </div>
+
+        <form id="oauth-form" hidden>
+          <p class="muted" data-i18n="oauth.emailText">Zadejte svůj e-mail.</p>
+          <label class="labeled"><span data-i18n="identity.email">E-mail</span><input type="email" name="email" data-i18n-placeholder="identity.emailExample" placeholder="jana@example.cz" autocomplete="email" required></label>
+          <div class="row" id="oauth-names" hidden>
+            <label class="labeled grow"><span data-i18n="identity.first">Jméno</span><input type="text" name="firstName" autocomplete="given-name" maxlength="80"></label>
+            <label class="labeled grow"><span data-i18n="identity.last">Příjmení</span><input type="text" name="lastName" autocomplete="family-name" maxlength="80"></label>
+          </div>
+          <div class="alert" hidden></div>
+          <div class="row">
+            <button class="btn btn-primary" type="submit" data-i18n="oauth.send">Poslat potvrzení</button>
+            <button class="btn" type="button" id="oauth-deny-2" data-i18n="oauth.deny">Zamítnout</button>
+          </div>
+          <p class="consent" id="oauth-consent" hidden data-i18n-html="register.consent"></p>
+        </form>
+
+        <div id="oauth-wait" hidden>
+          <p class="notice" id="oauth-wait-text"></p>
+        </div>
+        <div class="alert" id="oauth-error" hidden></div>
+      </section>
+    </div>
+  </main>
+
+  <!--footer-->
+
+  <script src="/_app/i18n.js"></script>
+  <script src="/_app/common.js"></script>
+  <script src="/_app/oauth.js"></script>
+</body>
+</html>

@@ -6,8 +6,12 @@
 const token = location.pathname.split('/').pop();
 
 async function consume() {
-  const { redirect } = await api('/auth/consume', { method: 'POST', json: { token } });
-  location.replace(redirect);
+  const result = await api('/auth/consume', { method: 'POST', json: { token } });
+  if (result.redirect) return location.replace(result.redirect);
+  // An app was allowed access: the user goes back to it.
+  $('#confirm-title').textContent = t('confirm.oauthDoneTitle');
+  $('#confirm-text').textContent = t('confirm.oauthDone', { name: result.client });
+  $('#confirm-button').hidden = true;
 }
 
 function fail(message) {
@@ -25,7 +29,7 @@ async function init() {
     $('#confirm-title').textContent = t('confirm.signingIn');
     return consume();
   }
-  const kind = { publish: 'publish', register: 'register', 'delete-account': 'delete' }[info.purpose];
+  const kind = { publish: 'publish', register: 'register', 'delete-account': 'delete', oauth: 'oauth' }[info.purpose];
   $('#confirm-title').textContent = t(`confirm.${kind}Title`, { name: info.name });
   $('#confirm-text').textContent = t(`confirm.${kind}Text`, { name: info.name });
   const button = $('#confirm-button');
