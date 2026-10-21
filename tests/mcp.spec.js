@@ -25,7 +25,7 @@ test('MCP: initialize and list tools', async () => {
   const { rpc, client, token } = await mcpClient();
   const init = await rpc('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'test', version: '1' } });
   expect(init.result.protocolVersion).toBe('2025-06-18');
-  expect(init.result.serverInfo.name).toBe('freepages');
+  expect(init.result.serverInfo.name).toBe('freepages.dev');
   expect(init.result.capabilities.tools).toBeTruthy();
 
   const note = await client.post('/mcp', { headers: { Authorization: `Bearer ${token}` }, data: { jsonrpc: '2.0', method: 'notifications/initialized' } });

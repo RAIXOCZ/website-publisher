@@ -61,7 +61,7 @@ module.exports = {
   // messages are only written to the log (and, with MAIL_DEV_OUTBOX, exposed
   // at /api/dev/outbox for tests).
   RESEND_API_KEY: process.env.RESEND_API_KEY || '',
-  MAIL_FROM: process.env.MAIL_FROM || `Freepages <noreply@${SITE_DOMAIN || publicUrl.hostname}>`,
+  MAIL_FROM: process.env.MAIL_FROM || `freepages.dev <noreply@${SITE_DOMAIN || publicUrl.hostname}>`,
   MAIL_DEV_OUTBOX: bool(process.env.MAIL_DEV_OUTBOX, false),
   EMAILS_PER_HOUR: int(process.env.EMAILS_PER_HOUR, 10),
 

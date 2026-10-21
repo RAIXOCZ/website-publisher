@@ -52,7 +52,7 @@ Sites that existed before accounts were introduced are moved to the `ADMIN_EMAIL
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `RESEND_API_KEY` | empty | API key of [Resend](https://resend.com) (free tier: 3,000 e-mails a month). Without it no e-mails are sent, so nobody outside the IP whitelist can publish or sign in. |
-| `MAIL_FROM` | `Freepages <noreply@SITE_DOMAIN>` | Sender; must be on a domain verified in Resend. |
+| `MAIL_FROM` | `freepages.dev <noreply@SITE_DOMAIN>` | Sender; must be on a domain verified in Resend. |
 | `ADMIN_EMAIL` | `martin@balcar.me` | The administrator account (name from `ADMIN_FIRST_NAME`/`ADMIN_LAST_NAME`, default Martin Balcar). Created on start; it signs in to `/admin` by e-mail link and owns the sites published before accounts existed. Changing it moves the admin role (and, if the new address has no account yet, the old admin account) to the new address. API tokens never get admin rights. |
 | `RETENTION_DAYS` | `90` | How long deleted sites and accounts are kept before they are purged. |
 | `AUDIT_DAYS` | `365` | Activity history entries are deleted after this. |
@@ -86,7 +86,7 @@ normal API key of the account. Clients without OAuth send an API key from
 the account page as `Authorization: Bearer <key>`.
 
 ```sh
-claude mcp add --transport http freepages https://freepages.dev/mcp
+claude mcp add --transport http freepages.dev https://freepages.dev/mcp
 ```
 
 For AI agents there are also `/llms.txt`, Markdown versions of the public

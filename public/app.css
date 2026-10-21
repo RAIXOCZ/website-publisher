@@ -658,7 +658,7 @@ td .site-url { font: 12px var(--mono); color: var(--muted); overflow-wrap: anywh
 .prose h2:first-child { margin-top: 0; }
 .prose h2, .prose h3 { scroll-margin-top: 100px; }
 /* links inside text are underlined, not told apart by colour alone */
-.prose a, .lead a, .muted a, .notice a, .empty a, .alert a { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+main :is(p, li) a:not(.btn), .consent a { color: var(--teal); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
 .prose h3 { font-size: 17px; margin: 22px 0 6px; }
 .doc-layout .side-nav { border-top: 0; padding-top: 0; }
 .toc { gap: 4px; }
@@ -784,11 +784,11 @@ td .site-url { font: 12px var(--mono); color: var(--muted); overflow-wrap: anywh
 @media (prefers-reduced-motion: reduce) { .preview-dot { animation: none; } }
 
 .identity {
-  display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
   padding-top: 16px; border-top: 1px solid var(--glass-line);
 }
 .identity-lead { grid-column: 1 / -1; margin: 0; font-weight: 600; }
-.identity-remember { grid-column: 1 / -1; }
+.identity-remember, .identity .full { grid-column: 1 / -1; }
 .identity-note { grid-column: 1 / -1; margin: 0; font-size: 13px; color: var(--muted); }
 .signed-as { margin: 0; }
 .pending-text { margin: 0; font-size: 17px; }

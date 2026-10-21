@@ -19,6 +19,15 @@ const { version } = require('../package.json');
 const PROTOCOL_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
 const READ_LIMIT = 1024 * 1024; // read_file returns at most 1 MB of text
 
+// What agents must know before publishing an app made with a framework.
+const BUILD_NOTE = [
+  'Only static files are served (HTML, CSS, JavaScript, images, fonts); there is no server-side code, PHP, Node.js or database.',
+  'Apps made with a framework or build tool (React, Vue, Svelte/SvelteKit, Angular, Astro, Next.js, Nuxt, Vite, Hugo, Jekyll, …) can be published too:',
+  "build them first (e.g. npm run build; SvelteKit with adapter-static, Next.js with output: 'export', Nuxt with nuxi generate)",
+  'and upload only the build output folder (dist/, build/, out/ or .output/public/) with index.html at its root, never the source code or node_modules.',
+  'Single-page apps should use hash routing or prerendered pages, because unknown paths return 404.html.',
+].join(' ');
+
 const fileSchema = {
   type: 'object',
   properties: {
@@ -61,7 +70,8 @@ const TOOLS = [
     description:
       'Publishes a static website from the given files and returns its address. Creates a new site, or with replace=true updates an existing site of the account. ' +
       'With replace=true and keep_other_files=true, only the given files are added or overwritten and the rest of the site stays. ' +
-      'Paths are relative to the site root; index.html is the home page. Text files go as plain text, images and other binary files as base64.',
+      'Paths are relative to the site root; index.html is the home page. Text files go as plain text, images and other binary files as base64. ' +
+      BUILD_NOTE,
     inputSchema: {
       type: 'object',
       properties: {
@@ -234,8 +244,8 @@ async function handle(message, req, user) {
       return reply({
         protocolVersion: PROTOCOL_VERSIONS.includes(params.protocolVersion) ? params.protocolVersion : PROTOCOL_VERSIONS[0],
         capabilities: { tools: { listChanged: false } },
-        serverInfo: { name: 'freepages', title: 'Freepages', version },
-        instructions: `Freepages publishes static websites at ${config.PUBLIC_URL}. Each site gets its own address. Use publish_site with the files of a site (index.html is the home page) and give the user the returned url. Signed in as ${user.email}.`,
+        serverInfo: { name: 'freepages.dev', title: 'freepages.dev', version },
+        instructions: `freepages.dev publishes static websites at ${config.PUBLIC_URL}. Each site gets its own address. Use publish_site with the files of a site (index.html is the home page) and give the user the returned url. ${BUILD_NOTE} Signed in as ${user.email}.`,
       });
     case 'ping':
       return reply({});
@@ -290,4 +300,4 @@ function mount(app, express) {
   app.all('/mcp', (req, res) => res.set('Allow', 'POST').status(405).json(rpcError(null, -32000, 'Method not allowed: this server answers POST requests only.')));
 }
 
-module.exports = { mount, TOOLS };
+module.exports = { mount, TOOLS, BUILD_NOTE };

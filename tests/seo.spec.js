@@ -19,7 +19,7 @@ test('public pages have title, description, canonical, hreflang and social cards
     expect(cs.html).not.toEqual(en.html);
     for (const [lang, { html }] of [['cs', cs], ['en', en]]) {
       const title = html.match(/<title[^>]*>([^<]+)<\/title>/)[1];
-      expect(title, path).toContain('Freepages');
+      expect(title, path).toContain('freepages.dev');
       const description = meta(html, 'name', 'description');
       expect(description?.length, `${path} ${lang}`).toBeGreaterThan(50);
       expect(description?.length, `${path} ${lang}`).toBeLessThan(200);
@@ -46,7 +46,7 @@ test('public pages have title, description, canonical, hreflang and social cards
 test('the home page describes the app with structured data', async ({ request }) => {
   const { html } = await head(request, '/?lang=en');
   const json = JSON.parse(html.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)[1]);
-  expect(json).toMatchObject({ '@type': 'WebApplication', name: 'Freepages', url: `${BASE}/`, offers: { price: '0' } });
+  expect(json).toMatchObject({ '@type': 'WebApplication', name: 'freepages.dev', url: `${BASE}/`, offers: { price: '0' } });
   expect(html.match(/<h1/g)).toHaveLength(1);
 });
 
@@ -107,7 +107,7 @@ test('favicons, app icons, manifest and share images are all served', async ({ r
   expect((await request.get('/favicon.svg')).headers()['content-type']).toContain('image/svg+xml');
 
   const manifest = await (await request.get('/site.webmanifest')).json();
-  expect(manifest.name).toBe('Freepages');
+  expect(manifest.name).toBe('freepages.dev');
   for (const icon of manifest.icons) expect((await request.get(icon.src)).status(), icon.src).toBe(200);
   expect(manifest.icons.some((i) => i.purpose === 'maskable')).toBe(true);
 });

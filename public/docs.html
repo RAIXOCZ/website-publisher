@@ -35,6 +35,7 @@
           <li>Ideálně úvodní stránku <code>index.html</code>. Není povinná: bez ní se zobrazí jediná HTML stránka ve složce, podsložka s <code>index.html</code> (například <code>dist/</code>), nebo seznam souborů.</li>
           <li>Cokoli dalšího: CSS, JavaScript, obrázky, fonty, podsložky. Struktura zůstane zachovaná.</li>
           <li>Fungují jen statické soubory. PHP, Node.js a databáze se nespouští.</li>
+          <li>Web z frameworku (React, Vue, Svelte, Angular, Astro, Next.js, Nuxt, Vite…) jde zveřejnit také: nejdřív ho sestavte (například <code>npm run build</code>; SvelteKit s <code>adapter-static</code>, Next.js s <code>output: 'export'</code>) a nahrajte jen výslednou složku, typicky <code>dist/</code>, <code>build/</code> nebo <code>out/</code>, ne zdrojový kód a <code>node_modules</code>.</li>
           <li>Nedávejte na web osobní údaje, které nemusí být veřejné (svoje ani cizí). Web je veřejný a za jeho obsah odpovídáte vy, viz <a href="/podminky">podmínky použití</a>.</li>
         </ul>
         <pre>muj-web/
@@ -79,13 +80,13 @@ curl -H "Authorization: Bearer $FREEPAGES_TOKEN" \
         <h3>MCP server pro AI asistenty</h3>
         <p>Web může zveřejnit i AI asistent (Claude, Cursor, VS Code a další). V aplikaci přidejte MCP server s adresou <code class="mcp-url">…/mcp</code>. Aplikace se přihlásí sama: otevře okno, kde zadáte e-mail, a přístup potvrdíte odkazem v e-mailu (pokud účet ještě nemáte, tím ho i vytvoříte). Jste-li v prohlížeči přihlášení, stačí kliknout na <b>Povolit přístup</b>.</p>
         <pre><span class="muted"># Claude Code</span>
-claude mcp add --transport http freepages <span class="mcp-url">…/mcp</span></pre>
+claude mcp add --transport http freepages.dev <span class="mcp-url">…/mcp</span></pre>
         <p>Aplikace bez přihlašování (OAuth) připojíte API klíčem v hlavičce:</p>
         <pre><span class="muted"># Claude Code s API klíčem</span>
-claude mcp add --transport http freepages <span class="mcp-url">…/mcp</span> \
+claude mcp add --transport http freepages.dev <span class="mcp-url">…/mcp</span> \
   --header "Authorization: Bearer $FREEPAGES_TOKEN"</pre>
         <pre><span class="muted"># Cursor, VS Code a další (JSON konfigurace)</span>
-{ "mcpServers": { "freepages": { "type": "http", "url": "<span class="mcp-url">…/mcp</span>",
+{ "mcpServers": { "freepages.dev": { "type": "http", "url": "<span class="mcp-url">…/mcp</span>",
   "headers": { "Authorization": "Bearer $FREEPAGES_TOKEN" } } } }</pre>
         <p>Asistent pak umí:</p>
         <ul>
@@ -146,6 +147,7 @@ claude mcp add --transport http freepages <span class="mcp-url">…/mcp</span> \
           <li>Ideally a start page <code>index.html</code>. It is not required: without it the only HTML page in the folder is shown, or a subfolder with an <code>index.html</code> (such as <code>dist/</code>), or a list of files.</li>
           <li>Anything else: CSS, JavaScript, images, fonts, subfolders. The structure is kept as it is.</li>
           <li>Only static files work. PHP, Node.js and databases are not run.</li>
+          <li>Sites made with a framework (React, Vue, Svelte, Angular, Astro, Next.js, Nuxt, Vite…) can be published too: build them first (for example <code>npm run build</code>; SvelteKit with <code>adapter-static</code>, Next.js with <code>output: 'export'</code>) and upload only the resulting folder, typically <code>dist/</code>, <code>build/</code> or <code>out/</code>, not the source code and <code>node_modules</code>.</li>
           <li>Avoid putting personal data on your site unless it needs to be public, whether your own or anyone else's. The site is public and you are responsible for its content, see the <a href="/podminky">terms of use</a>.</li>
         </ul>
         <pre>my-site/
@@ -190,13 +192,13 @@ curl -H "Authorization: Bearer $FREEPAGES_TOKEN" \
         <h3>MCP server for AI assistants</h3>
         <p>An AI assistant (Claude, Cursor, VS Code and others) can publish sites too. Add an MCP server with the address <code class="mcp-url">…/mcp</code> in the app. The app signs in by itself: it opens a window where you enter your e-mail, and you confirm access with a link in the e-mail (which also creates your account if you do not have one). If you are signed in in the browser, just click <b>Allow access</b>.</p>
         <pre><span class="muted"># Claude Code</span>
-claude mcp add --transport http freepages <span class="mcp-url">…/mcp</span></pre>
+claude mcp add --transport http freepages.dev <span class="mcp-url">…/mcp</span></pre>
         <p>Apps without sign-in (OAuth) connect with an API key in a header:</p>
         <pre><span class="muted"># Claude Code with an API key</span>
-claude mcp add --transport http freepages <span class="mcp-url">…/mcp</span> \
+claude mcp add --transport http freepages.dev <span class="mcp-url">…/mcp</span> \
   --header "Authorization: Bearer $FREEPAGES_TOKEN"</pre>
         <pre><span class="muted"># Cursor, VS Code and others (JSON configuration)</span>
-{ "mcpServers": { "freepages": { "type": "http", "url": "<span class="mcp-url">…/mcp</span>",
+{ "mcpServers": { "freepages.dev": { "type": "http", "url": "<span class="mcp-url">…/mcp</span>",
   "headers": { "Authorization": "Bearer $FREEPAGES_TOKEN" } } } }</pre>
         <p>The assistant can then:</p>
         <ul>

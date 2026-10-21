@@ -14,7 +14,7 @@ test('signing in with an e-mail link', async ({ page, browser, request }) => {
   await expect(page.locator('#signin .sent')).toContainText(email);
 
   const mail = await lastMail(request, email, 'login');
-  expect(mail.subject).toBe('Přihlášení do Freepages');
+  expect(mail.subject).toBe('Přihlášení do freepages.dev');
   expect(mail.text).toContain('30 minut');
   await page.goto(new URL(mail.params.link).pathname);
   // A sign-in link signs in right away, no button to press.
@@ -203,7 +203,7 @@ test('an account can be created without uploading a site', async ({ page, reques
   await expect(page.locator('#signin .sent')).toContainText(email);
 
   const mail = await lastMail(request, email, 'register');
-  expect(mail.subject).toBe('Potvrďte registraci do Freepages');
+  expect(mail.subject).toBe('Potvrďte registraci do freepages.dev');
   await page.goto(new URL(mail.params.link).pathname);
   await expect(page.locator('#confirm-title')).toHaveText('Vytvořit účet');
   await page.locator('#confirm-button').click();

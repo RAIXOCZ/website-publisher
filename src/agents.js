@@ -96,9 +96,9 @@ function pageMarkdown(name, lang) {
 function homeMarkdown(lang) {
   const example = sites.siteUrl(lang === 'en' ? 'my-site' : 'muj-web');
   if (lang === 'en') {
-    return `# Freepages – publish a website for free in one drop
+    return `# freepages.dev – publish a website for free in one drop
 
-Freepages publishes static websites. Drop a folder (or a .zip) with HTML, CSS, JavaScript and images, and seconds later it runs at its own address, such as ${example}, with HTTPS.
+freepages.dev publishes static websites. Drop a folder (or a .zip) with HTML, CSS, JavaScript and images, and seconds later it runs at its own address, such as ${example}, with HTTPS.
 
 - Publishing: ${config.PUBLIC_URL}/ (drag and drop in the browser)
 - Guide: ${config.PUBLIC_URL}/docs.md
@@ -107,9 +107,9 @@ Freepages publishes static websites. Drop a folder (or a .zip) with HTML, CSS, J
 - Terms: ${config.PUBLIC_URL}/podminky.md?lang=en · Privacy: ${config.PUBLIC_URL}/soukromi.md?lang=en
 `;
   }
-  return `# Freepages – zveřejněte web zdarma jedním přetažením
+  return `# freepages.dev – zveřejněte web zdarma jedním přetažením
 
-Freepages zveřejňuje statické weby. Přetáhněte složku (nebo .zip) s HTML, CSS, JavaScriptem a obrázky a za pár sekund web běží na vlastní adrese, například ${example}, s HTTPS.
+freepages.dev zveřejňuje statické weby. Přetáhněte složku (nebo .zip) s HTML, CSS, JavaScriptem a obrázky a za pár sekund web běží na vlastní adrese, například ${example}, s HTTPS.
 
 - Zveřejnění: ${config.PUBLIC_URL}/ (přetažením v prohlížeči)
 - Návod: ${config.PUBLIC_URL}/docs.md
@@ -133,11 +133,13 @@ function markdownPath(name) {
 
 function llmsTxt() {
   const u = config.PUBLIC_URL;
-  return `# Freepages
+  return `# freepages.dev
 
 > Free hosting for static websites. A folder of HTML, CSS, JavaScript and images becomes a public website at its own address (${sites.siteUrl('{name}')}) in seconds. AI agents can publish and manage sites for a user through the MCP server or the HTTP API, signed in with the user's API key.
 
-Each site is a set of static files; index.html is the home page, addresses work without .html, and 404.html is the error page. Limits: ${config.SITE_MAX_MB} MB per site, ${config.ACCOUNT_MAX_MB} MB per account. Sites are public; uploading illegal content, phishing or malware is forbidden by the terms. The service and its pages are in Czech and English; add ?lang=en to any link below for English.
+Each site is a set of static files; index.html is the home page, addresses work without .html, and 404.html is the error page. Limits: ${config.SITE_MAX_MB} MB per site, ${config.ACCOUNT_MAX_MB} MB per account. Sites are public; uploading illegal content, phishing or malware is forbidden by the terms.
+
+${require('./mcp').BUILD_NOTE} The service and its pages are in Czech and English; add ?lang=en to any link below for English.
 
 ## For agents
 
@@ -149,7 +151,7 @@ Each site is a set of static files; index.html is the home page, addresses work 
 ## Docs
 
 - [Guide](${u}/docs.md?lang=en): how to publish, what the folder should contain, editing, previews, name rules and limits.
-- [Home page](${u}/index.md?lang=en): what Freepages is.
+- [Home page](${u}/index.md?lang=en): what freepages.dev is.
 
 ## Optional
 
@@ -167,8 +169,8 @@ function serverCard() {
   return {
     version: '1.0',
     protocolVersion: '2025-06-18',
-    serverInfo: { name: 'freepages', title: 'Freepages', version },
-    description: 'Publish and manage static websites on Freepages.',
+    serverInfo: { name: 'freepages.dev', title: 'freepages.dev', version },
+    description: 'Publish and manage static websites on freepages.dev.',
     documentationUrl: `${config.PUBLIC_URL}/docs.md?lang=en`,
     transport: { type: 'streamable-http', endpoint: `${config.PUBLIC_URL}/mcp` },
     authentication: {
@@ -189,7 +191,7 @@ function openApi() {
   return {
     openapi: '3.1.0',
     info: {
-      title: 'Freepages API',
+      title: 'freepages.dev API',
       version,
       description: `Publish static websites. Authenticate with an API key from ${config.PUBLIC_URL}/ucet#api-klice ("Authorization: Bearer <key>"). For AI agents the MCP server at ${config.PUBLIC_URL}/mcp is usually easier.`,
     },

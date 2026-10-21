@@ -38,7 +38,7 @@ function metadata() {
       authorization_servers: [u],
       bearer_methods_supported: ['header'],
       scopes_supported: [SCOPE],
-      resource_name: 'Freepages',
+      resource_name: 'freepages.dev',
       resource_documentation: `${u}/docs.md?lang=en`,
     },
   };
