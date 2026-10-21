@@ -989,3 +989,4 @@ textarea:focus { border-color: var(--teal-2); box-shadow: 0 0 0 4px var(--ring);
   .topbar .bar, .menu, .dialog, .toast { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--page); }
   :root { --glass-line: color-mix(in srgb, var(--ink) 25%, transparent); --glass: var(--page); --glass-strong: var(--page); }
 }
+.subhead { margin: 10px 0 0; font-size: 17px; }

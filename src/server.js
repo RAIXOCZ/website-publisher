@@ -13,6 +13,7 @@ const db = require('./db');
 const { serveSite, page } = require('./serve');
 const seo = require('./seo');
 const layout = require('./layout');
+const mcp = require('./mcp');
 const stats = require('./stats');
 const { langOf, t } = require('./i18n');
 
@@ -601,6 +602,7 @@ if (config.MAIL_DEV_OUTBOX) {
 
 api.use((req, res) => fail(req, res, 404, 'notFound'));
 app.use('/api', api);
+mcp.mount(app, express);
 
 // 3. <PUBLIC_URL>/<name>/... → site (or redirect to its subdomain).
 app.use((req, res, next) => {

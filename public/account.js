@@ -35,6 +35,7 @@ async function load() {
   $('#delete-account').hidden = user.isAdmin;
   $('#delete-admin').hidden = !user.isAdmin;
   $('#curl-example').textContent = curlExample();
+  $('#mcp-example').textContent = mcpExample();
   renderSites(sites);
   renderUsage(usage);
   renderVisits(sites);
@@ -144,6 +145,19 @@ function curlExample(token = '$FREEPAGES_TOKEN') {
   ].join('\n');
 }
 
+// How to connect an AI assistant to the MCP server at /mcp.
+function mcpExample(token = '$FREEPAGES_TOKEN') {
+  const url = `${location.origin}/mcp`;
+  return [
+    t('account.mcpClaude'),
+    `claude mcp add --transport http freepages ${url} \\`,
+    `  --header "Authorization: Bearer ${token}"`,
+    '',
+    t('account.mcpJson'),
+    JSON.stringify({ mcpServers: { freepages: { type: 'http', url, headers: { Authorization: `Bearer ${token}` } } } }, null, 2),
+  ].join('\n');
+}
+
 function renderTokens(tokens) {
   const active = tokens.filter((tok) => !tok.revokedAt);
   $('#tokens-table').hidden = active.length === 0;
@@ -178,6 +192,7 @@ $('#token-form').addEventListener('submit', async (e) => {
     $('#token-value').textContent = token;
     $('#token-new').hidden = false;
     $('#curl-example').textContent = curlExample(token);
+    $('#mcp-example').textContent = mcpExample(token);
   } catch (err) {
     uiError(err);
   }

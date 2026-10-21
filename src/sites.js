@@ -5,6 +5,7 @@ const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
 const { pipeline } = require('stream/promises');
+const { Readable } = require('stream');
 const Busboy = require('busboy');
 const yauzl = require('yauzl');
 const config = require('./config');
@@ -14,7 +15,7 @@ const accounts = require('./accounts');
 const NAME_RE = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 const RESERVED = new Set([
   'admin', 'api', 'app', 'docs', 'podminky', 'soukromi', 'terms', 'privacy', 'ucet', 'account', 'email', 'www', 'static',
-  'assets', 'login', 'logout', 'mail', 'ftp', 'dashboard', 'favicon.ico', 'robots.txt', 'preview',
+  'assets', 'login', 'logout', 'mail', 'ftp', 'dashboard', 'favicon.ico', 'robots.txt', 'preview', 'mcp',
 ]);
 // preview-xxxxxx addresses belong to temporary previews; no site may use them.
 const PREVIEW_PREFIX = 'preview-';
@@ -341,6 +342,30 @@ async function parseUpload(req) {
   };
 }
 
+// The same kind of upload as parseUpload gives, from files sent as data
+// ({ path, content, encoding: 'utf8' | 'base64' }), for the MCP server.
+async function uploadFromFiles(files, { name = '', keep = [] } = {}) {
+  const work = path.join(config.TMP_DIR, `up-${crypto.randomUUID()}`);
+  const raw = path.join(work, 'raw');
+  await fsp.mkdir(raw, { recursive: true });
+  const budget = new Budget();
+  const uploaded = [];
+  const cleanup = () => fsp.rm(work, { recursive: true, force: true }).catch(() => {});
+  try {
+    for (const file of Array.isArray(files) ? files : []) {
+      const segments = cleanPath(file?.path);
+      if (!segments) continue;
+      const data = Buffer.from(String(file.content ?? ''), file.encoding === 'base64' ? 'base64' : 'utf8');
+      await writeFile(raw, segments, Readable.from([data]), budget);
+      uploaded.push(segments);
+    }
+  } catch (err) {
+    await cleanup();
+    throw err;
+  }
+  return { work, raw, uploaded, keep, budget, cleanup, fields: { name, exact: true } };
+}
+
 /**
  * Turns a parsed upload into the folder that will be published. Kept files
  * are copied from `baseDir` (an existing site the caller may edit).
@@ -651,6 +676,7 @@ module.exports = {
   checkSitePassword,
   resetPassword,
   parseUpload,
+  uploadFromFiles,
   assemble,
   createSite,
   replaceSite,

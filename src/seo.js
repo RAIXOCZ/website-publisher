@@ -134,6 +134,7 @@ function robots() {
     'Disallow: /account',
     'Disallow: /email/',
     'Disallow: /api/',
+    'Disallow: /mcp',
     '',
     `Sitemap: ${config.PUBLIC_URL}/sitemap.xml`,
     '',

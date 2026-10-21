@@ -75,6 +75,22 @@ Sites that existed before accounts were introduced are moved to the `ADMIN_EMAIL
 4. In the domain settings, keep **click and open tracking off**, otherwise the one-time links are rewritten through Resend.
 5. Accept Resend's data processing agreement (DPA) in the account settings; the privacy policy relies on it.
 
+## MCP server
+
+AI assistants can publish and manage sites through the MCP server at
+`<PUBLIC_URL>/mcp` (Streamable HTTP, stateless JSON responses). It
+authenticates with an API token from the account page:
+
+```sh
+claude mcp add --transport http freepages https://freepages.dev/mcp \
+  --header "Authorization: Bearer $FREEPAGES_TOKEN"
+```
+
+Tools: `list_sites`, `list_files`, `read_file`, `publish_site` (files as
+text or base64, optionally updating only some files of an existing site),
+`create_preview`, `rename_site`, `delete_site` and `get_visits`. A token
+only reaches the sites of its own account; admin rights never come through it.
+
 ## Deploying with Cloudflare Tunnel
 
 The setup used here: the publisher runs on `https://freepages.dev` and every site gets its own subdomain, `https://<name>.freepages.dev/`. `www.freepages.dev` redirects to the publisher. Cloudflare's free Universal SSL covers both `freepages.dev` and `*.freepages.dev`.

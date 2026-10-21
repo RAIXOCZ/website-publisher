@@ -73,6 +73,19 @@ curl -H "Authorization: Bearer $FREEPAGES_TOKEN" \
           <li>Odpověď je JSON s adresou webu (<code>url</code>). Chyby vrací <code>{"error": "…"}</code> s HTTP kódem 4xx.</li>
         </ul>
 
+        <h2>MCP server pro AI asistenty</h2>
+        <p>Freepages má MCP server, takže web může zveřejnit i AI asistent (Claude, Cursor, VS Code a další). Připojíte ho adresou <code class="mcp-url">…/mcp</code> a API tokenem z <a href="/ucet#cli">Účtu</a>:</p>
+        <pre><span class="muted"># Claude Code</span>
+claude mcp add --transport http freepages <span class="mcp-url">…/mcp</span> \
+  --header "Authorization: Bearer $FREEPAGES_TOKEN"</pre>
+        <p>V jiných aplikacích zadejte adresu serveru (typ HTTP) a hlavičku <code>Authorization: Bearer …</code> s tokenem. Asistent pak umí:</p>
+        <ul>
+          <li>zveřejnit nebo aktualizovat web ze souborů (<code>publish_site</code>) a vytvořit náhled (<code>create_preview</code>),</li>
+          <li>vypsat vaše weby a jejich soubory a přečíst soubor (<code>list_sites</code>, <code>list_files</code>, <code>read_file</code>),</li>
+          <li>přejmenovat a smazat web (<code>rename_site</code>, <code>delete_site</code>) a zjistit návštěvnost (<code>get_visits</code>).</li>
+        </ul>
+        <p>Asistent má stejná práva jako token: vidí a mění jen weby vašeho účtu. Token kdykoli zrušíte na stránce Účet.</p>
+
         <h2>Weby s heslem</h2>
         <p>Z IP adres, které povolí správce, lze zveřejňovat bez účtu. Takový web dostane heslo (například <code>k7mq-2xpa-9fve</code>), které se uloží do prohlížeče; bez něj web nejde nahradit ani smazat. Na jiném zařízení ho přidáte tlačítkem <b>Přidat web s heslem</b>.</p>
 
@@ -161,6 +174,19 @@ curl -H "Authorization: Bearer $FREEPAGES_TOKEN" \
           <li><code>preview=1</code> – creates a 5-minute preview instead of publishing; its address is in the response. A new preview of your account deletes the previous one.</li>
           <li>The response is JSON with the site's address (<code>url</code>). Errors return <code>{"error": "…"}</code> with a 4xx HTTP status.</li>
         </ul>
+
+        <h2>MCP server for AI assistants</h2>
+        <p>Freepages has an MCP server, so an AI assistant (Claude, Cursor, VS Code and others) can publish sites too. Connect it with the address <code class="mcp-url">…/mcp</code> and an API token from your <a href="/ucet#cli">Account</a>:</p>
+        <pre><span class="muted"># Claude Code</span>
+claude mcp add --transport http freepages <span class="mcp-url">…/mcp</span> \
+  --header "Authorization: Bearer $FREEPAGES_TOKEN"</pre>
+        <p>In other apps, enter the server address (HTTP type) and the header <code>Authorization: Bearer …</code> with your token. The assistant can then:</p>
+        <ul>
+          <li>publish or update a site from files (<code>publish_site</code>) and create a preview (<code>create_preview</code>),</li>
+          <li>list your sites and their files and read a file (<code>list_sites</code>, <code>list_files</code>, <code>read_file</code>),</li>
+          <li>rename and delete a site (<code>rename_site</code>, <code>delete_site</code>) and check visits (<code>get_visits</code>).</li>
+        </ul>
+        <p>The assistant has the same rights as the token: it sees and changes only your account's sites. You can revoke the token at any time on the Account page.</p>
 
         <h2>Password sites</h2>
         <p>From IP addresses allowed by the administrator, sites can be published without an account. Such a site gets a password (for example <code>k7mq-2xpa-9fve</code>), saved in your browser; without it the site cannot be replaced or deleted. On another device, add it with <b>Add a password site</b>.</p>
