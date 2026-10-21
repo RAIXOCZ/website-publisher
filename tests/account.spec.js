@@ -32,9 +32,11 @@ test('signing in with an e-mail link', async ({ page, browser, request }) => {
 test('signing in with an unknown e-mail looks the same, but the e-mail says there is no account', async ({ page, request }) => {
   const email = uniqueEmail('nobody');
   await page.goto('/');
-  await page.locator('#login-inline input[name=email]').fill(email);
-  await page.locator('#login-inline button').click();
-  await expect(page.locator('#login-inline .sent')).toContainText(email);
+  await page.locator('#login-inline a').click();
+  await expect(page).toHaveURL('/ucet');
+  await page.locator('#signin-form input[name=email]').fill(email);
+  await page.locator('#signin-form button').click();
+  await expect(page.locator('#signin-form .sent')).toContainText(email);
   const mail = await lastMail(request, email);
   expect(mail.kind).toBe('loginNoAccount');
   expect(mail.params.link).toBeUndefined();

@@ -1092,7 +1092,6 @@ $('#add-form').addEventListener('submit', async (e) => {
   }
 });
 
-setupEmailLogin($('#login-inline'));
 
 init().catch((err) => {
   document.querySelector('main').textContent = t('err.load', { message: err.message });

@@ -150,14 +150,10 @@
           </div>
         </div>
 
-        <form class="login-inline glass" id="login-inline" hidden>
-          <p data-i18n="my.loginText">Weby jsou vázané na váš e-mail. Přihlaste se odkazem, který vám pošleme, a můžete je upravovat a mazat.</p>
-          <div class="row stack-sm align-end">
-            <label class="labeled grow"><span data-i18n="identity.email">E-mail</span><input type="email" name="email" data-i18n-placeholder="identity.emailExample" placeholder="jana@example.cz" autocomplete="email" required></label>
-            <button class="btn" type="submit" data-i18n="login.send">Poslat přihlašovací odkaz</button>
-          </div>
-          <div class="alert" hidden></div>
-        </form>
+        <div class="login-inline glass" id="login-inline" hidden>
+          <p data-i18n="my.loginText">Weby jsou vázané na váš e-mail. Přihlaste se a můžete je upravovat a mazat.</p>
+          <a class="btn" href="/ucet" data-i18n="nav.login">Přihlásit se</a>
+        </div>
 
         <form class="add-form glass" id="add-form" hidden>
           <label class="labeled"><span data-i18n="my.namePlaceholder">Název webu</span><input type="text" name="site" autocomplete="off" spellcheck="false" required></label>
