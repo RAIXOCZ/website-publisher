@@ -10,7 +10,7 @@ let request;
 function fail(message) {
   $('#oauth-title').textContent = t('oauth.invalidTitle');
   $('#oauth-text').textContent = message;
-  for (const id of ['#oauth-signed', '#oauth-form', '#oauth-wait']) $(id).hidden = true;
+  $('#oauth-body').hidden = true;
 }
 
 const goTo = (url) => location.replace(url);
@@ -51,8 +51,19 @@ async function init() {
   document.title = `${t('oauth.title', { name: request.client.name })} – Freepages`;
   $('#oauth-title').textContent = t('oauth.title', { name: request.client.name });
   $('#oauth-text').textContent = t('oauth.text', { name: request.client.name, host: request.client.host });
+  $('#oauth-body').hidden = false;
   if (request.user) {
-    $('#oauth-signed-as').textContent = t('oauth.signedAs', { email: request.user.email });
+    // "Signing in as x. You can sign in to another account."
+    const line = $('#oauth-signed-as');
+    const [before, after] = t('oauth.signedAs', { email: '\u0000' }).split('\u0000');
+    const other = Object.assign(document.createElement('a'), { href: '#', id: 'oauth-other', textContent: t('oauth.otherAccount') });
+    other.addEventListener('click', (e) => {
+      e.preventDefault();
+      $('#oauth-signed').hidden = true;
+      $('#oauth-form').hidden = false;
+      $('#oauth-form input[name=email]').focus();
+    });
+    line.replaceChildren(before, Object.assign(document.createElement('b'), { textContent: request.user.email }), after, ' ', other, t('oauth.otherAccountTail'));
     $('#oauth-signed').hidden = false;
   } else {
     $('#oauth-form').hidden = false;
@@ -62,10 +73,6 @@ async function init() {
 $('#oauth-allow').addEventListener('click', () => decide('approve'));
 $('#oauth-deny').addEventListener('click', () => decide('deny'));
 $('#oauth-deny-2').addEventListener('click', () => decide('deny'));
-$('#oauth-other').addEventListener('click', () => {
-  $('#oauth-signed').hidden = true;
-  $('#oauth-form').hidden = false;
-});
 
 $('#oauth-form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -81,7 +88,6 @@ $('#oauth-form').addEventListener('submit', async (e) => {
     });
     form.hidden = true;
     $('#oauth-title').textContent = t('oauth.waitTitle');
-    $('#oauth-text').hidden = true;
     $('#oauth-wait-text').textContent = t('oauth.waitText', { email });
     $('#oauth-wait').hidden = false;
     waitForApproval();

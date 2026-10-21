@@ -12,38 +12,55 @@
 
   <main>
     <div class="wrap page">
-      <section class="login glass confirm" id="oauth">
-        <h2 id="oauth-title" data-i18n="confirm.loading">Načítám…</h2>
-        <p class="muted" id="oauth-text"></p>
-
-        <div id="oauth-signed" hidden>
-          <p id="oauth-signed-as"></p>
-          <div class="row">
-            <button class="btn btn-primary" type="button" id="oauth-allow" data-i18n="oauth.allow">Povolit přístup</button>
-            <button class="btn" type="button" id="oauth-deny" data-i18n="oauth.deny">Zamítnout</button>
+      <section class="oauth glass" id="oauth">
+        <header class="oauth-head">
+          <span class="oauth-icon" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7H6a3 3 0 0 0 0 6h3M15 7h3a3 3 0 0 1 0 6h-3M8 10h8"/></svg></span>
+          <div>
+            <h1 id="oauth-title" data-i18n="confirm.loading">Načítám…</h1>
+            <p class="muted" id="oauth-text"></p>
           </div>
-          <button class="btn btn-quiet btn-sm mt" type="button" id="oauth-other" data-i18n="oauth.otherAccount">Použít jiný účet</button>
+        </header>
+
+        <div class="oauth-body" id="oauth-body" hidden>
+          <div class="oauth-perms">
+            <p class="side-title" data-i18n="oauth.canTitle">Aplikace bude moci</p>
+            <ul>
+              <li data-i18n="oauth.can1">zveřejňovat nové weby,</li>
+              <li data-i18n="oauth.can2">upravovat, přejmenovávat a mazat vaše weby,</li>
+              <li data-i18n="oauth.can3">číst soubory a návštěvnost vašich webů.</li>
+            </ul>
+            <p class="muted small" data-i18n="oauth.revoke">Přístup kdykoli zrušíte v Účtu v části API klíče.</p>
+          </div>
+
+          <div class="oauth-action">
+            <div id="oauth-signed" hidden>
+              <p id="oauth-signed-as"></p>
+              <div class="row">
+                <button class="btn btn-primary" type="button" id="oauth-allow" data-i18n="oauth.allow">Povolit přístup</button>
+                <button class="btn" type="button" id="oauth-deny" data-i18n="oauth.deny">Zamítnout</button>
+              </div>
+            </div>
+
+            <form id="oauth-form" hidden>
+              <p data-i18n="oauth.emailText">Zadejte svůj e-mail.</p>
+              <label class="labeled"><span data-i18n="identity.email">E-mail</span><input type="email" name="email" data-i18n-placeholder="identity.emailExample" placeholder="jana@example.cz" autocomplete="email" required></label>
+              <div class="oauth-names" id="oauth-names" hidden>
+                <label class="labeled"><span data-i18n="identity.first">Jméno</span><input type="text" name="firstName" autocomplete="given-name" maxlength="80"></label>
+                <label class="labeled"><span data-i18n="identity.last">Příjmení</span><input type="text" name="lastName" autocomplete="family-name" maxlength="80"></label>
+              </div>
+              <div class="alert" hidden></div>
+              <div class="row">
+                <button class="btn btn-primary" type="submit" data-i18n="oauth.send">Poslat potvrzení</button>
+                <button class="btn" type="button" id="oauth-deny-2" data-i18n="oauth.deny">Zamítnout</button>
+              </div>
+              <p class="consent" id="oauth-consent" hidden data-i18n-html="register.consent"></p>
+            </form>
+
+            <div id="oauth-wait" hidden>
+              <p class="notice" id="oauth-wait-text"></p>
+            </div>
+          </div>
         </div>
-
-        <form id="oauth-form" hidden>
-          <p class="muted" data-i18n="oauth.emailText">Zadejte svůj e-mail.</p>
-          <label class="labeled"><span data-i18n="identity.email">E-mail</span><input type="email" name="email" data-i18n-placeholder="identity.emailExample" placeholder="jana@example.cz" autocomplete="email" required></label>
-          <div class="row" id="oauth-names" hidden>
-            <label class="labeled grow"><span data-i18n="identity.first">Jméno</span><input type="text" name="firstName" autocomplete="given-name" maxlength="80"></label>
-            <label class="labeled grow"><span data-i18n="identity.last">Příjmení</span><input type="text" name="lastName" autocomplete="family-name" maxlength="80"></label>
-          </div>
-          <div class="alert" hidden></div>
-          <div class="row">
-            <button class="btn btn-primary" type="submit" data-i18n="oauth.send">Poslat potvrzení</button>
-            <button class="btn" type="button" id="oauth-deny-2" data-i18n="oauth.deny">Zamítnout</button>
-          </div>
-          <p class="consent" id="oauth-consent" hidden data-i18n-html="register.consent"></p>
-        </form>
-
-        <div id="oauth-wait" hidden>
-          <p class="notice" id="oauth-wait-text"></p>
-        </div>
-        <div class="alert" id="oauth-error" hidden></div>
       </section>
     </div>
   </main>

@@ -853,6 +853,27 @@ table.audit td, table.tokens td { font-size: 14px; }
 table.audit td.detail { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
 .danger-zone { border-color: var(--danger-line); }
 .confirm { text-align: left; }
+
+/* ---------- connecting an app (OAuth) ---------- */
+
+.oauth { width: 100%; max-width: 760px; margin: 5vh auto 0; padding: 32px; border-radius: var(--r-lg); display: flex; flex-direction: column; gap: 26px; }
+.oauth-head { display: flex; gap: 18px; align-items: flex-start; }
+.oauth-head h1 { font-size: 32px; line-height: 1.15; overflow-wrap: anywhere; }
+.oauth-head p { margin: 8px 0 0; }
+.oauth-icon { flex: none; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; color: #fff; background: var(--accent-fill); }
+.oauth-body { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 28px; padding-top: 24px; border-top: 1px solid var(--glass-line); }
+.oauth-perms ul { margin: 8px 0 14px; padding-left: 1.2rem; }
+.oauth-perms li { margin: 6px 0; }
+.oauth-perms .side-title { padding: 0; }
+.oauth-action > div, .oauth-action form { display: flex; flex-direction: column; gap: 14px; }
+.oauth-action p { margin: 0; }
+.oauth-names { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 640px) {
+  .oauth { padding: 22px; margin-top: 0; }
+  .oauth-head h1 { font-size: 26px; }
+  .oauth-icon { width: 44px; height: 44px; }
+  .oauth-body, .oauth-names { grid-template-columns: 1fr; }
+}
 .confirm .row { margin-top: 16px; }
 
 /* ---------- admin ---------- */

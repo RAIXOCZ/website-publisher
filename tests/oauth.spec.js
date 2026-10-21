@@ -49,7 +49,9 @@ test('signed in: one click allows the app, and its key works with MCP', async ({
   const client = await startClient(request);
   const target = await catchRedirect(page);
   await page.goto(client.url);
-  await expect(page.locator('#oauth-title')).toHaveText('Připojit Test Agent k Freepages');
+  await expect(page.locator('#oauth-title')).toHaveText('Připojit Test Agent');
+  await expect(page.locator('#oauth-signed-as')).toContainText('Přihlašujete se jako');
+  await expect(page.locator('#oauth-other')).toHaveText('můžete se přihlásit do jiného účtu');
   await page.locator('#oauth-allow').click();
   await expect.poll(() => Boolean(target())).toBe(true);
   expect(target().searchParams.get('state')).toBe(client.state);
