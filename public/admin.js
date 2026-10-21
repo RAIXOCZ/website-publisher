@@ -80,16 +80,20 @@ function renderSites() {
       size[0].textContent = `${filesLabel(site.files)} · ${formatBytes(site.bytes)}`;
       size[1].textContent = t('chip.updated', { ago: timeAgo(site.updatedAt) });
       size[1].title = formatDateTime(site.updatedAt);
-      // Same order as everywhere: edit, the rest, history, delete last.
+      // An edit button and history; the rest is under "⋯", delete last.
       // "Delete permanently" is offered only once a site is deleted.
-      const actions = [];
-      if (!site.deletedAt) {
-        actions.push(`<a class="btn btn-sm btn-accent" href="/?edit=${encodeURIComponent(site.name)}">${t('row.edit')}</a>`);
-        actions.push(button(t('row.rename'), 'rename'));
-        if (!site.owner) actions.push(button(t('row.newPw'), 'password'));
+      let actions;
+      if (site.deletedAt) actions = [button(t('admin.history'), 'audit'), button(t('admin.purge'), 'purge', 'btn-danger')];
+      else {
+        const more = [[t('row.rename'), 'rename']];
+        if (!site.owner) more.push([t('row.newPw'), 'password']);
+        more.push('-', [t('row.delete'), 'delete', 'btn-danger']);
+        actions = [
+          `<a class="btn btn-sm btn-accent" href="/?edit=${encodeURIComponent(site.name)}">${t('row.edit')}</a>`,
+          button(t('admin.history'), 'audit'),
+          moreMenu(more),
+        ];
       }
-      actions.push(button(t('admin.history'), 'audit', 'btn-quiet'));
-      actions.push(site.deletedAt ? button(t('admin.purge'), 'purge', 'btn-danger') : button(t('row.delete'), 'delete', 'btn-danger'));
       cell(tr, 2).innerHTML = `<div class="actions-wrap">${actions.join('')}</div>`;
       return tr;
     }),
@@ -168,14 +172,16 @@ function renderUsers() {
       $('td:nth-child(2) span', tr).textContent = formatDateTime(user.createdAt);
       $('td:nth-child(2) code', tr).textContent = user.createdIp || '';
       cell(tr, 2).textContent = user.deletedSites ? `${user.sites} (+${user.deletedSites} ${t('admin.deletedShort')})` : String(user.sites);
-      const actions = [button(t('admin.sites'), 'sites')];
-      if (!user.isAdmin && !user.deletedAt) actions.push(user.blockedAt ? button(t('admin.unblock'), 'unblock') : button(t('admin.block'), 'block'));
-      actions.push(button(t('admin.history'), 'audit', 'btn-quiet'));
+      const actions = [button(t('admin.sites'), 'sites'), button(t('admin.history'), 'audit')];
       if (user.isAdmin) {
         $('.owner-name', tr).insertAdjacentHTML('beforeend', `<span class="chip">${t('admin.adminChip')}</span>`);
       } else {
         if (user.blockedAt) $('.owner-name', tr).insertAdjacentHTML('beforeend', `<span class="chip chip-danger">${t('admin.blockedChip')}</span>`);
-        actions.push(user.deletedAt ? button(t('admin.purge'), 'purge', 'btn-danger') : button(t('row.delete'), 'delete', 'btn-danger'));
+        if (user.deletedAt) actions.push(moreMenu([[t('admin.purge'), 'purge', 'btn-danger']]));
+        else {
+          const block = user.blockedAt ? [t('admin.unblock'), 'unblock'] : [t('admin.block'), 'block'];
+          actions.push(moreMenu([block, '-', [t('row.delete'), 'delete', 'btn-danger']]));
+        }
       }
       cell(tr, 3).innerHTML = `<div class="actions-wrap">${actions.join('')}</div>`;
       return tr;

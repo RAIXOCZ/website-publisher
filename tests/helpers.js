@@ -35,6 +35,13 @@ async function pickAndPublish(page, locator, files) {
 
 const htmlFile = (html) => ({ name: 'index.html', mimeType: 'text/html', buffer: Buffer.from(html) });
 
+// Runs a row action, opening the row's "⋯" menu first when the action is in it.
+async function rowAction(row, action) {
+  const item = row.locator(`[data-action=${action}]`);
+  if (!(await item.isVisible())) await row.locator('.more-btn').click();
+  await item.click();
+}
+
 /* ---------- e-mail (the test servers run with MAIL_DEV_OUTBOX=1) ---------- */
 
 // The newest e-mail of `kind` sent to `email`; waits for it to arrive.
@@ -158,6 +165,7 @@ async function clipboard(page) {
 }
 
 module.exports = {
+  rowAction,
   FIXTURES,
   ADMIN_EMAIL,
   PASSWORD_RE,

@@ -5,6 +5,10 @@
 // admin panel; `endpoint` is /me/stats or /admin/stats.
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
+const VIEW_ICONS = {
+  chart: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>',
+  table: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M3.5 15h17M10 10v9.5"/></svg>',
+};
 
 function statsPanel(root, { endpoint, siteNames = [] }) {
   const state = { site: '', range: '24h', data: null };
@@ -12,7 +16,11 @@ function statsPanel(root, { endpoint, siteNames = [] }) {
   root.innerHTML = `
     <div class="stats-filters">
       <select class="stats-site" aria-label=""></select>
-      <div class="segmented" role="group"></div>
+      <div class="segmented stats-ranges" role="group"></div>
+      <div class="segmented view-switch" role="group">
+        <button type="button" data-view="chart" aria-pressed="true">${VIEW_ICONS.chart}</button>
+        <button type="button" data-view="table" aria-pressed="false">${VIEW_ICONS.table}</button>
+      </div>
     </div>
     <div class="stats-tiles">
       <div class="stat-tile"><span class="stat-label"></span><b class="stat-value" data-stat="total">–</b></div>
@@ -20,7 +28,7 @@ function statsPanel(root, { endpoint, siteNames = [] }) {
     </div>
     <div class="chart" role="img"><svg></svg><div class="chart-tip" hidden><b></b><span></span></div><p class="chart-empty" hidden></p></div>
     <ul class="stats-sites"></ul>
-    <details class="stats-table"><summary></summary><div class="table-wrap"><table><thead><tr><th></th><th class="num"></th></tr></thead><tbody></tbody></table></div></details>
+    <div class="stats-table table-wrap" hidden><table><thead><tr><th></th><th class="num"></th></tr></thead><tbody></tbody></table></div>
     <p class="muted small stats-note"></p>`;
 
   const select = $('.stats-site', root);
@@ -33,7 +41,7 @@ function statsPanel(root, { endpoint, siteNames = [] }) {
     load();
   });
 
-  const segmented = $('.segmented', root);
+  const segmented = $('.stats-ranges', root);
   segmented.setAttribute('aria-label', t('stats.range'));
   for (const range of ['24h', '7d', '30d']) {
     const button = document.createElement('button');
@@ -49,7 +57,20 @@ function statsPanel(root, { endpoint, siteNames = [] }) {
     segmented.append(button);
   }
   $$('.stat-label', root)[0].textContent = t('stats.total');
-  $('summary', root).textContent = t('stats.table');
+  // Chart or table: the same numbers, two ways to read them.
+  const views = $('.view-switch', root);
+  views.setAttribute('aria-label', t('stats.view'));
+  for (const b of views.children) {
+    const label = t(b.dataset.view === 'chart' ? 'stats.viewChart' : 'stats.viewTable');
+    b.setAttribute('aria-label', label);
+    b.title = label;
+    b.addEventListener('click', () => {
+      for (const other of views.children) other.setAttribute('aria-pressed', String(other === b));
+      const table = b.dataset.view === 'table';
+      $('.chart', root).hidden = table;
+      $('.stats-table', root).hidden = !table;
+    });
+  }
   $$('th', root)[0].textContent = t('stats.when');
   $$('th', root)[1].textContent = t('stats.views');
   $('.stats-note', root).textContent = t('stats.note');

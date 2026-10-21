@@ -2,7 +2,7 @@
 // The :4319 server has this machine on its IP whitelist: publishing works
 // without an account, and every site gets a password (the original mode).
 const { test, expect } = require('./test');
-const { FIXTURES, HEADERS, PASSWORD_RE, unique, pick, pickAndPublish, publishViaApi, answerModal, clipboard } = require('./helpers');
+const { rowAction, FIXTURES, HEADERS, PASSWORD_RE, unique, pick, pickAndPublish, publishViaApi, answerModal, clipboard } = require('./helpers');
 
 const BASE = 'http://localhost:4319';
 test.use({ baseURL: BASE, permissions: ['clipboard-read', 'clipboard-write'] });
@@ -30,7 +30,7 @@ test('publishes without e-mail and shows the site password', async ({ page }) =>
   expect(await clipboard(page)).toBe(password);
 
   const card = page.locator(`.site-card[data-name="${name}"]`);
-  await card.locator('[data-action=password]').click();
+  await rowAction(card, 'password');
   await expect(card.locator('.site-pw code')).toHaveText(password);
 });
 
@@ -68,7 +68,7 @@ test('"Smazat" deletes the site and removes it from the list', async ({ page, re
   const name = unique('wldel');
   await page.goto('/');
   await publishViaUi(page, name);
-  await page.locator(`.site-card[data-name="${name}"] [data-action=delete]`).click();
+  await rowAction(page.locator(`.site-card[data-name="${name}"]`), 'delete');
   await answerModal(page, true);
   await expect(page.locator(`.site-card[data-name="${name}"]`)).toHaveCount(0);
   expect((await request.get(`/${name}/`)).status()).toBe(404);
@@ -103,7 +103,7 @@ test('a site deleted elsewhere can be removed from the list', async ({ page, req
   const card = page.locator(`.site-card[data-name="${name}"]`);
   await expect(card.locator('.site-status')).toHaveText('Web už neexistuje (byl smazán nebo přejmenován).');
   await expect(card.locator('[data-action=edit]')).toBeHidden();
-  await card.locator('[data-action=forget]').click();
+  await rowAction(card, 'forget');
   await expect(card).toHaveCount(0);
 });
 

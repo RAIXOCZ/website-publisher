@@ -41,7 +41,8 @@ test('page views are counted per site and hour and shown as a chart', async ({ p
   await expect(visits.locator('.chart-tip')).toBeVisible();
   await expect(visits.locator('.chart-tip b')).toHaveText('1 zobrazení');
   // The same numbers are available as a table.
-  await visits.locator('.stats-table summary').click();
+  await visits.locator('[data-view=table]').click();
+  await expect(visits.locator('.chart')).toBeHidden();
   await expect(visits.locator('.stats-table tbody tr').first()).toContainText('1');
 
   // Other people's sites are not in your statistics.

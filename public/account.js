@@ -57,8 +57,7 @@ function renderSites(sites) {
         <div class="site-actions">
           <a class="btn btn-sm btn-accent" data-action="edit"></a>
           <button class="btn btn-sm" data-action="copy"></button>
-          <button class="btn btn-sm" data-action="rename"></button>
-          <button class="btn btn-sm btn-danger" data-action="delete"></button>
+          ${moreMenu([[t('row.rename'), 'rename'], '-', [t('row.delete'), 'delete', 'btn-danger']])}
         </div>`;
       $('h3', card).textContent = site.name;
       $('.site-url', card).textContent = site.url;
@@ -66,8 +65,6 @@ function renderSites(sites) {
       $('[data-action=edit]', card).textContent = t('row.edit');
       $('[data-action=copy]', card).textContent = t('row.copyLink');
       $('[data-action=edit]', card).href = `/?edit=${encodeURIComponent(site.name)}`;
-      $('[data-action=rename]', card).textContent = t('row.rename');
-      $('[data-action=delete]', card).textContent = t('row.delete');
       const chips = [filesLabel(site.files), formatBytes(site.bytes), t('chip.updated', { ago: timeAgo(site.updatedAt) })];
       $('.site-meta', card).replaceChildren(...chips.map((text) => Object.assign(document.createElement('span'), { className: 'chip', textContent: text })));
       return card;
@@ -99,9 +96,8 @@ $('#sites').addEventListener('click', async (e) => {
 });
 
 // How much of the account's storage the sites use (the admin has no limit).
-function renderUsage({ used, limit, siteLimit }) {
+function renderUsage({ used, limit }) {
   $('#usage-text').textContent = limit ? t('usage.used', { used: formatBytes(used), limit: formatBytes(limit) }) : t('usage.unlimited', { used: formatBytes(used) });
-  $('#usage-limit').textContent = t('usage.siteLimit', { limit: formatBytes(siteLimit) });
   const share = limit ? Math.min(1, used / limit) : 0;
   $('#usage-bar').style.width = `${(share * 100).toFixed(1)}%`;
   $('#usage-bar').classList.toggle('full', share >= 0.8); // almost full

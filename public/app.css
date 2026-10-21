@@ -605,7 +605,8 @@ select option { color: #0b1324; background: #fff; }
 .chart-empty { position: absolute; inset: 0 0 26px 40px; display: grid; place-items: center; margin: 0; color: var(--muted); }
 .stats-sites { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--glass-line); }
 .stats-sites li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--glass-line); font-size: 14px; }
-.stats-table summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var(--muted); }
+.view-switch { margin-left: auto; }
+.view-switch button { display: grid; place-items: center; padding: 6px 10px; }
 .stats-table table { margin-top: 8px; }
 .stats-note { margin: 0; }
 
@@ -637,9 +638,9 @@ td.num { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular
 td.actions { text-align: right; }
 td.actions .btn { margin: 3px 0 3px 4px; }
 /* row actions stack in a narrow column, so tables fit next to the side panel */
-.actions-wrap { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; max-width: 250px; margin-left: auto; }
+.actions-wrap { display: flex; justify-content: flex-end; align-items: center; gap: 6px; }
+.actions-wrap .btn { white-space: nowrap; }
 .admin-main td:first-child { min-width: 170px; }
-.admin-main td.actions { width: 260px; }
 .site-size { margin: 4px 0 0; }
 .actions-wrap .btn { margin: 0; }
 .site-name { font-weight: 650; }
@@ -758,6 +759,14 @@ td .site-url { font: 12px var(--mono); color: var(--muted); overflow-wrap: anywh
 .menu button:hover, .menu button:focus-visible { background: var(--hover); outline: none; }
 .menu button.danger { color: var(--danger); }
 .menu hr { width: 100%; margin: 4px 0; border: 0; border-top: 1px solid var(--glass-line); }
+.row-menu { position: fixed; min-width: 190px; box-shadow: 0 18px 50px -12px rgba(15, 23, 42, 0.35); }
+.row-menu button { white-space: nowrap; }
+.menu button.btn-danger { color: var(--danger); }
+.more { display: inline-flex; }
+/* no "⋯" when everything in it is hidden */
+.more:not(:has(.row-menu > button:not([hidden]))) { display: none; }
+.btn-icon { padding-left: 9px; padding-right: 9px; }
+.row-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; }
 
 .preview-box { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .preview-box .grow { display: flex; flex-direction: column; min-width: 0; }

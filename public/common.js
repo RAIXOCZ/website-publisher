@@ -366,3 +366,66 @@ function actionLabel(action) {
   const label = t(key);
   return label === key ? action : label;
 }
+
+/* ---------- "⋯" menu with the less frequent actions of a row ---------- */
+
+// The items stay inside the row, so the row's own click handler runs them
+// like any other action button. `items` are [label, action, extra class].
+const MORE_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
+
+function moreMenu(items) {
+  const entries = items
+    .map((item) => (item === '-' ? '<hr>' : `<button type="button" role="menuitem" data-action="${item[1]}" class="${item[2] || ''}">${item[0]}</button>`))
+    .join('');
+  return `<div class="more"><button type="button" class="btn btn-sm btn-icon more-btn" aria-haspopup="menu" aria-expanded="false" aria-label="${t('more.actions')}" title="${t('more.actions')}">${MORE_ICON}</button><div class="menu glass row-menu" role="menu" hidden>${entries}</div></div>`;
+}
+
+function closeRowMenus() {
+  for (const menu of document.querySelectorAll('.row-menu:not([hidden])')) {
+    menu.hidden = true;
+    menu.previousElementSibling.setAttribute('aria-expanded', 'false');
+  }
+}
+
+function openRowMenu(button) {
+  const menu = button.nextElementSibling;
+  menu.hidden = false;
+  button.setAttribute('aria-expanded', 'true');
+  placeRowMenu(button, menu);
+  menu.querySelector('button:not([hidden])')?.focus({ preventScroll: true });
+}
+
+// Under the button, or above it when there is no room below.
+function placeRowMenu(button, menu) {
+  const rect = button.getBoundingClientRect();
+  const left = Math.max(8, Math.min(rect.right - menu.offsetWidth, window.innerWidth - menu.offsetWidth - 8));
+  const below = rect.bottom + 4 + menu.offsetHeight < window.innerHeight;
+  menu.style.setProperty('--x', `${left}px`);
+  menu.style.setProperty('--y', `${below ? rect.bottom + 4 : rect.top - menu.offsetHeight - 4}px`);
+}
+
+document.addEventListener('click', (e) => {
+  const button = e.target.closest('.more-btn');
+  const wasOpen = button && button.getAttribute('aria-expanded') === 'true';
+  closeRowMenus(); // also after an item was chosen: the row handled it first
+  if (button && !wasOpen) openRowMenu(button);
+});
+document.addEventListener('keydown', (e) => {
+  const menu = e.target.closest?.('.row-menu');
+  if (!menu) return;
+  const items = [...menu.querySelectorAll('button:not([hidden])')];
+  const i = items.indexOf(document.activeElement);
+  if (e.key === 'ArrowDown') items[(i + 1) % items.length].focus();
+  else if (e.key === 'ArrowUp') items[(i - 1 + items.length) % items.length].focus();
+  else if (e.key === 'Escape' || e.key === 'Tab') {
+    closeRowMenus();
+    menu.previousElementSibling.focus();
+  } else return;
+  e.preventDefault();
+});
+window.addEventListener('resize', closeRowMenus);
+// The menu is fixed on screen, so it follows its button while the page scrolls.
+window.addEventListener('scroll', () => {
+  const menu = document.querySelector('.row-menu:not([hidden])');
+  if (menu) placeRowMenu(menu.previousElementSibling, menu);
+}, { passive: true });

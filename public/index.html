@@ -215,9 +215,14 @@
       <div class="site-actions">
         <button class="btn btn-sm btn-accent" data-action="edit" data-i18n="row.edit">Upravit</button>
         <button class="btn btn-sm" data-action="copy" data-i18n="row.copyLink">Kopírovat odkaz</button>
-        <button class="btn btn-sm" data-action="password" data-i18n="row.password" hidden>Heslo</button>
-        <button class="btn btn-sm" data-action="forget" data-i18n="row.forget" hidden>Odebrat ze seznamu</button>
-        <button class="btn btn-sm btn-danger" data-action="delete" data-i18n="row.delete">Smazat</button>
+        <div class="more">
+          <button type="button" class="btn btn-sm btn-icon more-btn" aria-haspopup="menu" aria-expanded="false" data-i18n-aria="more.actions" aria-label="Další akce"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+          <div class="menu glass row-menu" role="menu" hidden>
+            <button type="button" role="menuitem" data-action="password" data-i18n="row.password" hidden>Heslo</button>
+            <button type="button" role="menuitem" data-action="forget" data-i18n="row.forget" hidden>Odebrat ze seznamu</button>
+            <button type="button" role="menuitem" class="btn-danger" data-action="delete" data-i18n="row.delete">Smazat</button>
+          </div>
+        </div>
       </div>
     </article>
   </template>

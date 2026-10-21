@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./test');
-const { HEADERS, htmlFile, unique, uniqueEmail, lastMail, mailToken, createAccount, signIn, answerModal, clipboard } = require('./helpers');
+const { rowAction, HEADERS, htmlFile, unique, uniqueEmail, lastMail, mailToken, createAccount, signIn, answerModal, clipboard } = require('./helpers');
 
 test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
 
@@ -66,14 +66,14 @@ test('the account page shows sites, lets you change your name and rename or dele
   await expect(page.locator('#account-name')).toHaveText('Jana Nováková');
 
   const renamed = unique('renamed');
-  await card.locator('[data-action=rename]').click();
+  await rowAction(card, 'rename');
   const rename = await answerModal(page, renamed);
   expect(rename.title).toBe('Přejmenovat web');
   await expect(page.locator(`#sites .site-card[data-name="${renamed}"]`)).toBeVisible();
   expect((await request.get(`/${renamed}/`)).status()).toBe(200);
   expect((await request.get(`/${site}/`)).status()).toBe(404);
 
-  await page.locator(`#sites .site-card[data-name="${renamed}"] [data-action=delete]`).click();
+  await rowAction(page.locator(`#sites .site-card[data-name="${renamed}"]`), 'delete');
   const confirmDelete = await answerModal(page, true);
   expect(confirmDelete.title).toBe(`Smazat web ${renamed}?`);
   expect(confirmDelete.text).toContain('90 dní');

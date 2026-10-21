@@ -1,6 +1,6 @@
 // @ts-check
 const { test, expect } = require('./test');
-const { FIXTURES, ADMIN_EMAIL, HEADERS, unique, pick, signIn, signInAsAdmin, createAccount, publishViaApi, answerModal, lastMail } = require('./helpers');
+const { rowAction, FIXTURES, ADMIN_EMAIL, HEADERS, unique, pick, signIn, signInAsAdmin, createAccount, publishViaApi, answerModal, lastMail } = require('./helpers');
 
 async function login(page) {
   await signInAsAdmin(page);
@@ -135,7 +135,7 @@ test('rename, edit and delete any site; deleted sites stay listed until purged',
   const { site } = await ownedSite(playwright);
   await login(page);
   const renamed = unique('adm');
-  await siteRow(page, site).locator('[data-action=rename]').click();
+  await rowAction(siteRow(page, site), 'rename');
   await answerModal(page, renamed);
   await expect(siteRow(page, renamed)).toBeVisible();
   expect(await (await request.get(`/${renamed}/`)).text()).toContain('Owned');
@@ -151,7 +151,7 @@ test('rename, edit and delete any site; deleted sites stay listed until purged',
   expect(await (await request.get(`/${renamed}/`)).text()).toContain('Version 2');
 
   await page.goto('/admin');
-  await siteRow(page, renamed).locator('[data-action=delete]').click();
+  await rowAction(siteRow(page, renamed), 'delete');
   await answerModal(page, true);
   await expect(siteRow(page, renamed)).toBeHidden();
   expect((await request.get(`/${renamed}/`)).status()).toBe(404);
@@ -164,7 +164,7 @@ test('rename, edit and delete any site; deleted sites stay listed until purged',
   await expect(page.locator('#audit-rows')).toContainText('Web smazán správcem');
   await page.locator('#audit-close').click();
 
-  await row.locator('[data-action=purge]').click();
+  await rowAction(row, 'purge');
   await answerModal(page, true);
   await expect(siteRow(page, renamed)).toHaveCount(0);
 });
@@ -187,14 +187,14 @@ test('users: history with IPs, delete (unlink, keep data) and purge', async ({ p
   await expect(siteRow(page, site)).toBeVisible();
   await page.locator('[role=tab][data-tab=users]').click();
 
-  await row.locator('[data-action=delete]').click();
+  await rowAction(row, 'delete');
   expect((await answerModal(page, true)).text).toContain('90 dní');
   await expect(userRow(page, email)).toBeHidden();
   expect((await request.get(`/${site}/`)).status()).toBe(404);
 
   await page.locator('#show-deleted-users').check();
   await expect(userRow(page, email)).toContainText('smazáno · správcem');
-  await userRow(page, email).locator('[data-action=purge]').click();
+  await rowAction(userRow(page, email), 'purge');
   expect((await answerModal(page, true)).title).toMatch(/^Smazat .+ trvale\?$/);
   await expect(userRow(page, email)).toHaveCount(0);
   const { users } = await (await page.request.get('/api/admin/users')).json();
@@ -209,7 +209,7 @@ test('the admin can stop an account from adding and editing sites, and allow it 
   await login(page);
   await page.locator('[role=tab][data-tab=users]').click();
   const row = userRow(page, email);
-  await row.locator('[data-action=block]').click();
+  await rowAction(row, 'block');
   const shown = await answerModal(page, true);
   expect(shown.title).toBe('Zakázat přidávání a úpravy?');
   await expect(row).toContainText('úpravy zakázány');
@@ -225,16 +225,16 @@ test('the admin can stop an account from adding and editing sites, and allow it 
   expect(visitor.status()).toBe(403);
   expect((await userPage.request.post(`/api/sites/${site}/rename`, { headers: HEADERS, data: { name: unique('r') } })).status()).toBe(403);
   await userPage.goto('/');
-  await expect(userPage.locator('#notice')).toContainText('zakázané');
+  await expect(userPage.locator('#notice')).toContainText('zakázal');
   await userPage.goto('/ucet');
   await expect(userPage.locator('#blocked-notice')).toBeVisible();
   await expect(userPage.locator('#audit')).toContainText('Úpravy webů zakázány správcem');
   // Deleting still works.
-  await userPage.locator(`#sites .site-card[data-name="${site}"] [data-action=delete]`).click();
+  await rowAction(userPage.locator(`#sites .site-card[data-name="${site}"]`), 'delete');
   await answerModal(userPage, true);
   await expect(userPage.locator('#sites-empty')).toBeVisible();
 
-  await row.locator('[data-action=unblock]').click();
+  await rowAction(row, 'unblock');
   await expect(row).not.toContainText('úpravy zakázány');
   const again = await request.post('/api/sites', { headers: { Authorization: `Bearer ${token}` }, multipart: { name: unique('ok'), f: html } });
   expect(again.status()).toBe(200);
@@ -244,7 +244,7 @@ test('the admin can stop an account from adding and editing sites, and allow it 
 test('a message written when deleting a site is e-mailed to its owner', async ({ page, playwright, request }) => {
   const { email, site } = await ownedSite(playwright);
   await login(page);
-  await siteRow(page, site).locator('[data-action=delete]').click();
+  await rowAction(siteRow(page, site), 'delete');
   await expect(page.locator('#ui-dialog .ui-area')).toBeVisible();
   await page.locator('#ui-dialog .ui-area').fill('Web posílá přes 1 TB dat denně.');
   await page.locator('#ui-dialog [data-ui=ok]').click();
@@ -310,7 +310,7 @@ test('password sites can get a new password from the admin', async ({ page, play
   await page.goto('http://localhost:4319/admin');
   const row = siteRow(page, name);
   await expect(row).toContainText('bez účtu (heslo)');
-  await row.locator('[data-action=password]').click();
+  await rowAction(row, 'password');
   await answerModal(page, true);
   const fresh = (await answerModal(page, true)).value;
   expect(fresh).not.toBe(created.body.password);
