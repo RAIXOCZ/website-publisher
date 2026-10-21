@@ -12,26 +12,7 @@
 
   <main>
     <div class="wrap page">
-      <section class="login glass" id="login" hidden>
-        <h2 data-i18n="admin.loginTitle">Přihlášení do správy</h2>
-        <p class="muted" id="login-text" data-i18n="admin.loginText">Správa je dostupná jen pro účet správce. Přihlaste se e-mailem správce, pošleme vám odkaz.</p>
-        <form id="login-form">
-          <label class="labeled"><span data-i18n="identity.email">E-mail</span><input type="email" name="email" data-i18n-placeholder="identity.emailExample" placeholder="jana@example.cz" autocomplete="email" required autofocus></label>
-          <div class="alert" hidden></div>
-          <button class="btn btn-primary" type="submit" data-i18n="login.send">Poslat přihlašovací odkaz</button>
-        </form>
-      </section>
-
-      <section class="login glass" id="forbidden" hidden>
-        <h2 data-i18n="admin.forbiddenTitle">Jen pro správce</h2>
-        <p class="muted" id="forbidden-text"></p>
-        <div class="row">
-          <a class="btn" href="/ucet" data-i18n="nav.account">Účet</a>
-          <button class="btn" type="button" id="switch-account" data-i18n="admin.switchAccount">Odhlásit a přihlásit jinak</button>
-        </div>
-      </section>
-
-      <div class="section" id="panel" hidden>
+      <div class="section" id="panel">
         <div class="doc-head">
           <h1 data-i18n="admin.h1">Správa</h1>
         </div>

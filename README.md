@@ -11,7 +11,7 @@ Drop a folder, get a website. A small self-hosted static site publisher with a C
 - **Editing**: an existing site opens in the same file tree; replace single files, a folder or everything, add and remove, preview, save (atomic swap).
 - **Account page** (`/ucet`): sites, name, API keys for curl, CI and MCP, activity history (with IPs, without e-mails), account deletion confirmed by e-mail.
 - **CLI**: `curl -H "Authorization: Bearer fp_…" -F name=my-site -F overwrite=1 -F f=@site.zip https://freepages.dev/api/sites`.
-- **Admin panel** (`/admin`, not linked anywhere, only for the `ADMIN_EMAIL` account, which signs in by e-mail link like everyone else): all sites with owners, users, activity history with IPs and e-mails, rename/edit/delete/purge sites and accounts, IP whitelist.
+- **Admin panel** (`/admin`, not linked anywhere, only for the `ADMIN_EMAIL` account, which signs in on `/ucet` by e-mail link like everyone else; to anyone else, `/admin` and its API answer 404 as if they did not exist): all sites with owners, users, activity history with IPs and e-mails, rename/edit/delete/purge sites and accounts, IP whitelist.
 - **Retention**: deleted sites and accounts stop being public immediately and are purged automatically after 90 days (`RETENTION_DAYS`); the admin can purge at once. Activity history is capped at 12 months (`AUDIT_DAYS`).
 - **IP whitelist**: from IPs whitelisted in the admin panel (*IP whitelist* tab, including a one-click "add my current IP") publishing works without an account, with per-site passwords remembered in the browser (the original mode).
 - **Guide** (`/docs`), **terms** (`/podminky`) and **privacy policy** (`/soukromi`).
@@ -31,7 +31,7 @@ cp .env.example .env        # set RESEND_API_KEY (and ADMIN_EMAIL, PUBLIC_URL / 
 docker compose -f docker-compose.local.yml up -d --build
 ```
 
-Open http://localhost:3000 and drop a folder. The admin panel is at http://localhost:3000/admin; sign in there with `ADMIN_EMAIL` (in development the link is printed to the console).
+Open http://localhost:3000 and drop a folder. Sign in at http://localhost:3000/ucet with `ADMIN_EMAIL`, then open http://localhost:3000/admin (in development the link is printed to the console).
 
 Data lives in the `publisher-data` volume:
 
@@ -53,7 +53,7 @@ Sites that existed before accounts were introduced are moved to the `ADMIN_EMAIL
 | --- | --- | --- |
 | `RESEND_API_KEY` | empty | API key of [Resend](https://resend.com) (free tier: 3,000 e-mails a month). Without it no e-mails are sent, so nobody outside the IP whitelist can publish or sign in. |
 | `MAIL_FROM` | `freepages.dev <noreply@SITE_DOMAIN>` | Sender; must be on a domain verified in Resend. |
-| `ADMIN_EMAIL` | `martin@balcar.me` | The administrator account (name from `ADMIN_FIRST_NAME`/`ADMIN_LAST_NAME`, default Martin Balcar). Created on start; it signs in to `/admin` by e-mail link and owns the sites published before accounts existed. Changing it moves the admin role (and, if the new address has no account yet, the old admin account) to the new address. API tokens never get admin rights. |
+| `ADMIN_EMAIL` | `martin@balcar.me` | The administrator account (name from `ADMIN_FIRST_NAME`/`ADMIN_LAST_NAME`, default Martin Balcar). Created on start; it signs in on `/ucet` by e-mail link, then `/admin` is available, and owns the sites published before accounts existed. Changing it moves the admin role (and, if the new address has no account yet, the old admin account) to the new address. API tokens never get admin rights. |
 | `RETENTION_DAYS` | `90` | How long deleted sites and accounts are kept before they are purged. |
 | `AUDIT_DAYS` | `365` | Activity history entries are deleted after this. |
 | `PREVIEW_MINUTES` | `5` | Lifetime of previews. |

@@ -63,7 +63,7 @@ test('private pages and previews are kept out of search engines', async ({ reque
 
 test('robots.txt and sitemap.xml', async ({ request }) => {
   const robots = await (await request.get('/robots.txt')).text();
-  for (const line of ['Disallow: /admin', 'Disallow: /ucet', 'Disallow: /email/', 'Disallow: /api/', `Sitemap: ${BASE}/sitemap.xml`]) {
+  for (const line of ['Disallow: /ucet', 'Disallow: /email/', 'Disallow: /api/', `Sitemap: ${BASE}/sitemap.xml`]) {
     expect(robots).toContain(line);
   }
   const res = await request.get('/sitemap.xml');

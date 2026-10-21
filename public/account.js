@@ -212,21 +212,58 @@ $('#logout').addEventListener('click', async () => {
 });
 
 // Signing in and creating an account both end on their own "check your
-// e-mail" view; "Zadat jiný e-mail" goes back to the forms.
-function showSent(text) {
+// e-mail" view. The e-mail can be sent again once a minute; "Zadat jiný
+// e-mail" goes back to the forms.
+const RESEND_SECONDS = 60;
+let resend = null;
+let resendTimer = null;
+
+function showSent(text, again) {
+  resend = again;
   $('#signin').hidden = true;
   $('.sent-text', $('#signin-sent')).textContent = text;
   $('#signin-sent').hidden = false;
   window.scrollTo({ top: 0 });
+  startResendWait();
 }
+
+function startResendWait() {
+  const button = $('#sent-again');
+  const until = Date.now() + RESEND_SECONDS * 1000;
+  const tick = () => {
+    const left = Math.ceil((until - Date.now()) / 1000);
+    button.disabled = left > 0;
+    button.textContent = left > 0 ? t('sent.againIn', { seconds: left }) : t('sent.again');
+    if (left <= 0) clearInterval(resendTimer);
+  };
+  clearInterval(resendTimer);
+  resendTimer = setInterval(tick, 1000);
+  tick();
+}
+
+$('#sent-again').addEventListener('click', async () => {
+  $('#sent-again').disabled = true;
+  try {
+    await resend();
+    toast(t('sent.againDone'));
+    startResendWait();
+  } catch (err) {
+    $('#sent-again').disabled = false;
+    uiError(err);
+  }
+});
+
 $('.sent-back').addEventListener('click', (e) => {
   e.preventDefault();
+  clearInterval(resendTimer);
   $('#signin-sent').hidden = true;
   $('#signin').hidden = false;
   $('#signin-form input[name=email]').focus();
 });
 
-setupEmailLogin($('#signin-form'), { onSent: (email) => showSent(t('login.sent', { email })) });
+setupEmailLogin($('#signin-form'), {
+  onSent: (email) => showSent(t('login.sent', { email }), () => api('/auth/login', { method: 'POST', json: { email } })),
+});
 
 $('#register-form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -236,10 +273,10 @@ $('#register-form').addEventListener('submit', async (e) => {
   alert.hidden = true;
   button.disabled = true;
   try {
-    const email = form.email.value.trim();
-    await api('/auth/register', { method: 'POST', json: { email, firstName: form.firstName.value.trim(), lastName: form.lastName.value.trim() } });
+    const body = { email: form.email.value.trim(), firstName: form.firstName.value.trim(), lastName: form.lastName.value.trim() };
+    await api('/auth/register', { method: 'POST', json: body });
     form.reset();
-    showSent(t('register.sent', { email }));
+    showSent(t('register.sent', { email: body.email }), () => api('/auth/register', { method: 'POST', json: body }));
   } catch (err) {
     alert.textContent = err.message;
     alert.hidden = false;

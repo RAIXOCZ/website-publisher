@@ -24,7 +24,7 @@ for (const p of PAGES) {
   });
 }
 
-for (const path of ['/', '/docs', '/admin', '/podminky', '/soukromi']) {
+for (const path of ['/', '/docs', '/ucet', '/podminky', '/soukromi']) {
   test(`footer on ${path} links to terms and privacy`, async ({ page }) => {
     await page.goto(path);
     const footer = page.locator('.site-footer');

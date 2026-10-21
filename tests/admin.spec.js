@@ -19,31 +19,31 @@ async function ownedSite(playwright) {
 const siteRow = (page, name) => page.locator('#site-rows tr').filter({ has: page.locator('.site-name span', { hasText: new RegExp(`^${name}$`) }) });
 const userRow = (page, email) => page.locator('#user-rows tr').filter({ hasText: email });
 
-test('the admin area is only for the admin account, signed in by e-mail link', async ({ page, browser, request }) => {
-  await page.goto('/admin');
-  await expect(page.locator('#login')).toBeVisible();
-  await expect(page.locator('#login input[type=password]')).toHaveCount(0);
-  await expect(page.locator('#panel')).toBeHidden();
-  for (const url of ['/api/admin/sites', '/api/admin/users', '/api/admin/whitelist']) expect((await request.get(url)).status()).toBe(401);
+test('the admin area does not exist for anyone but the admin, who signs in on /ucet', async ({ page, browser, request }) => {
+  // Not signed in: the same 404 page as any address that does not exist.
+  const res = await page.goto('/admin');
+  expect(res.status()).toBe(404);
+  await expect(page.locator('h1')).toHaveText('Stránka nenalezena');
+  for (const url of ['/api/admin/sites', '/api/admin/users', '/api/admin/whitelist']) expect((await request.get(url)).status()).toBe(404);
+  expect(await (await request.get('/robots.txt')).text()).not.toContain('/admin');
 
-  // An ordinary account is turned away.
+  // An ordinary account gets the same.
   const other = await (await browser.newContext({ locale: 'cs-CZ' })).newPage();
-  const { email } = await signIn(other);
-  await other.goto('/admin');
-  await expect(other.locator('#forbidden')).toBeVisible();
-  await expect(other.locator('#forbidden-text')).toContainText(email);
-  expect((await other.request.get('/api/admin/users')).status()).toBe(403);
+  await signIn(other);
+  expect((await other.goto('/admin')).status()).toBe(404);
+  await expect(other.locator('#panel')).toHaveCount(0);
+  expect((await other.request.get('/api/admin/users')).status()).toBe(404);
   await other.context().close();
 
-  // The admin signs in with an e-mail link from the admin page.
+  // The admin signs in with an e-mail link on the account page.
   // Other tests sign in as the admin at the same time and may use up this
   // link first; then ask for another one.
   for (let attempt = 0; attempt < 10 && !page.url().endsWith('/ucet'); attempt++) {
-    if (attempt) await page.goto('/admin');
+    await page.goto('/ucet');
     const before = (await (await request.get('/api/dev/outbox')).json()).messages.length;
-    await page.locator('#login-form input[name=email]').fill(ADMIN_EMAIL);
-    await page.locator('#login-form button').click();
-    await expect(page.locator('#login .sent')).toContainText(ADMIN_EMAIL);
+    await page.locator('#signin-form input[name=email]').fill(ADMIN_EMAIL);
+    await page.locator('#signin-form button').click();
+    await expect(page.locator('#signin-sent')).toContainText(ADMIN_EMAIL);
     let mail;
     await expect
       .poll(async () => {
@@ -72,7 +72,8 @@ test('admin rights never come with an API token, and the admin account cannot be
   const { token } = await (await page.request.post('/api/me/tokens', { headers: HEADERS, data: { name: 'admin-cli' } })).json();
   const curl = await playwright.request.newContext({ baseURL: 'http://localhost:4317' });
   const res = await curl.get('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } });
-  expect(res.status()).toBe(403);
+  expect(res.status()).toBe(404);
+  expect((await curl.get('/admin', { headers: { Authorization: `Bearer ${token}` } })).status()).toBe(404);
   await curl.dispose();
 
   const { items: users } = await (await page.request.get(`/api/admin/users?q=${encodeURIComponent(ADMIN_EMAIL)}`)).json();
@@ -94,9 +95,8 @@ test('admin rights never come with an API token, and the admin account cannot be
 test('"Odhlásit" signs out', async ({ page }) => {
   await login(page);
   await page.locator('#logout').click();
-  await expect(page.locator('#login')).toBeVisible();
-  await page.reload();
-  await expect(page.locator('#login')).toBeVisible();
+  await expect(page).toHaveURL('/');
+  expect((await page.goto('/admin')).status()).toBe(404);
 });
 
 test('sites list shows owners and filters by name or e-mail', async ({ page, playwright }) => {

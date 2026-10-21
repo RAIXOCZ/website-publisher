@@ -131,7 +131,8 @@ app.use(
   }),
 );
 app.get('/', securityHeaders, appPage('index.html'));
-app.get(['/admin', '/admin/'], securityHeaders, appPage('admin.html'));
+// Without the admin's session the admin page does not exist, as far as anyone can tell.
+app.get(['/admin', '/admin/'], securityHeaders, (req, res, next) => (accounts.isAdmin(req) ? next() : notFoundPage(req, res)), appPage('admin.html'));
 app.get(['/docs', '/docs/'], securityHeaders, appPage('docs.html'));
 app.get(['/podminky', '/terms'], securityHeaders, appPage('terms.html'));
 app.get(['/soukromi', '/privacy'], securityHeaders, appPage('privacy.html'));
@@ -578,7 +579,7 @@ api.post('/my-sites', json, (req, res) => {
 const admin = express.Router();
 admin.use((req, res, next) => {
   if (accounts.isAdmin(req)) return next();
-  fail(req, res, accounts.currentUser(req) ? 403 : 401, 'adminRequired');
+  fail(req, res, 404, 'notFound');
 }, json);
 const adminSite = (req, res) => {
   const site = sites.siteById(Number(req.params.id));
@@ -770,10 +771,13 @@ app.use((req, res, next) => {
   serveSite(req, res, name, rest, `/${name}`, sites.previewRoot(name)).catch(next);
 });
 
-app.use((req, res) => {
+app.use((req, res) => notFoundPage(req, res));
+
+function notFoundPage(req, res) {
   const lang = langOf(req);
+  res.set({ 'Cache-Control': 'no-cache', 'X-Robots-Tag': 'noindex' });
   res.status(404).type('html').send(page(lang, t(lang, 'pageNotFoundTitle'), `<h1>${t(lang, 'pageNotFound')}</h1><p>${t(lang, 'appPageNotFoundText')}</p>`, { code: '404' }));
-});
+}
 
 // Errors: user-facing messages for expected problems, a generic one otherwise.
 app.use((err, req, res, _next) => {

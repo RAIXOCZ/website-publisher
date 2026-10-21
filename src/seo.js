@@ -129,7 +129,6 @@ function render(name, html, { lang, explicit }) {
 function robots() {
   return [
     'User-agent: *',
-    'Disallow: /admin',
     'Disallow: /ucet',
     'Disallow: /account',
     'Disallow: /email/',

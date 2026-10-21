@@ -46,11 +46,11 @@ test('the CS/EN switch changes and remembers the language', async ({ page }) => 
 
   await page.goto('/docs');
   await expect(page.locator('[data-lang=en] h1')).toHaveText('Guide');
-  await page.goto('/admin');
-  await expect(page.locator('#login h2')).toHaveText('Admin login');
+  await page.goto('/ucet');
+  await expect(page.locator('#signin h2').first()).toHaveText('Sign in');
 
   await page.locator('[data-set-lang=cs]').click();
-  await expect(page.locator('#login h2')).toHaveText('Přihlášení do správy');
+  await expect(page.locator('#signin h2').first()).toHaveText('Přihlášení');
 });
 
 test('header navigation links work', async ({ page }) => {
@@ -78,7 +78,7 @@ test('"Přečíst návod" opens the guide with this server\'s details', async ({
   await expect(page.locator('[data-lang=cs] .max-upload')).toHaveText('100 MB');
 });
 
-for (const path of ['/', '/docs', '/admin']) {
+for (const path of ['/', '/docs', '/ucet']) {
   test(`footer on ${path} credits Martin Balcar and links to abuse reports`, async ({ page }) => {
     await page.goto(path);
     const footer = page.locator('.site-footer');
@@ -93,7 +93,7 @@ for (const path of ['/', '/docs', '/admin']) {
 
 
 test('every page has the same header, marking the current page', async ({ page }) => {
-  const current = { '/': '/', '/docs': '/docs', '/ucet': '/ucet', '/podminky': null, '/soukromi': null, '/admin': null };
+  const current = { '/': '/', '/docs': '/docs', '/ucet': '/ucet', '/podminky': null, '/soukromi': null };
   for (const [path, href] of Object.entries(current)) {
     await page.goto(path);
     const links = page.locator('.topbar .nav a');
@@ -116,7 +116,7 @@ test('the header comes in the language chosen with the switch, before any script
 
 test.describe('phone', () => {
   test.use({ viewport: { width: 360, height: 740 } });
-  for (const path of ['/', '/docs', '/podminky', '/soukromi', '/ucet', '/admin']) {
+  for (const path of ['/', '/docs', '/podminky', '/soukromi', '/ucet']) {
     test(`the header and page fit the screen on ${path}`, async ({ page }) => {
       await page.goto(path);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);

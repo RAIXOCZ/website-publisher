@@ -3,13 +3,10 @@
 const data = { whitelist: [], yourIp: '', activeSites: 0 };
 let config;
 
+// The server only serves this page to the signed-in admin.
 async function init() {
   config = await api('/config');
-  $('#login').hidden = Boolean(config.user);
-  $('#forbidden').hidden = !config.user || config.admin;
-  $('#panel').hidden = !config.admin;
-  if (config.user && !config.admin) $('#forbidden-text').textContent = t('admin.forbiddenText', { email: config.user.email });
-  if (config.admin) await load();
+  await load();
 }
 
 async function load() {
@@ -18,7 +15,7 @@ async function load() {
     data.whitelist = whitelist.ips;
     data.yourIp = whitelist.yourIp;
   } catch (err) {
-    if (err.status === 401 || err.status === 403) return init();
+    if (err.status === 404) return location.reload(); // signed out meanwhile
     throw err;
   }
   renderWhitelist();
@@ -354,9 +351,10 @@ for (const el of document.querySelectorAll('.filter')) el.addEventListener('inpu
 $('#show-deleted-sites').addEventListener('change', () => siteList.reset());
 $('#show-deleted-users').addEventListener('change', () => userList.reset());
 
-$('#logout').addEventListener('click', logout);
-$('#switch-account').addEventListener('click', logout);
-setupEmailLogin($('#login-form'));
+$('#logout').addEventListener('click', async () => {
+  await api('/auth/logout', { method: 'POST' });
+  location.href = '/';
+});
 
 init().catch((err) => {
   document.querySelector('main').textContent = t('err.load', { message: err.message });

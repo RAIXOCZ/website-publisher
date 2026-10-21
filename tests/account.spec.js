@@ -227,3 +227,29 @@ test('an account can be created without uploading a site', async ({ page, reques
   const bad = await request.post('/api/auth/register', { headers: HEADERS, data: { email: uniqueEmail() } });
   expect(bad.status()).toBe(400);
 });
+
+test('the e-mail can be sent again after a minute', async ({ page, request }) => {
+  await page.clock.install();
+  const email = uniqueEmail('again');
+  await page.goto('/ucet');
+  const form = page.locator('#register-form');
+  await form.locator('[name=firstName]').fill('Eva');
+  await form.locator('[name=lastName]').fill('Znovu');
+  await form.locator('[name=email]').fill(email);
+  await form.locator('button[type=submit]').click();
+  const again = page.locator('#sent-again');
+  await expect(again).toBeDisabled();
+  await expect(again).toHaveText('Poslat znovu za 60 s');
+  await page.clock.runFor(30_000);
+  await expect(again).toHaveText('Poslat znovu za 30 s');
+  await page.clock.runFor(30_000);
+  await expect(again).toBeEnabled();
+  await expect(again).toHaveText('Poslat e-mail znovu');
+
+  const count = async () => (await (await request.get('/api/dev/outbox')).json()).messages.filter((m) => m.to === email).length;
+  expect(await count()).toBe(1);
+  await again.click();
+  await expect(page.locator('.toast')).toHaveText('E-mail jsme poslali znovu.');
+  await expect.poll(count).toBe(2);
+  await expect(again).toBeDisabled();
+});

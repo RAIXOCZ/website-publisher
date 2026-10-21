@@ -145,7 +145,7 @@ test.describe('subdomain sites (<name>.pub.test)', () => {
 });
 
 test('pages reference versioned assets so a deploy never mixes old CSS/JS with new HTML', async ({ request }) => {
-  for (const path of ['/', '/docs', '/admin']) {
+  for (const path of ['/', '/docs', '/ucet']) {
     const res = await request.get(path);
     expect(res.headers()['cache-control'], path).toBe('no-cache');
     const html = await res.text();

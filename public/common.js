@@ -334,9 +334,8 @@ function scrollSpy(nav) {
 
 /* ---------- signing in with an e-mail link ---------- */
 
-// `onSent(email)` shows the "check your e-mail" view; without it the form
-// is replaced by the message.
-function setupEmailLogin(form, { onSent = null } = {}) {
+// Sends a sign-in link; `onSent(email)` then shows the "check your e-mail" view.
+function setupEmailLogin(form, { onSent }) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const button = $('button[type=submit]', form);
@@ -346,11 +345,7 @@ function setupEmailLogin(form, { onSent = null } = {}) {
     try {
       const email = form.email.value.trim();
       await api('/auth/login', { method: 'POST', json: { email } });
-      if (onSent) return onSent(email);
-      form.replaceChildren(Object.assign(document.createElement('p'), {
-        className: 'sent',
-        textContent: t('login.sent', { email: form.email.value.trim() }),
-      }));
+      onSent(email);
     } catch (err) {
       alert.textContent = err.message;
       alert.hidden = false;

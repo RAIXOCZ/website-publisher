@@ -43,7 +43,10 @@
         <h2 data-i18n="sent.title">Zkontrolujte e-mail</h2>
         <p class="sent-text"></p>
         <p class="muted" data-i18n="sent.hint">Zprávu nevidíte? Podívejte se do složky se spamem nebo hromadnou poštou.</p>
-        <p><a href="/ucet" class="sent-back" data-i18n="sent.back">Zadat jiný e-mail</a></p>
+        <div class="sent-actions">
+          <button class="btn" type="button" id="sent-again" data-i18n="sent.again">Poslat e-mail znovu</button>
+          <a href="/ucet" class="sent-back" data-i18n="sent.back">Zadat jiný e-mail</a>
+        </div>
       </section>
 
       <div class="account-page" id="account" hidden>

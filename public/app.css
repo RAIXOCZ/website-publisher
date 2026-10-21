@@ -615,6 +615,8 @@ select option { color: #0b1324; background: #fff; }
 .auth-sent h2 { font-size: 26px; }
 .auth-sent p { margin: 0; }
 .auth-sent .sent-text { font-size: 17px; }
+.sent-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 20px; margin-top: 8px; }
+#sent-again { min-width: 210px; font-variant-numeric: tabular-nums; }
 .auth-col { display: flex; flex-direction: column; gap: 12px; padding: 30px; }
 .auth-col + .auth-col { border-left: 1px solid var(--glass-line); }
 .auth-col h2 { font-size: 26px; }
@@ -658,7 +660,7 @@ td .site-url { font: 12px var(--mono); color: var(--muted); overflow-wrap: anywh
 .prose h2:first-child { margin-top: 0; }
 .prose h2, .prose h3 { scroll-margin-top: 100px; }
 /* links inside text are underlined, not told apart by colour alone */
-main :is(p, li) a:not(.btn), .consent a { color: var(--teal); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+main :is(p, li) a:not(.btn), .consent a, .sent-actions a { color: var(--teal); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
 .prose h3 { font-size: 17px; margin: 22px 0 6px; }
 .doc-layout .side-nav { border-top: 0; padding-top: 0; }
 .side-panel.toc { gap: 6px; }
@@ -792,7 +794,6 @@ main :is(p, li) a:not(.btn), .consent a { color: var(--teal); text-decoration: u
 
 .login-inline { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 20px; padding: 16px 18px; border-radius: var(--r-md); }
 .login-inline p { margin: 0; }
-.sent { margin: 0; color: var(--ok); font-weight: 600; }
 
 /* ---------- account ---------- */
 
