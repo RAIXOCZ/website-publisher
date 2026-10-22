@@ -84,12 +84,20 @@ function publicSite(row) {
 
 // Turns a client-supplied relative path into safe path segments, or null if
 // the file should be skipped.
+// File systems allow 255 bytes per name; whole paths are kept well below
+// their limit too.
+const NAME_MAX_BYTES = 255;
+const PATH_MAX_BYTES = 1024;
+const shortPath = (raw) => (String(raw).length > 80 ? `${String(raw).slice(0, 77)}...` : String(raw));
+
 function cleanPath(raw) {
   const parts = String(raw || '').replace(/\\/g, '/').split('/');
   const out = [];
+  if (Buffer.byteLength(String(raw || '')) > PATH_MAX_BYTES) throw new UserError('pathTooLong', 400, {}, { path: shortPath(raw), max: NAME_MAX_BYTES });
   for (const part of parts) {
     if (part === '' || part === '.') continue;
-    if (part === '..' || part.includes('\0')) throw new UserError('invalidPath', 400, {}, { path: raw });
+    if (part === '..' || part.includes('\0')) throw new UserError('invalidPath', 400, {}, { path: shortPath(raw) });
+    if (Buffer.byteLength(part) > NAME_MAX_BYTES) throw new UserError('pathTooLong', 400, {}, { path: shortPath(raw), max: NAME_MAX_BYTES });
     if (JUNK.has(part.toLowerCase()) || part.startsWith('._')) return null;
     out.push(part);
   }
@@ -344,6 +352,12 @@ async function parseUpload(req) {
 
 // The same kind of upload as parseUpload gives, from files sent as data
 // ({ path, content, encoding: 'utf8' | 'base64' }), for the MCP server.
+// Standard or URL-safe base64, padding optional, whitespace allowed.
+function isBase64(text) {
+  const s = text.replace(/\s/g, '');
+  return /^[A-Za-z0-9+/_-]*={0,2}$/.test(s) && s.replace(/=+$/, '').length % 4 !== 1;
+}
+
 async function uploadFromFiles(files, { name = '', keep = [] } = {}) {
   const work = path.join(config.TMP_DIR, `up-${crypto.randomUUID()}`);
   const raw = path.join(work, 'raw');
@@ -353,9 +367,12 @@ async function uploadFromFiles(files, { name = '', keep = [] } = {}) {
   const cleanup = () => fsp.rm(work, { recursive: true, force: true }).catch(() => {});
   try {
     for (const file of Array.isArray(files) ? files : []) {
-      const segments = cleanPath(file?.path);
+      if (!String(file?.path ?? '').replace(/[\\/.\s]/g, '')) throw new UserError('emptyPath', 400);
+      const segments = cleanPath(file.path);
       if (!segments) continue;
-      const data = Buffer.from(String(file.content ?? ''), file.encoding === 'base64' ? 'base64' : 'utf8');
+      const content = String(file.content ?? '');
+      if (file.encoding === 'base64' && !isBase64(content)) throw new UserError('invalidBase64', 400, {}, { path: shortPath(file.path) });
+      const data = Buffer.from(content, file.encoding === 'base64' ? 'base64' : 'utf8');
       await writeFile(raw, segments, Readable.from([data]), budget);
       uploaded.push(segments);
     }

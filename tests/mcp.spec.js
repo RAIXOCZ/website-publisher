@@ -140,3 +140,31 @@ test('the account page links to the guide for API keys', async ({ page }) => {
   await expect(page.locator('#cs-api-klice')).toHaveText('API klíče');
   await expect(page.locator('[data-lang=cs] .mcp-url').first()).toHaveText('http://localhost:4317/mcp');
 });
+
+test('MCP and the API refuse bad files with a clear message, not a server error', async ({ request }) => {
+  const { call, token } = await mcpClient();
+  const longName = `${'a'.repeat(300)}.html`;
+  const cases = [
+    [[{ path: longName, content: 'x' }], /too long.*255 bytes/],
+    [[{ path: `${'d/'.repeat(600)}index.html`, content: 'x' }], /too long/],
+    [[{ path: 'index.html', content: 'not base64!!', encoding: 'base64' }], /not valid base64/],
+    [[{ path: '', content: 'x' }], /has no path/],
+  ];
+  for (const [files, message] of cases) {
+    const result = await call('publish_site', { name: unique('bad'), files });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toMatch(message);
+    expect(result.content[0].text).not.toMatch(/server error/i);
+  }
+  // Valid base64 (with or without padding) still works.
+  const ok = await call('publish_site', { name: unique('b64'), files: [{ path: 'index.html', content: Buffer.from('<h1>ok</h1>').toString('base64'), encoding: 'base64' }] });
+  expect(ok.isError).toBe(false);
+
+  // The HTTP API: a long file name is a 400 with the same message.
+  const res = await request.post('/api/sites', {
+    headers: { Authorization: `Bearer ${token}`, 'Accept-Language': 'en' },
+    multipart: { name: unique('bad'), p: longName, f: { name: 'x.html', mimeType: 'text/html', buffer: Buffer.from('x') } },
+  });
+  expect(res.status()).toBe(400);
+  expect((await res.json()).error).toMatch(/too long/);
+});
