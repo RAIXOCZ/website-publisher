@@ -27,6 +27,17 @@ test('MCP: initialize and list tools', async () => {
   expect(init.result.protocolVersion).toBe('2025-06-18');
   expect(init.result.serverInfo.name).toBe('freepages.dev');
   expect(init.result.capabilities.tools).toBeTruthy();
+  // The app shows the server with the freepages.dev icon.
+  const latest = await rpc('initialize', { protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: 'test', version: '1' } });
+  expect(latest.result.protocolVersion).toBe('2025-11-25');
+  const { icons, websiteUrl } = latest.result.serverInfo;
+  expect(websiteUrl).toBe('http://localhost:4317');
+  expect(icons.map((i) => i.mimeType)).toEqual(['image/svg+xml', 'image/png', 'image/png']);
+  for (const icon of icons) {
+    const res = await client.get(icon.src);
+    expect(res.status(), icon.src).toBe(200);
+    expect(res.headers()['content-type']).toContain(icon.mimeType);
+  }
 
   const note = await client.post('/mcp', { headers: { Authorization: `Bearer ${token}` }, data: { jsonrpc: '2.0', method: 'notifications/initialized' } });
   expect(note.status()).toBe(202);

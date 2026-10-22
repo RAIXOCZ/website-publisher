@@ -16,7 +16,21 @@ const { langOf, t } = require('./i18n');
 const { clientIp } = require('./auth');
 const { version } = require('../package.json');
 
-const PROTOCOL_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
+const PROTOCOL_VERSIONS = ['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05'];
+
+// Name, icon and website the app shows for this server (icons and
+// websiteUrl came with protocol 2025-11-25; older clients ignore them).
+const serverInfo = () => ({
+  name: 'freepages.dev',
+  title: 'freepages.dev',
+  version,
+  websiteUrl: config.PUBLIC_URL,
+  icons: [
+    { src: `${config.PUBLIC_URL}/favicon.svg`, mimeType: 'image/svg+xml', sizes: ['any'] },
+    { src: `${config.PUBLIC_URL}/icon-192.png`, mimeType: 'image/png', sizes: ['192x192'] },
+    { src: `${config.PUBLIC_URL}/icon-512.png`, mimeType: 'image/png', sizes: ['512x512'] },
+  ],
+});
 const READ_LIMIT = 1024 * 1024; // read_file returns at most 1 MB of text
 
 // What agents must know before publishing an app made with a framework.
@@ -251,7 +265,7 @@ async function handle(message, req, user) {
       return reply({
         protocolVersion: PROTOCOL_VERSIONS.includes(params.protocolVersion) ? params.protocolVersion : PROTOCOL_VERSIONS[0],
         capabilities: { tools: { listChanged: false } },
-        serverInfo: { name: 'freepages.dev', title: 'freepages.dev', version },
+        serverInfo: serverInfo(),
         instructions: `freepages.dev publishes static websites at ${config.PUBLIC_URL}. Each site gets its own address. Use publish_site with the files of a site (index.html is the home page) and give the user the returned url. ${BUILD_NOTE} Signed in as ${user.email}.`,
       });
     case 'ping':
@@ -307,4 +321,4 @@ function mount(app, express) {
   app.all('/mcp', (req, res) => res.set('Allow', 'POST').status(405).json(rpcError(null, -32000, 'Method not allowed: this server answers POST requests only.')));
 }
 
-module.exports = { mount, TOOLS, BUILD_NOTE };
+module.exports = { mount, TOOLS, BUILD_NOTE, serverInfo };

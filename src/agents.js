@@ -170,8 +170,8 @@ function llmsFullTxt() {
 function serverCard() {
   return {
     version: '1.0',
-    protocolVersion: '2025-06-18',
-    serverInfo: { name: 'freepages.dev', title: 'freepages.dev', version },
+    protocolVersion: '2025-11-25',
+    serverInfo: require('./mcp').serverInfo(),
     description: 'Publish and manage static websites on freepages.dev.',
     documentationUrl: `${config.PUBLIC_URL}/docs.md?lang=en`,
     transport: { type: 'streamable-http', endpoint: `${config.PUBLIC_URL}/mcp` },
