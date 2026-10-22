@@ -3,6 +3,8 @@
 // Sends e-mail through Resend's HTTP API (free tier: 3,000 e-mails a month).
 // Without RESEND_API_KEY, messages are only logged (and kept in memory for
 // tests when MAIL_DEV_OUTBOX is on).
+const fs = require('fs');
+const path = require('path');
 const config = require('./config');
 
 const outbox = [];
@@ -163,6 +165,11 @@ const richText = (s) =>
     .replace(/\n/g, '<br>');
 
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+// The wordmark's font (Bricolage Grotesque, only a-z, 0-9, "." and "-",
+// 6 kB) travels inside the e-mail, so nothing is loaded from the web. Apple
+// Mail and iOS Mail use it; Gmail and Outlook fall back to a bold system font.
+const BRAND_FONT = fs.readFileSync(path.join(__dirname, '..', 'public', 'font', 'bricolage-grotesque-brand.woff2')).toString('base64');
+const DISPLAY = `'Bricolage Grotesque',${FONT}`;
 
 function htmlEmail(lang, parts, preheader) {
   const p = (text, color = '#3a4456', size = 16) => `<p style="margin:0 0 16px;font:${size}px/1.6 ${FONT};color:${color}">${richText(text)}</p>`;
@@ -173,26 +180,24 @@ function htmlEmail(lang, parts, preheader) {
       <p style="margin:0 0 20px;font:13px/1.5 ${FONT};color:#687083">${lang === 'en' ? 'If the button does not work, open this address:' : 'Pokud tlačítko nefunguje, otevřete tuto adresu:'}<br><a href="${escapeHtml(parts.href)}" style="color:#0f766e;word-break:break-all">${escapeHtml(parts.href)}</a></p>`
     : '';
   const quote = parts.quote
-    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px"><tr><td style="padding:14px 18px;background:#f3f5f9;border-left:3px solid #0f766e;border-radius:8px">
-        <p style="margin:0 0 6px;font:600 13px/1.4 ${FONT};color:#586174;text-transform:uppercase;letter-spacing:.04em">${escapeHtml(parts.quote.label)}</p>
-        <p style="margin:0;font:15px/1.6 ${FONT};color:#0b1324">${richText(parts.quote.text)}</p>
-      </td></tr></table>`
+    ? `<p style="margin:0 0 16px;font:16px/1.6 ${FONT};color:#0b1324"><b>${escapeHtml(parts.quote.label)}:</b> ${richText(parts.quote.text)}</p>`
     : '';
   return `<!doctype html>
-<html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><title>${escapeHtml(parts.subject)}</title></head>
-<body style="margin:0;padding:0;background:#eef1f6">
+<html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><title>${escapeHtml(parts.subject)}</title>
+<style>@font-face{font-family:'Bricolage Grotesque';font-weight:200 800;src:url(data:font/woff2;base64,${BRAND_FONT}) format('woff2')}</style></head>
+<body style="margin:0;padding:0;background:#ffffff">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(preheader)}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef1f6"><tr><td align="center" style="padding:32px 16px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff"><tr><td align="center" style="padding:32px 20px">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px">
-    <tr><td style="padding:0 4px 18px">
+    <tr><td style="padding:0 0 28px">
       <!-- The logo is drawn with HTML, so the e-mail loads nothing from the web.
            (Gmail and Outlook do not show SVG in e-mails.) -->
       <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-        <td width="36" height="36" align="center" valign="middle" style="width:36px;height:36px;background:#0d9488;border-radius:9px;font:700 22px/36px ${FONT};color:#ffffff">&#8593;</td>
-        <td style="padding-left:10px;font:700 20px/1 ${FONT};color:#0b1324;letter-spacing:-.02em">freepages.dev</td>
+        <td width="30" height="30" align="center" valign="middle" style="width:30px;height:30px;background:#0d9488;border-radius:8px;font:700 19px/30px ${FONT};color:#ffffff">&#8593;</td>
+        <td style="padding-left:10px;font:700 19px/1 ${DISPLAY};color:#0b1324;letter-spacing:-.02em">freepages<span style="font-weight:500;color:#687083">.dev</span></td>
       </tr></table>
     </td></tr>
-    <tr><td style="background:#ffffff;border-radius:18px;padding:32px 32px 16px;border:1px solid #e3e7ee">
+    <tr><td style="padding:0 0 8px">
       <h1 style="margin:0 0 18px;font:700 24px/1.25 ${FONT};color:#0b1324;letter-spacing:-.02em">${escapeHtml(parts.title)}</h1>
       ${p(parts.greeting, '#0b1324')}
       ${parts.body.map((t) => p(t, '#0b1324')).join('')}
@@ -200,7 +205,7 @@ function htmlEmail(lang, parts, preheader) {
       ${button}
       ${parts.after.map((t) => p(t, '#586174', 14)).join('')}
     </td></tr>
-    <tr><td style="padding:18px 8px;font:12px/1.6 ${FONT};color:#687083;text-align:center">${escapeHtml(parts.footer)}<br><a href="${escapeHtml(config.PUBLIC_URL)}" style="color:#586174">${escapeHtml(config.PUBLIC_URL.replace(/^https?:\/\//, ''))}</a></td></tr>
+    <tr><td style="padding:20px 0 0;border-top:1px solid #e3e7ee;font:12px/1.6 ${FONT};color:#687083">${escapeHtml(parts.footer)}<br><a href="${escapeHtml(config.PUBLIC_URL)}" style="color:#586174">${escapeHtml(config.PUBLIC_URL.replace(/^https?:\/\//, ''))}</a></td></tr>
   </table>
 </td></tr></table>
 </body></html>`;
