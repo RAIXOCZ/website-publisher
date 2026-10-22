@@ -956,6 +956,9 @@ function siteCard({ name, url, info, password = null }) {
     $('.site-pw code', row).textContent = password;
     $('[data-action="password"]', row).hidden = false;
     $('[data-action="forget"]', row).hidden = false;
+  } else {
+    // Sites of the account: the same actions as on the account page.
+    $('[data-action="rename"]', row).hidden = false;
   }
   return row;
 }
@@ -1035,6 +1038,7 @@ async function renderMySites() {
         $('.site-status', card).hidden = false;
         card.classList.add('dim');
         for (const action of ['edit', 'delete']) $(`[data-action="${action}"]`, card).hidden = true;
+        $('.row-menu hr', card).hidden = true;
       }
       cards.push(card);
     }
@@ -1075,6 +1079,19 @@ $('#my-sites').addEventListener('click', async (e) => {
       if (password) forgetSite(name);
       if (state.edit?.name === name) cancelEdit();
       toast(t('toast.deleted', { name }));
+      renderMySites();
+    } catch (err) {
+      uiError(err);
+    }
+    return;
+  }
+  if (action === 'rename') {
+    try {
+      const next = await uiPrompt(t('rename.label', { name }), name, { title: t('rename.title'), ok: t('rename.ok') });
+      if (!next || slugify(next) === name) return;
+      const site = await api(`/sites/${encodeURIComponent(name)}/rename`, { method: 'POST', json: { name: next } });
+      if (state.edit?.name === name) cancelEdit();
+      toast(t('admin.renamed', { name: site.name }));
       renderMySites();
     } catch (err) {
       uiError(err);

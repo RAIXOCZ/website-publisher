@@ -262,3 +262,22 @@ test('the e-mail can be sent again after a minute', async ({ page, request }) =>
   await expect.poll(count).toBe(2);
   await expect(again).toBeDisabled();
 });
+
+test('a site has the same actions on the home page as on the account page', async ({ page, request }) => {
+  const { site } = await signIn(page);
+  const actions = (card) => card.locator('[data-action]:not([hidden])').evaluateAll((els) => els.map((el) => el.dataset.action));
+
+  await page.goto('/ucet');
+  const onAccount = await actions(page.locator(`#sites .site-card[data-name="${site}"]`));
+  await page.goto('/');
+  const card = page.locator(`#my-list .site-card[data-name="${site}"]`);
+  await expect(card).toBeVisible();
+  expect(await actions(card)).toEqual(onAccount);
+
+  // Renaming works from the home page too.
+  const renamed = unique('renamed');
+  await rowAction(card, 'rename');
+  await answerModal(page, renamed);
+  await expect(page.locator(`#my-list .site-card[data-name="${renamed}"]`)).toBeVisible();
+  expect((await request.get(`/${renamed}/`)).status()).toBe(200);
+});
