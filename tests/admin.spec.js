@@ -333,3 +333,27 @@ test('"Zveřejnit" goes back to the upload page', async ({ page }) => {
   await page.locator('.nav a[href="/"]').click();
   await expect(page).toHaveURL('/');
 });
+
+test('the "⋯" menu of a deleted site opens above the rows below it', async ({ page }) => {
+  await login(page);
+  const prefix = unique('gone');
+  for (let i = 0; i < 3; i++) {
+    const res = await page.request.post('/api/sites', { headers: HEADERS, multipart: { name: `${prefix}-${i}`, f: { name: 'index.html', mimeType: 'text/html', buffer: Buffer.from('<h1>x</h1>') } } });
+    expect(res.status()).toBe(200);
+  }
+  const { items } = await (await page.request.get(`/api/admin/sites?q=${prefix}`)).json();
+  for (const site of items) await page.request.post(`/api/admin/sites/${site.id}/delete`, { headers: HEADERS, data: { reason: '' } });
+
+  await page.reload();
+  await page.locator('.filter[data-for=sites]').fill(prefix);
+  await page.locator('#show-deleted-sites').check();
+  const rows = page.locator('#site-rows tr');
+  await expect(rows).toHaveCount(3);
+  await rows.first().locator('.more-btn').click();
+  const purge = rows.first().locator('[data-action=purge]');
+  await expect(purge).toBeVisible();
+  // The item is what a click there hits, not the row underneath.
+  const box = await purge.boundingBox();
+  const hit = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.dataset.action, { x: box.x + box.width / 2, y: box.y + box.height / 2 });
+  expect(hit).toBe('purge');
+});

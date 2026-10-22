@@ -908,7 +908,8 @@ table.audit td.detail { color: var(--muted); font-size: 13px; overflow-wrap: any
 .owner { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .owner-name { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .site-name .chip { margin-left: 4px; }
-tr.dim td { opacity: 0.65; }
+/* Not the actions cell: opacity would trap its fixed "⋯" menu under the next rows. */
+tr.dim td:not(.actions) { opacity: 0.65; }
 .table-panel > p { margin: 0 0 12px; }
 .table-panel > form { margin-bottom: 8px; }
 
