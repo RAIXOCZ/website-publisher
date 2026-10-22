@@ -243,17 +243,47 @@ function ownedPassword(name) {
 
 // Opens the browser's folder picker (or, with folder: false, a picker for any
 // number of files); resolves with [{ path, file }].
+// The input stays in the page until the picker closes: phones may drop a
+// detached input (and its change event) while the picker is open. Phones
+// without folder picking get a multiple-file picker instead.
 function pickFiles({ folder = true, multiple = true } = {}) {
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
+    input.multiple = multiple;
     if (folder) input.webkitdirectory = true;
-    else input.multiple = multiple;
-    input.addEventListener('change', () => {
-      resolve([...input.files].map((file) => ({ path: file.webkitRelativePath || file.name, file })));
+    input.className = 'picker-input';
+    input.tabIndex = -1;
+    document.body.append(input);
+    const done = (files) => {
+      input.remove();
+      resolve(files);
+    };
+    input.addEventListener('change', async () => {
+      done(await readPicked([...input.files].map((file) => ({ path: file.webkitRelativePath || file.name, file }))));
     });
+    input.addEventListener('cancel', () => done([]));
     input.click();
   });
+}
+
+// On phones a picked file is often only a reference into another app (a
+// cloud drive, the gallery) that stops working by the time it is uploaded,
+// so the first upload fails. Reading it right away keeps a copy; big picks
+// (which the size limit refuses anyway) are left as they are.
+const READ_PICKED_MAX = 150 * 1024 * 1024;
+async function readPicked(picked) {
+  const total = picked.reduce((sum, { file }) => sum + file.size, 0);
+  if (!matchMedia('(pointer: coarse)').matches || total > READ_PICKED_MAX) return picked;
+  return Promise.all(
+    picked.map(async ({ path, file }) => {
+      try {
+        return { path, file: new File([await file.arrayBuffer()], file.name, { type: file.type, lastModified: file.lastModified }) };
+      } catch {
+        return { path, file };
+      }
+    }),
+  );
 }
 
 function cleanFiles(files) {

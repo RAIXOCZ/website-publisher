@@ -243,6 +243,8 @@ function prefillName(fallback) {
 // become the site root; otherwise it is added as a subfolder of `dest`.
 async function addFolder(files, dest = '', label = files[0]?.path.split('/')[0]) {
   if (!files.length) return;
+  // A phone without folder picking hands over loose files.
+  if (!files.every((f) => f.path.includes('/'))) return addFiles(files.map((f) => f.file), dest);
   const asRoot = state.files.length === 0 && state.emptyDirs.size === 0 && !dest;
   if (asRoot) prefillName(label);
   const strip = (path) => (path.startsWith(`${label}/`) ? path.slice(label.length + 1) : path);
@@ -258,6 +260,7 @@ async function addFiles(files, dest = '') {
 // Replaces everything inside folder `dir` ('' = the whole site) with a picked folder's contents.
 function replaceFolder(dir, files) {
   if (!files.length) return;
+  if (!files.every((f) => f.path.includes('/'))) files = files.map((f) => ({ path: `-/${f.path}`, file: f.file }));
   const label = files[0].path.split('/')[0];
   state.files = state.files.filter((f) => !(dir ? isInside(f.path, dir) : true));
   if (!dir) state.emptyDirs.clear();

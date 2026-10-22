@@ -1,4 +1,5 @@
 // @ts-check
+const path = require('path');
 const fs = require('fs');
 const { test, expect } = require('./test');
 const { rowAction, choose, FIXTURES, HEADERS, unique, uniqueEmail, pick, pickAndPublish, mailToken, signIn, publishViaApi, answerModal, clipboard } = require('./helpers');
@@ -38,6 +39,25 @@ test('the name is typed into an address bar and slugified', async ({ page }) => 
   await page.locator('#name').fill('Můj Web');
   await page.locator('#name').blur();
   await expect(page.locator('#name')).toHaveValue('muj-web');
+});
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 800 }, hasTouch: true, isMobile: true });
+
+  test('"Přidat složku" without folder picking takes loose files, read right away', async ({ page }) => {
+    await page.goto('/');
+    const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.locator('#pick-folder').click()]);
+    // The picker input stays in the page while the picker is open.
+    await expect(page.locator('body > input.picker-input')).toHaveCount(1);
+    expect(chooser.isMultiple()).toBe(true);
+    // Like a phone browser that ignores folder picking.
+    await chooser.element().evaluate((input) => { input.webkitdirectory = false; });
+    await chooser.setFiles([path.join(FIXTURES.site, 'index.html'), path.join(FIXTURES.site, 'about.html')]);
+    await expect(page.locator('#staged')).toBeVisible();
+    await expect(page.locator('#staged')).toContainText('index.html');
+    await expect(page.locator('#staged')).toContainText('about.html');
+    await expect(page.locator('body > input.picker-input')).toHaveCount(0);
+  });
 });
 
 test.describe('publishing without an account', () => {
@@ -119,7 +139,7 @@ test.describe('signed in', () => {
     await pick(page, page.locator('#pick-folder'), FIXTURES.site);
     await expect(page.locator('#identity')).toBeHidden();
     await expect(page.locator('#signed-as')).toContainText('Zveřejníte jako');
-    await expect(page.locator('#account-limit')).toHaveText(/^Na účtu po zveřejnění: .* z 500 MB$/);
+    await expect(page.locator('#account-limit')).toHaveText(/^Na účtu po zveřejnění: .* z 100 MB$/);
     await page.locator('#publish').click();
 
     const url = `http://localhost:4317/${name}/`;
@@ -412,7 +432,7 @@ test.describe('file tree before publishing', () => {
     expect(order).toEqual(['', 'css', 'css/style.css', 'files', 'files/readme.txt', 'index.html', '404.html', 'about.html']);
     await expect(page.locator('#dropzone')).toBeHidden();
     await expect(page.locator('#staged-summary')).toContainText('5 souborů');
-    await expect(page.locator('#site-limit')).toHaveText('nejvýše 100 MB na jeden web');
+    await expect(page.locator('#site-limit')).toHaveText('nejvýše 50 MB na jeden web');
     await expect(page.locator('#account-limit')).toBeHidden(); // not signed in
     expect((await request.get('/sample-site/')).status()).toBe(404);
   });
