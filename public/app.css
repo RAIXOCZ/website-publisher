@@ -547,28 +547,8 @@ select option { color: #0b1324; background: #fff; }
 
 .empty { padding: 28px 20px; text-align: center; color: var(--muted); }
 
-/* folder → address explainer */
-.how {
-  display: grid; grid-template-columns: minmax(0, 0.9fr) auto minmax(0, 1.1fr); gap: 24px; align-items: center;
-  padding: 28px;
-  border-radius: var(--r-lg);
-}
-.tree {
-  margin: 0;
-  padding: 16px 18px;
-  font: 14px/1.7 var(--mono);
-  color: var(--muted);
-  background: var(--well);
-  border: 1px solid var(--glass-line);
-  border-radius: var(--r-md);
-  white-space: pre;
-  overflow-x: auto;
-}
-.tree b { color: var(--ink); }
-.how .arrow { color: var(--teal-2); }
-.how .copy { display: flex; flex-direction: column; gap: 10px; }
-.how .copy p { margin: 0; color: var(--muted); }
-.how .live { font: 600 15px var(--mono); color: var(--violet); }
+/* one line under the upload, pointing to the guide */
+.how-note { margin: 4px 0 0; text-align: center; color: var(--muted); }
 
 /* ---------- visits chart ---------- */
 
@@ -966,8 +946,6 @@ textarea:focus { border-color: var(--teal-2); box-shadow: 0 0 0 4px var(--ring);
   .side-nav a, .side-nav button { white-space: nowrap; }
   .staged { grid-template-columns: 1fr; }
   .staged-side { position: static; padding-left: 0; padding-top: 18px; border-left: 0; border-top: 1px solid var(--glass-line); }
-  .how { grid-template-columns: 1fr; }
-  .how .arrow { transform: rotate(90deg); justify-self: center; }
   .site-card { grid-template-areas: 'avatar main' 'avatar meta' 'actions actions'; grid-template-columns: auto minmax(0, 1fr); }
   .site-card .site-actions { grid-row: auto; grid-column: 1 / -1; justify-content: flex-start; max-width: none; margin-top: 8px; }
 }
@@ -1015,7 +993,6 @@ textarea:focus { border-color: var(--teal-2); box-shadow: 0 0 0 4px var(--ring);
   .segmented button { min-height: 40px; }
   .row.stack-sm { flex-direction: column; align-items: stretch; }
   .stack-sm > .btn { width: 100%; }
-  .how { padding: 18px; }
   .prose { padding: 20px; }
   .toolbar-stats { margin-left: 0; width: 100%; }
   .footer-row { flex-direction: column; text-align: center; }

@@ -75,7 +75,6 @@ function updateAddress() {
   const [prefix, suffix] = state.config.urlTemplate.split('{name}');
   $('#url-prefix').textContent = prefix;
   $('#url-suffix').textContent = suffix;
-  $('#how-live').textContent = siteUrl(t('how.example')).replace(/^https?:\/\//, '');
 }
 
 els.name.addEventListener('keydown', (e) => {

@@ -190,13 +190,16 @@ function consumeEmailToken(token) {
 
 /* ---------- API tokens for curl ---------- */
 
+// A key created without a name.
+const DEFAULT_KEY_NAME = 'API Klíč';
+
 function createApiToken(user, name, ip) {
   const token = `fp_${randomToken(24)}`;
   const info = run(
     'INSERT INTO api_tokens (user_id, name, hash, prefix, created_at) VALUES (?, ?, ?, ?, ?)',
-    user.id, cleanName(name) || 'CLI', sha256(token), token.slice(0, 10), now(),
+    user.id, cleanName(name) || DEFAULT_KEY_NAME, sha256(token), token.slice(0, 10), now(),
   );
-  audit('token.created', { userId: user.id, ip, detail: { name: cleanName(name) || 'CLI' } });
+  audit('token.created', { userId: user.id, ip, detail: { name: cleanName(name) || DEFAULT_KEY_NAME } });
   return { id: Number(info.lastInsertRowid), token };
 }
 

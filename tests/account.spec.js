@@ -134,8 +134,17 @@ test('API tokens publish and update sites with curl, and can be revoked', async 
   expect((await res.json()).replaced).toBe(true);
   expect(await (await curl.get(`/${name}/docs/`)).text()).toContain('Docs');
 
+  // A key without a name is called "API Klíč"; keys are revoked with "Odvolat".
+  await page.locator('#token-form button').click();
+  await expect(page.locator('#tokens tr')).toHaveCount(2);
+  await expect(page.locator('#tokens')).toContainText('API Klíč');
+  await page.locator('#tokens tr', { hasText: 'API Klíč' }).locator('button').click();
+  await answerModal(page, true);
+  await expect(page.locator('#tokens tr')).toHaveCount(1);
+
   await page.reload();
   await expect(page.locator('#tokens')).toContainText('právě teď');
+  await expect(page.locator('#tokens button')).toHaveText('Odvolat');
   await page.locator('#tokens button').click();
   await answerModal(page, false);
   await expect(page.locator('#tokens tr')).toHaveCount(1);
