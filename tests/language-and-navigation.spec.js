@@ -42,7 +42,6 @@ test('the CS/EN switch changes and remembers the language', async ({ page }) => 
   await page.locator('[data-set-lang=en]').click();
   await expect(page.locator('h1')).toHaveText('Your site online in one drop.');
   await expect(page.locator('[data-set-lang=en]')).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.how-note')).toHaveText('All you need is a folder with an index.html; the guide covers the rest.');
 
   await page.goto('/docs');
   await expect(page.locator('[data-lang=en] h1')).toHaveText('Guide');
@@ -69,9 +68,9 @@ test('header navigation links work', async ({ page }) => {
   await expect(page).toHaveURL('/');
 });
 
-test('the guide link under the upload opens the guide with this server\'s details', async ({ page }) => {
+test('the guide shows this server\'s details', async ({ page }) => {
   await page.goto('/');
-  await page.locator('.how-note a[href="/docs"]').click();
+  await page.locator('.nav a[href="/docs"]').click();
   await expect(page).toHaveURL('/docs');
   await expect(page.locator('[data-lang=cs] .url-example')).toHaveText('http://localhost:4317/nazev-webu/');
   await expect(page.locator('[data-lang=cs] .max-upload')).toHaveText(/^\d+ MB$/);

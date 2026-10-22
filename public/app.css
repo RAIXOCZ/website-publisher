@@ -547,8 +547,6 @@ select option { color: #0b1324; background: #fff; }
 
 .empty { padding: 28px 20px; text-align: center; color: var(--muted); }
 
-/* one line under the upload, pointing to the guide */
-.how-note { margin: 4px 0 0; text-align: center; color: var(--muted); }
 
 /* ---------- visits chart ---------- */
 
