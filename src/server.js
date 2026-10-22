@@ -367,6 +367,9 @@ api.get('/me', requireUser, (req, res) => {
   res.json({ user: accounts.publicUser(user), siteCount: sites.countSites(user.id), tokens: accounts.listApiTokens(user.id), usage: sites.usage(user.id) });
 });
 
+// Who is signed in (with a session or an API key), with the account's storage.
+api.get('/whoami', requireUser, (req, res) => res.json(sites.whoami(accounts.currentUser(req), req)));
+
 // The account's sites, a page at a time (?q= searches the name, ?cursor= continues).
 const listQuery = (req) => ({ q: String(req.query.q || '').slice(0, 200), cursor: req.query.cursor || null, limit: req.query.limit });
 api.get('/me/sites', requireUser, (req, res) => {

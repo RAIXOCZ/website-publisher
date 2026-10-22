@@ -149,6 +149,7 @@ function currentUser(req) {
       run('UPDATE api_tokens SET last_used_at = ? WHERE id = ?', now(), row.id);
       user = one('SELECT * FROM users WHERE id = ? AND deleted_at IS NULL', row.user_id);
       req._via = 'token';
+      req._key = { name: row.name, prefix: row.prefix };
     }
   } else {
     const token = parseCookies(req.headers.cookie)[SESSION_COOKIE];

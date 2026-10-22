@@ -145,9 +145,9 @@ ${require('./mcp').BUILD_NOTE} The service and its pages are in Czech and Englis
 
 ## For agents
 
-- [MCP server](${u}/mcp): Streamable HTTP endpoint. Tools: list_sites, list_files, read_file, publish_site, create_preview, rename_site, delete_site, get_visits. Sign-in: OAuth 2.1 with PKCE and dynamic client registration (${u}/.well-known/oauth-authorization-server); the user enters an e-mail and confirms by a link, which also creates an account when needed. Alternatively "Authorization: Bearer <API key>" with a key from ${u}/ucet#api-klice.
+- [MCP server](${u}/mcp): Streamable HTTP endpoint. Tools: get_account, list_sites, list_files, read_file, publish_site, create_preview, rename_site, delete_site, get_visits. Sign-in: OAuth 2.1 with PKCE and dynamic client registration (${u}/.well-known/oauth-authorization-server); the user enters an e-mail and confirms by a link, which also creates an account when needed. Alternatively "Authorization: Bearer <API key>" with a key from ${u}/ucet#api-klice.
 - [MCP server card](${u}/.well-known/mcp/server-card.json): how to connect, in JSON.
-- [HTTP API (OpenAPI)](${u}/openapi.json): publish with a multipart POST to ${u}/api/sites, same API key.
+- [HTTP API (OpenAPI)](${u}/openapi.json): publish with a multipart POST to ${u}/api/sites, same API key; GET ${u}/api/whoami tells which account the key belongs to.
 - [Guide: API keys, curl and MCP](${u}/docs.md?lang=en): examples for the command line and for MCP clients.
 
 ## Docs
@@ -242,10 +242,43 @@ function openApi() {
           responses: { 200: { description: 'Published', content: { 'application/json': { schema: { $ref: '#/components/schemas/Site' } } } }, 400: error, 403: error, 413: error },
         },
       },
-      '/me': {
+      '/whoami': {
         get: {
-          summary: 'The account, its sites and storage use',
-          responses: { 200: { description: 'Account', content: { 'application/json': { schema: { type: 'object', properties: { sites: { type: 'array', items: { $ref: '#/components/schemas/Site' } } } } } } }, 401: error },
+          summary: 'Who is signed in: the account, the API key used and storage use',
+          responses: {
+            200: {
+              description: 'Account',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      email: { type: 'string' },
+                      firstName: { type: 'string' },
+                      lastName: { type: 'string' },
+                      createdAt: { type: 'string', format: 'date-time' },
+                      blocked: { type: 'boolean', description: 'Adding and editing sites is not allowed' },
+                      signedInWith: { type: 'string', enum: ['apiKey', 'session'] },
+                      apiKey: { type: ['object', 'null'], properties: { name: { type: 'string' }, prefix: { type: 'string' } } },
+                      siteCount: { type: 'integer' },
+                      usage: { type: 'object', properties: { used: { type: 'integer' }, limit: { type: ['integer', 'null'] }, siteLimit: { type: 'integer' } } },
+                    },
+                  },
+                },
+              },
+            },
+            401: error,
+          },
+        },
+      },
+      '/me/sites': {
+        get: {
+          summary: 'The account\'s sites, newest change first, a page at a time',
+          parameters: [
+            { name: 'q', in: 'query', schema: { type: 'string' }, description: 'Part of a site name' },
+            { name: 'cursor', in: 'query', schema: { type: 'string' }, description: 'next from the previous page' },
+          ],
+          responses: { 200: { description: 'Sites', content: { 'application/json': { schema: { type: 'object', properties: { items: { type: 'array', items: { $ref: '#/components/schemas/Site' } }, next: { type: ['string', 'null'] }, total: { type: 'integer' } } } } } }, 401: error },
         },
       },
       '/sites/{name}/files': {

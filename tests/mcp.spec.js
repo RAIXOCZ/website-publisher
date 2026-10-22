@@ -27,6 +27,15 @@ test('MCP: initialize and list tools', async () => {
   expect(init.result.protocolVersion).toBe('2025-06-18');
   expect(init.result.serverInfo.name).toBe('freepages.dev');
   expect(init.result.capabilities.tools).toBeTruthy();
+  // get_account tells who is signed in; GET /api/whoami does the same over HTTP.
+  const account = (await rpc('tools/call', { name: 'get_account', arguments: {} })).result;
+  expect(account.content[0].text).toMatch(/^Signed in as \S+@\S+ .*with the API key "/);
+  expect(account.structuredContent.signedInWith).toBe('apiKey');
+  const whoami = await (await client.get('/api/whoami', { headers: { Authorization: `Bearer ${token}` } })).json();
+  expect(whoami.email).toBe(account.structuredContent.email);
+  expect(whoami.apiKey.prefix).toBe(token.slice(0, 10));
+  expect(whoami.usage.siteLimit).toBeGreaterThan(0);
+  expect((await client.get('/api/whoami')).status()).toBe(401);
   // The app shows the server with the freepages.dev icon.
   const latest = await rpc('initialize', { protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: 'test', version: '1' } });
   expect(latest.result.protocolVersion).toBe('2025-11-25');
@@ -44,7 +53,7 @@ test('MCP: initialize and list tools', async () => {
 
   const { result } = await rpc('tools/list', {});
   expect(result.tools.map((tool) => tool.name)).toEqual(
-    expect.arrayContaining(['list_sites', 'list_files', 'read_file', 'publish_site', 'create_preview', 'rename_site', 'delete_site', 'get_visits']),
+    expect.arrayContaining(['get_account', 'list_sites', 'list_files', 'read_file', 'publish_site', 'create_preview', 'rename_site', 'delete_site', 'get_visits']),
   );
   expect((await rpc('nope', {})).error.code).toBe(-32601);
 });

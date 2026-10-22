@@ -54,6 +54,13 @@ const fileSchema = {
 
 const TOOLS = [
   {
+    name: 'get_account',
+    title: 'Get the signed-in account',
+    description: 'Tells which freepages.dev account this connection is signed in to (e-mail and name), with which API key, how many sites it has and how much of its storage it uses.',
+    inputSchema: { type: 'object', properties: {} },
+    annotations: { readOnlyHint: true },
+  },
+  {
     name: 'list_sites',
     title: 'List sites',
     description: 'Lists the sites of the account (newest change first, 100 at a time) with their addresses, size and last update, and the storage used. Use search to find sites by name and cursor to get the next page.',
@@ -205,8 +212,15 @@ async function readFile(user, args) {
 }
 
 // Runs a tool; returns [summary text, structured result].
-async function callTool(name, args, user, ip) {
+async function callTool(name, args, user, ip, req) {
   switch (name) {
+    case 'get_account': {
+      const me = sites.whoami(user, req);
+      const name = `${me.firstName} ${me.lastName}`.trim();
+      const limit = me.usage.limit ? ` of ${me.usage.limit} bytes` : ' (no limit)';
+      const text = `Signed in as ${me.email}${name ? ` (${name})` : ''}${me.apiKey ? ` with the API key "${me.apiKey.name}"` : ''}. ${me.siteCount} sites, ${me.usage.used} bytes used${limit}.${me.blocked ? ' Adding and editing sites is blocked for this account.' : ''}`;
+      return [text, me];
+    }
     case 'list_sites': {
       const page = sites.listPage({ ownerId: user.id, q: args.search || '', cursor: args.cursor || null, limit: 100 });
       const list = page.items.map((s) => ({ name: s.name, url: s.url, files: s.files, bytes: s.bytes, updatedAt: s.updatedAt }));
@@ -275,7 +289,7 @@ async function handle(message, req, user) {
     case 'tools/call': {
       if (!TOOLS.some((tool) => tool.name === params.name)) return rpcError(id, -32602, `Unknown tool: ${params.name}`);
       try {
-        const [text, structured] = await callTool(params.name, params.arguments || {}, user, accounts.normIp(clientIp(req)));
+        const [text, structured] = await callTool(params.name, params.arguments || {}, user, accounts.normIp(clientIp(req)), req);
         return reply({ content: [{ type: 'text', text }], ...(structured ? { structuredContent: structured } : {}), isError: false });
       } catch (err) {
         if (err instanceof ToolError) return reply({ content: [{ type: 'text', text: err.message }], isError: true });

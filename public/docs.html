@@ -75,6 +75,7 @@ curl -H "Authorization: Bearer $FREEPAGES_TOKEN" \
           <li><code>f</code>: soubory. Jeden <code>.zip</code> se rozbalí; více souborů pošlete jako dvojice <code>-F p=cesta/soubor.html -F f=@soubor.html</code> (cesta <code>p</code> vždy před souborem).</li>
           <li><code>preview=1</code>: místo zveřejnění vytvoří 5minutový náhled; adresa je v odpovědi. Nový náhled vašeho účtu smaže ten předchozí.</li>
           <li>Odpověď je JSON s adresou webu (<code>url</code>). Chyby vrací <code>{"error": "…"}</code> s HTTP kódem 4xx.</li>
+          <li>Ke kterému účtu klíč patří, vrátí <code>GET /api/whoami</code> se stejnou hlavičkou: e-mail, jméno, název klíče, počet webů a využité úložiště.</li>
         </ul>
 
         <h3>MCP server pro AI asistenty</h3>
@@ -91,6 +92,7 @@ claude mcp add --transport http freepages.dev <span class="mcp-url">…/mcp</spa
         <p>Asistent pak umí:</p>
         <ul>
           <li>zveřejnit nebo aktualizovat web ze souborů (<code>publish_site</code>) a vytvořit náhled (<code>create_preview</code>),</li>
+          <li>zjistit, ke kterému účtu je připojený (<code>get_account</code>),</li>
           <li>vypsat vaše weby a jejich soubory a přečíst soubor (<code>list_sites</code>, <code>list_files</code>, <code>read_file</code>),</li>
           <li>přejmenovat a smazat web (<code>rename_site</code>, <code>delete_site</code>) a zjistit návštěvnost (<code>get_visits</code>).</li>
         </ul>
@@ -187,6 +189,7 @@ curl -H "Authorization: Bearer $FREEPAGES_TOKEN" \
           <li><code>f</code>: files. A single <code>.zip</code> is extracted; send several files as pairs <code>-F p=path/file.html -F f=@file.html</code> (the path <code>p</code> always before the file).</li>
           <li><code>preview=1</code>: creates a 5-minute preview instead of publishing; its address is in the response. A new preview of your account deletes the previous one.</li>
           <li>The response is JSON with the site's address (<code>url</code>). Errors return <code>{"error": "…"}</code> with a 4xx HTTP status.</li>
+          <li><code>GET /api/whoami</code> with the same header tells which account the key belongs to: e-mail, name, key name, number of sites and storage used.</li>
         </ul>
 
         <h3>MCP server for AI assistants</h3>
@@ -203,6 +206,7 @@ claude mcp add --transport http freepages.dev <span class="mcp-url">…/mcp</spa
         <p>The assistant can then:</p>
         <ul>
           <li>publish or update a site from files (<code>publish_site</code>) and create a preview (<code>create_preview</code>),</li>
+          <li>tell which account it is connected to (<code>get_account</code>),</li>
           <li>list your sites and their files and read a file (<code>list_sites</code>, <code>list_files</code>, <code>read_file</code>),</li>
           <li>rename and delete a site (<code>rename_site</code>, <code>delete_site</code>) and check visits (<code>get_visits</code>).</li>
         </ul>

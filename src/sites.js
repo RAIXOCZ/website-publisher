@@ -423,6 +423,22 @@ const MB = 1024 * 1024;
 const storageUsed = () => one('SELECT COALESCE(SUM(bytes), 0) AS n FROM sites')?.n || 0;
 const accountUsed = (userId) => one('SELECT COALESCE(SUM(bytes), 0) AS n FROM sites WHERE user_id = ? AND deleted_at IS NULL', userId)?.n || 0;
 
+// Who is signed in, for the API (GET /api/whoami) and MCP (get_account):
+// the account, how it signed in (and with which key) and its storage.
+function whoami(user, req) {
+  return {
+    email: user.email,
+    firstName: user.first_name,
+    lastName: user.last_name,
+    createdAt: user.created_at,
+    blocked: Boolean(user.blocked_at),
+    signedInWith: req._via === 'token' ? 'apiKey' : 'session',
+    apiKey: req._via === 'token' ? req._key : null,
+    siteCount: countSites(user.id),
+    usage: usage(user.id),
+  };
+}
+
 function usage(userId) {
   const user = userId && accounts.userById(userId);
   return {
@@ -717,6 +733,7 @@ async function init() {
 }
 
 module.exports = {
+  whoami,
   UserError,
   NAME_RE,
   PREVIEW_PREFIX,
