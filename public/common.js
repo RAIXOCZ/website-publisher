@@ -252,7 +252,7 @@ function pickFiles({ folder = true, multiple = true } = {}) {
     input.type = 'file';
     input.multiple = multiple;
     if (folder) input.webkitdirectory = true;
-    input.className = 'picker-input';
+    input.className = 'file-pick';
     input.tabIndex = -1;
     document.body.append(input);
     const done = (files) => {

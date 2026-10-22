@@ -243,7 +243,8 @@ label { display: block; font-weight: 600; margin-bottom: 8px; }
 .labeled { display: flex; flex-direction: column; gap: 6px; margin: 0; font-size: 14px; min-width: 0; }
 .labeled > input { font-weight: 400; }
 .row.align-end { align-items: flex-end; }
-input[type='text'], input[type='password'], input[type='email'] {
+input[type='text'], input[type='password'], input[type='email'], input[type='search'] {
+  -webkit-appearance: none; appearance: none;
   width: 100%;
   padding: 11px 14px;
   font: 15px var(--body);
@@ -255,6 +256,7 @@ input[type='text'], input[type='password'], input[type='email'] {
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 input::placeholder { color: var(--faint); }
+input[type='search']::-webkit-search-decoration { -webkit-appearance: none; }
 input:focus { border-color: var(--teal-2); box-shadow: 0 0 0 4px var(--ring); }
 
 /* checkboxes and selects are drawn by us, never left to the browser */
@@ -826,16 +828,22 @@ main :is(p, li) a:not(.btn), .consent a, .sent-actions a { color: var(--teal); t
 .side-nav a:hover, .side-nav button:hover { text-decoration: none; }
 .side-nav a:not(.active):hover, .side-nav button:not([aria-selected='true']):hover { color: var(--ink); background: var(--hover); }
 .side-nav .active, .side-nav [aria-selected='true'] { color: var(--teal); background: color-mix(in srgb, var(--accent-fill) 13%, transparent); }
-.side-foot { display: flex; flex-direction: column; gap: 2px; padding-top: 12px; border-top: 1px solid var(--glass-line); }
+.side-foot { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid var(--glass-line); }
 .side-item {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 12px; border: 0; border-radius: 9px;
   font: 600 15px var(--body); text-align: left; color: var(--muted); background: none; cursor: pointer;
   transition: background-color 0.15s, color 0.15s;
 }
-.side-item svg { flex: none; color: var(--faint); }
-.side-item:hover { color: var(--ink); background: var(--hover); text-decoration: none; }
-.side-item:hover svg { color: currentColor; }
+.side-item svg { flex: none; }
+.side-item:hover { text-decoration: none; }
+/* Sign out is lightly tinted red; the admin link (only on phones, where the
+   header hides it) is tinted with the accent. */
+.side-item.danger { color: var(--danger); background: color-mix(in srgb, var(--danger) 8%, transparent); }
+.side-item.danger:hover { background: color-mix(in srgb, var(--danger) 15%, transparent); }
+.side-item.primary { color: var(--teal); background: color-mix(in srgb, var(--accent-fill) 9%, transparent); }
+.side-item.primary:hover { background: color-mix(in srgb, var(--accent-fill) 16%, transparent); }
+.side-item.show-sm { display: none; }
 .card { scroll-margin-top: 100px; }
 .card { padding: 22px; border-radius: var(--r-lg); display: flex; flex-direction: column; gap: 14px; }
 .card h2 { margin: 0; font-size: 22px; }
@@ -983,6 +991,7 @@ textarea:focus { border-color: var(--teal-2); box-shadow: 0 0 0 4px var(--ring);
   h2 { font-size: 25px; }
   .lead { font-size: 16px; }
   .hide-sm { display: none !important; }
+  .side-item.show-sm:not([hidden]) { display: flex; }
   .nav a { padding: 8px 7px; font-size: 14px; }
   .topbar .bar { gap: 8px; padding-left: 8px; }
   .brand { font-size: 17px; }
@@ -1021,7 +1030,7 @@ textarea:focus { border-color: var(--teal-2); box-shadow: 0 0 0 4px var(--ring);
 
 /* ---------- long lists and the searchable picker ---------- */
 
-.picker-input { position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.file-pick { position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .list-search { margin-bottom: 4px; }
 .list-sentinel { height: 1px; }
 .list-sentinel.loading { height: 36px; background: center / 20px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='%23888' stroke-opacity='.3' stroke-width='3'/%3E%3Cpath d='M21 12a9 9 0 0 0-9-9' fill='none' stroke='%230d9488' stroke-width='3' stroke-linecap='round'%3E%3CanimateTransform attributeName='transform' type='rotate' from='0 12 12' to='360 12 12' dur='0.8s' repeatCount='indefinite'/%3E%3C/path%3E%3C/svg%3E"); }
@@ -1040,7 +1049,8 @@ textarea:focus { border-color: var(--teal-2); box-shadow: 0 0 0 4px var(--ring);
   width: max(100%, 280px); padding: 6px;
   background: var(--glass-strong); border-radius: var(--r-md); box-shadow: var(--float-shadow);
 }
-.picker-search { padding: 8px 10px !important; font-size: 14px !important; }
+.picker-search { display: block; padding: 9px 12px; font-size: 14px; }
+.picker-search:focus { box-shadow: none; }
 .picker-list { max-height: 280px; overflow-y: auto; margin: 6px 0 0; padding: 0; list-style: none; }
 .picker-list li { padding: 8px 10px; border-radius: 7px; font-size: 14px; cursor: pointer; overflow-wrap: anywhere; }
 .picker-list li:hover, .picker-list li.active { background: var(--hover); }

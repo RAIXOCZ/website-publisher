@@ -48,7 +48,7 @@ test.describe('on a phone', () => {
     await page.goto('/');
     const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.locator('#pick-folder').click()]);
     // The picker input stays in the page while the picker is open.
-    await expect(page.locator('body > input.picker-input')).toHaveCount(1);
+    await expect(page.locator('body > input.file-pick')).toHaveCount(1);
     expect(chooser.isMultiple()).toBe(true);
     // Like a phone browser that ignores folder picking.
     await chooser.element().evaluate((input) => { input.webkitdirectory = false; });
@@ -56,7 +56,7 @@ test.describe('on a phone', () => {
     await expect(page.locator('#staged')).toBeVisible();
     await expect(page.locator('#staged')).toContainText('index.html');
     await expect(page.locator('#staged')).toContainText('about.html');
-    await expect(page.locator('body > input.picker-input')).toHaveCount(0);
+    await expect(page.locator('body > input.file-pick')).toHaveCount(0);
   });
 });
 

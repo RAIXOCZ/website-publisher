@@ -57,11 +57,16 @@ test('the admin area does not exist for anyone but the admin, who signs in on /u
   }
   await expect(page).toHaveURL('/ucet');
   await expect(page.locator('#account-name')).toHaveText('Martin Balcar');
+  // On a computer the header links to the admin area; on a phone (where the
+  // header has no room for it) the side panel does.
+  await expect(page.locator('#admin-link')).toBeHidden();
+  await page.setViewportSize({ width: 390, height: 800 });
   await expect(page.locator('#admin-link')).toBeVisible();
+  await page.setViewportSize({ width: 1280, height: 800 });
   await page.locator('.account-side a[href="#smazani"]').click();
   await expect(page.locator('#delete-account')).toBeHidden();
   await expect(page.locator('#delete-admin')).toBeVisible();
-  await page.locator('#admin-link').click();
+  await page.locator('.nav a[href="/admin"]').click();
   await expect(page.locator('#panel')).toBeVisible();
   await expect(page.locator('#logout')).toBeVisible();
   await expect(page.locator('.nav a[href="/admin"]')).toHaveAttribute('aria-current', 'page');
