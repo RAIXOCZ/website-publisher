@@ -345,8 +345,9 @@ test('the "⋯" menu of a deleted site opens above the rows below it', async ({ 
   for (const site of items) await page.request.post(`/api/admin/sites/${site.id}/delete`, { headers: HEADERS, data: { reason: '' } });
 
   await page.reload();
-  await page.locator('.filter[data-for=sites]').fill(prefix);
+  // The search goes last: it reloads the list a moment after typing.
   await page.locator('#show-deleted-sites').check();
+  await page.locator('.filter[data-for=sites]').fill(prefix);
   const rows = page.locator('#site-rows tr');
   await expect(rows).toHaveCount(3);
   await rows.first().locator('.more-btn').click();
