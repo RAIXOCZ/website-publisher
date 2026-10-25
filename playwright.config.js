@@ -50,7 +50,7 @@ module.exports = defineConfig({
       // Small storage limits, so tests/limits.spec.js can reach them.
       command: 'node --disable-warning=ExperimentalWarning tests/start-server.js',
       url: 'http://localhost:4320/api/config',
-      env: { ...common, PORT: '4320', PUBLIC_URL: 'http://localhost:4320', SITE_MAX_MB: '1', ACCOUNT_MAX_MB: '2' },
+      env: { ...common, PORT: '4320', PUBLIC_URL: 'http://localhost:4320', SITE_MAX_MB: '1', ACCOUNT_MAX_MB: '2', MAX_UPLOAD_MB: '2' },
       reuseExistingServer: false,
     },
   ],

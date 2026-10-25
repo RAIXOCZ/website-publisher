@@ -261,7 +261,7 @@ function openApi() {
                       signedInWith: { type: 'string', enum: ['apiKey', 'session'] },
                       apiKey: { type: ['object', 'null'], properties: { name: { type: 'string' }, prefix: { type: 'string' } } },
                       siteCount: { type: 'integer' },
-                      usage: { type: 'object', properties: { used: { type: 'integer' }, limit: { type: ['integer', 'null'] }, siteLimit: { type: 'integer' } } },
+                      usage: { type: 'object', properties: { used: { type: 'integer' }, limit: { type: ['integer', 'null'] }, siteLimit: { type: ['integer', 'null'], description: 'null: no site limit (the admin account)' } } },
                     },
                   },
                 },

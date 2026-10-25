@@ -240,6 +240,9 @@ api.get('/config', (req, res) => {
     whitelisted: accounts.isWhitelisted(ipOf(req)),
     maxUploadMb: config.MAX_UPLOAD_MB,
     siteMaxMb: config.SITE_MAX_MB,
+    // The admin account: no site limit, big uploads go in parts of this size.
+    unlimited: Boolean(user?.is_admin),
+    partBytes: user?.is_admin ? sites.partBytes() : null,
     accountMaxMb: config.ACCOUNT_MAX_MB,
     urlTemplate: sites.siteUrl('{name}'),
     previewMinutes: config.PREVIEW_MINUTES,
@@ -449,6 +452,23 @@ api.get('/check-name', (req, res) => {
  *  - everyone else: give e-mail + name; the site goes live after the e-mail link
  *  - preview=1: anyone, a temporary preview-xxxxxx site for PREVIEW_MINUTES
  */
+// The admin account has no size limits; its uploads bigger than one request
+// can carry go in parts. For everyone else these addresses do not exist.
+const unlimitedUser = (req) => {
+  const user = accounts.currentUser(req);
+  return user?.is_admin ? user : null;
+};
+api.post('/uploads', async (req, res) => {
+  const user = unlimitedUser(req);
+  if (!user) return fail(req, res, 404, 'notFound');
+  res.json(await sites.startUpload(user.id));
+});
+api.post('/uploads/:id', async (req, res) => {
+  const user = unlimitedUser(req);
+  if (!user) return fail(req, res, 404, 'notFound');
+  res.json(await sites.addUploadPart(req, req.params.id, user.id, { append: req.query.append === '1' }));
+});
+
 api.post('/sites', async (req, res) => {
   const ip = ipOf(req);
   const user = accounts.currentUser(req);
@@ -458,8 +478,10 @@ api.post('/sites', async (req, res) => {
     if (auth.tooManyAttempts(req)) return fail(req, res, 429, 'tooManyAttempts');
     if (!auth.publishAllowed(req)) return fail(req, res, 429, 'tooManyUploads');
   }
-  const upload = await sites.parseUpload(req);
+  let upload = await sites.parseUpload(req);
   try {
+    // Files sent before in parts (the admin account's big sites).
+    if (upload.fields.upload) upload = await sites.useUpload(upload, upload.fields.upload, unlimitedUser(req)?.id);
     const f = upload.fields;
     let base = null;
     if (f.base) {
@@ -800,6 +822,7 @@ sites.init().then(() => {
       .cleanup()
       .then(() => stats.cleanup())
       .then(() => oauth.cleanup())
+      .then(() => sites.cleanupUploads())
       .catch((err) => console.error('cleanup failed:', err));
   housekeeping();
   setInterval(housekeeping, 60_000).unref();

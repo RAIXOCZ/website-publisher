@@ -105,10 +105,10 @@ function cleanPath(raw) {
 }
 
 class Budget {
-  constructor() {
+  constructor(maxBytes = config.MAX_UPLOAD_MB * 1024 * 1024) {
     this.files = 0;
     this.bytes = 0;
-    this.maxBytes = config.MAX_UPLOAD_MB * 1024 * 1024;
+    this.maxBytes = maxBytes;
   }
 
   addFile() {
@@ -117,7 +117,10 @@ class Budget {
 
   addBytes(n) {
     this.bytes += n;
-    if (this.bytes > this.maxBytes) throw new UserError('tooLarge', 413, {}, { limit: config.MAX_UPLOAD_MB });
+    if (this.bytes > this.maxBytes) {
+      if (this.maxBytes > config.MAX_UPLOAD_MB * 1024 * 1024) throw new UserError('storageFull', 507);
+      throw new UserError('tooLarge', 413, {}, { limit: config.MAX_UPLOAD_MB });
+    }
   }
 }
 
@@ -136,12 +139,17 @@ function counter(budget) {
   });
 }
 
-async function writeFile(root, segments, source, budget) {
-  budget.addFile();
+// `append` adds to a file received earlier (the next part of a big file).
+async function writeFile(root, segments, source, budget, { append = false } = {}) {
   const target = path.join(root, ...segments);
   if (!target.startsWith(root + path.sep)) throw new UserError('invalidPath', 400, {}, { path: segments.join('/') });
-  await fsp.mkdir(path.dirname(target), { recursive: true });
-  await pipeline(source, counter(budget), fs.createWriteStream(target));
+  if (append) {
+    if (!fs.existsSync(target)) throw new UserError('partWithoutStart', 400, {}, { path: shortPath(segments.join('/')) });
+  } else {
+    budget.addFile();
+    await fsp.mkdir(path.dirname(target), { recursive: true });
+  }
+  await pipeline(source, counter(budget), fs.createWriteStream(target, { flags: append ? 'a' : 'w' }));
 }
 
 function openZip(file) {
@@ -249,6 +257,58 @@ function resetPassword(site) {
 
 /* ---------- reading uploads ---------- */
 
+// Reads a multipart request (p + f pairs, or plain files) into `raw`, adding
+// the received paths to `uploaded`. Resolves with the other form fields.
+function receiveFiles(req, raw, budget, uploaded, { append = false } = {}) {
+  return new Promise((resolve, reject) => {
+    const fields = {};
+    let bb;
+    try {
+      bb = Busboy({
+        headers: req.headers,
+        limits: { files: config.MAX_FILES, fileSize: config.MAX_UPLOAD_MB * 1024 * 1024, fields: config.MAX_FILES + 20, fieldSize: 5 * 1024 * 1024 },
+      });
+    } catch {
+      return reject(new UserError('expectedUpload'));
+    }
+    const writes = [];
+    let pendingPath = null;
+    let failed = false;
+    const fail = (err) => {
+      if (failed) return;
+      failed = true;
+      req.unpipe(bb);
+      req.resume();
+      reject(err);
+    };
+
+    bb.on('field', (field, value) => {
+      if (field === 'p') pendingPath = value;
+      else fields[field] = value;
+    });
+    bb.on('file', (_field, stream, info) => {
+      const relPath = pendingPath || info.filename;
+      pendingPath = null;
+      let segments;
+      try {
+        segments = cleanPath(relPath);
+      } catch (err) {
+        stream.resume();
+        return fail(err);
+      }
+      if (!segments || failed) return stream.resume();
+      if (!append) uploaded.push(segments);
+      stream.on('limit', () => fail(new UserError('tooLarge', 413, {}, { limit: config.MAX_UPLOAD_MB })));
+      writes.push(writeFile(raw, segments, stream, budget, { append }).catch(fail));
+    });
+    bb.on('filesLimit', () => fail(new UserError('tooManyFiles', 413, {}, { limit: config.MAX_FILES })));
+    bb.on('error', (err) => fail(new UserError('uploadFailed', 400, {}, { reason: err.message })));
+    bb.on('close', () => Promise.all(writes).then(() => !failed && resolve(fields), fail));
+    req.on('aborted', () => fail(new UserError('uploadAborted')));
+    req.pipe(bb);
+  });
+}
+
 /**
  * Reads a multipart upload into a temporary folder. Fields (all optional):
  *   name, overwrite ("1"), password, email, firstName, lastName, preview ("1"),
@@ -261,57 +321,12 @@ async function parseUpload(req) {
   const raw = path.join(work, 'raw');
   await fsp.mkdir(raw, { recursive: true });
   const budget = new Budget();
-  const fields = {};
   const uploaded = [];
   const cleanup = () => fsp.rm(work, { recursive: true, force: true }).catch(() => {});
 
+  let fields;
   try {
-    await new Promise((resolve, reject) => {
-      let bb;
-      try {
-        bb = Busboy({
-          headers: req.headers,
-          limits: { files: config.MAX_FILES, fileSize: config.MAX_UPLOAD_MB * 1024 * 1024, fields: config.MAX_FILES + 20, fieldSize: 5 * 1024 * 1024 },
-        });
-      } catch {
-        return reject(new UserError('expectedUpload'));
-      }
-      const writes = [];
-      let pendingPath = null;
-      let failed = false;
-      const fail = (err) => {
-        if (failed) return;
-        failed = true;
-        req.unpipe(bb);
-        req.resume();
-        reject(err);
-      };
-
-      bb.on('field', (field, value) => {
-        if (field === 'p') pendingPath = value;
-        else fields[field] = value;
-      });
-      bb.on('file', (_field, stream, info) => {
-        const relPath = pendingPath || info.filename;
-        pendingPath = null;
-        let segments;
-        try {
-          segments = cleanPath(relPath);
-        } catch (err) {
-          stream.resume();
-          return fail(err);
-        }
-        if (!segments || failed) return stream.resume();
-        uploaded.push(segments);
-        stream.on('limit', () => fail(new UserError('tooLarge', 413, {}, { limit: config.MAX_UPLOAD_MB })));
-        writes.push(writeFile(raw, segments, stream, budget).catch(fail));
-      });
-      bb.on('filesLimit', () => fail(new UserError('tooManyFiles', 413, {}, { limit: config.MAX_FILES })));
-      bb.on('error', (err) => fail(new UserError('uploadFailed', 400, {}, { reason: err.message })));
-      bb.on('close', () => Promise.all(writes).then(() => !failed && resolve(), fail));
-      req.on('aborted', () => fail(new UserError('uploadAborted')));
-      req.pipe(bb);
-    });
+    fields = await receiveFiles(req, raw, budget, uploaded);
   } catch (err) {
     await cleanup();
     throw err;
@@ -346,8 +361,71 @@ async function parseUpload(req) {
       lastName: fields.lastName || '',
       base: fields.base || '',
       replacePreview: fields.replacePreview || '',
+      upload: fields.upload || '',
     },
   };
+}
+
+/* ---------- uploads in parts (the admin's big sites) ---------- */
+
+// A request can carry at most MAX_UPLOAD_MB (Cloudflare's limit), so the
+// admin account, which has no site limit, sends bigger sites in parts: files
+// go to an upload started with startUpload (a big file in pieces, each piece
+// after the first with append), then POST /api/sites with upload=<id>
+// publishes them like a normal upload.
+const uploads = new Map();
+const UPLOAD_IDLE_MS = 60 * 60 * 1000;
+const partBytes = () => Math.min(64 * MB, Math.floor(config.MAX_UPLOAD_MB * MB * 0.8));
+
+async function startUpload(userId) {
+  const id = crypto.randomUUID();
+  const work = path.join(config.TMP_DIR, `parts-${id}`);
+  const raw = path.join(work, 'raw');
+  await fsp.mkdir(raw, { recursive: true });
+  // No upload limit, only the free space of the whole service.
+  const free = config.TOTAL_MAX_GB * 1024 * MB - storageUsed();
+  uploads.set(id, { userId, work, raw, uploaded: [], budget: new Budget(Math.max(0, free)), touched: Date.now(), busy: false });
+  return { id, partBytes: partBytes() };
+}
+
+function ownUpload(id, userId) {
+  const upload = uploads.get(String(id));
+  if (!upload || upload.userId !== userId) throw new UserError('uploadNotFound', 404);
+  return upload;
+}
+
+// One part: files, or (append) the next piece of a file sent before.
+async function addUploadPart(req, id, userId, { append = false } = {}) {
+  const upload = ownUpload(id, userId);
+  if (upload.busy) throw new UserError('uploadBusy', 409);
+  upload.busy = true;
+  try {
+    await receiveFiles(req, upload.raw, upload.budget, upload.uploaded, { append });
+  } finally {
+    upload.busy = false;
+    upload.touched = Date.now();
+  }
+  return { files: upload.budget.files, bytes: upload.budget.bytes };
+}
+
+// Swaps the (empty) files of a publish request for those of an upload.
+async function useUpload(parsed, id, userId) {
+  const upload = ownUpload(id, userId);
+  if (upload.busy) throw new UserError('uploadBusy', 409);
+  uploads.delete(String(id));
+  await parsed.cleanup();
+  const cleanup = () => fsp.rm(upload.work, { recursive: true, force: true }).catch(() => {});
+  return { ...parsed, work: upload.work, raw: upload.raw, uploaded: upload.uploaded, budget: upload.budget, cleanup };
+}
+
+// Unfinished uploads are dropped after an hour without a new part.
+async function cleanupUploads() {
+  for (const [id, upload] of uploads) {
+    if (!upload.busy && Date.now() - upload.touched > UPLOAD_IDLE_MS) {
+      uploads.delete(id);
+      await fsp.rm(upload.work, { recursive: true, force: true }).catch(() => {});
+    }
+  }
 }
 
 // The same kind of upload as parseUpload gives, from files sent as data
@@ -414,7 +492,7 @@ async function assemble(upload, { baseDir = null } = {}) {
     fallbackName = uploaded[0].at(-1);
     content = path.join(work, 'zip');
     await fsp.mkdir(content);
-    await extractZip(path.join(raw, ...uploaded[0]), content, new Budget());
+    await extractZip(path.join(raw, ...uploaded[0]), content, new Budget(Math.max(upload.budget.maxBytes, config.MAX_UPLOAD_MB * MB)));
   }
   let dir = content;
   let wrapper = null;
@@ -461,23 +539,24 @@ function usage(userId) {
   return {
     used: userId ? accountUsed(userId) : 0,
     limit: user && !user.is_admin ? config.ACCOUNT_MAX_MB * MB : null,
-    siteLimit: config.SITE_MAX_MB * MB,
+    siteLimit: user?.is_admin ? null : config.SITE_MAX_MB * MB,
   };
 }
 
 /**
- * Refuses content that would break a limit: SITE_MAX_MB per site,
- * ACCOUNT_MAX_MB per account (the admin has none) and TOTAL_MAX_GB for the
- * whole service. `replacing` is the site whose current files go away.
+ * Refuses content that would break a limit: SITE_MAX_MB per site and
+ * ACCOUNT_MAX_MB per account (the admin account has neither) and
+ * TOTAL_MAX_GB for the whole service. `replacing` is the site whose current
+ * files go away.
  */
 async function assertQuota(dir, { ownerId = null, replacing = null } = {}) {
   const { bytes } = await stats(dir);
-  if (bytes > config.SITE_MAX_MB * MB) {
+  const owner = ownerId && accounts.userById(ownerId);
+  if (!owner?.is_admin && bytes > config.SITE_MAX_MB * MB) {
     throw new UserError('siteTooLarge', 413, {}, { size: (bytes / MB).toFixed(1), limit: config.SITE_MAX_MB });
   }
   const freed = replacing ? replacing.bytes : 0;
   if (storageUsed() - freed + bytes > config.TOTAL_MAX_GB * 1024 * MB) throw new UserError('storageFull', 507);
-  const owner = ownerId && accounts.userById(ownerId);
   if (owner && !owner.is_admin) {
     const used = accountUsed(owner.id) - (replacing && replacing.user_id === owner.id && !replacing.deleted_at ? freed : 0);
     if (used + bytes > config.ACCOUNT_MAX_MB * MB) {
@@ -562,7 +641,7 @@ const previewUrl = (code) =>
   config.SITE_DOMAIN ? `${config.SCHEME}://${PREVIEW_PREFIX}${code}.${config.SITE_DOMAIN}/` : `${config.PUBLIC_URL}/${PREVIEW_PREFIX}${code}/`;
 
 async function savePreview(dir, { userId = null, ip, siteName = null, replace = '' }) {
-  await assertQuota(dir);
+  await assertQuota(dir, { ownerId: userId });
   // One preview at a time: a new one deletes the account's previous previews.
   // Without an account, the page names the preview it replaces (IP addresses
   // can be shared by many people, so they are only a check).
@@ -751,6 +830,11 @@ async function init() {
 
 module.exports = {
   whoami,
+  startUpload,
+  addUploadPart,
+  useUpload,
+  cleanupUploads,
+  partBytes,
   UserError,
   NAME_RE,
   PREVIEW_PREFIX,

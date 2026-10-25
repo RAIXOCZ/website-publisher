@@ -33,7 +33,7 @@ const needsIdentity = () => !signedIn() && !state.config.whitelisted;
 async function init() {
   state.config = await api('/config');
   updateAddress();
-  $('.dropzone .hint').innerHTML = t('drop.hint', { limit: `${state.config.siteMaxMb} MB` });
+  $('.dropzone .hint').innerHTML = state.config.unlimited ? t('drop.hintUnlimited') : t('drop.hint', { limit: `${state.config.siteMaxMb} MB` });
   restoreIdentity();
   if (state.config.user?.blocked) {
     showNotice(t('account.blocked'));
@@ -767,6 +767,7 @@ $('#preview').addEventListener('click', async () => {
     exact: Boolean(state.edit),
     base: state.edit?.name || '',
     password: state.edit?.password || '',
+    partBytes: state.config.partBytes,
   });
   button.disabled = false;
   button.textContent = t('preview.button');
@@ -859,7 +860,7 @@ $('#cancel').addEventListener('click', () => {
 
 async function upload(files, name, { replace = false, password = '', base = '', identity = null } = {}) {
   const totalBytes = files.reduce((sum, f) => sum + (f.file ? f.file.size : 0), 0);
-  if (totalBytes > state.config.maxUploadMb * 1024 * 1024) {
+  if (!state.config.unlimited && totalBytes > state.config.maxUploadMb * 1024 * 1024) {
     return showError(t('err.tooBig', { size: formatBytes(totalBytes), limit: state.config.maxUploadMb }));
   }
 
@@ -878,6 +879,7 @@ async function upload(files, name, { replace = false, password = '', base = '', 
     base,
     identity,
     exact: Boolean(state.edit),
+    partBytes: state.config.partBytes, // the admin: big uploads go in parts
     onProgress: (p) => {
       const pct = Math.round(p * 100);
       els.bar.style.width = `${pct}%`;
@@ -966,11 +968,13 @@ function siteCard({ name, url, info, password = null }) {
 // The size limits, right where the site is put together.
 function renderLimits(size) {
   const MB = 1024 * 1024;
-  const siteMax = state.config.siteMaxMb * MB;
+  // The admin account has no site limit (only the account line, if any).
+  const siteMax = state.config.unlimited ? Infinity : state.config.siteMaxMb * MB;
+  $('#site-meter').parentElement.hidden = state.config.unlimited;
   const siteShare = Math.min(1, size / siteMax);
   $('#site-meter').style.width = `${(siteShare * 100).toFixed(1)}%`;
   let over = size > siteMax;
-  $('#site-limit').textContent = t(over ? 'limits.siteOver' : 'limits.site', { limit: formatBytes(siteMax) });
+  $('#site-limit').textContent = state.config.unlimited ? t('limits.siteUnlimited') : t(over ? 'limits.siteOver' : 'limits.site', { limit: formatBytes(siteMax) });
 
   const usage = state.usage;
   const accountLimit = $('#account-limit');

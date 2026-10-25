@@ -296,7 +296,7 @@ function cleanFiles(files) {
  * Resolves with { status, data } whatever the outcome, so callers can react
  * to 403/409 themselves.
  */
-function uploadSite({ files, name, overwrite = false, password = '', preview = false, replacePreview = '', base = '', exact = false, identity = null, onProgress }) {
+async function uploadSite({ files, name, overwrite = false, password = '', preview = false, replacePreview = '', base = '', exact = false, identity = null, onProgress, partBytes = 0 }) {
   const form = new FormData();
   form.append('name', name);
   form.append('overwrite', overwrite ? '1' : '0');
@@ -308,14 +308,74 @@ function uploadSite({ files, name, overwrite = false, password = '', preview = f
   if (identity) for (const key of ['email', 'firstName', 'lastName']) form.append(key, identity[key] || '');
   const keep = files.filter((f) => f.from).map(({ path, from }) => ({ path, from }));
   if (keep.length) form.append('keep', JSON.stringify(keep));
+  const total = files.reduce((sum, f) => sum + (f.file ? f.file.size : 0), 0);
+  if (partBytes && total > partBytes) {
+    // Too big for one request: the files go in parts first, then the site is
+    // published from them.
+    const sent = await uploadInParts(files.filter((f) => f.file), partBytes, (p) => onProgress?.(p));
+    if (sent.error) return sent.error;
+    form.append('upload', sent.id);
+    return postForm('/api/sites', form);
+  }
   for (const { path, file } of files) {
     if (!file) continue;
     form.append('p', path);
     form.append('f', file, file.name);
   }
+  return postForm('/api/sites', form, onProgress);
+}
+
+// Sends files in requests of at most `partBytes`; a bigger file goes in
+// pieces, each one after the first appended to it. Resolves with { id } or
+// { error: { status, data } }.
+async function uploadInParts(files, partBytes, onProgress) {
+  const start = await postForm('/api/uploads', new FormData());
+  if (start.status !== 200) return { error: start };
+  const { id } = start.data;
+  const total = files.reduce((sum, f) => sum + f.file.size, 0);
+  // Requests: groups of whole files, or one piece of a big file (append).
+  const requests = [];
+  let group = [];
+  let groupBytes = 0;
+  const flush = () => {
+    if (group.length) requests.push({ items: group, bytes: groupBytes, append: false });
+    group = [];
+    groupBytes = 0;
+  };
+  for (const { path, file } of files) {
+    if (file.size > partBytes) {
+      for (let offset = 0; offset < file.size; offset += partBytes) {
+        const piece = file.slice(offset, Math.min(file.size, offset + partBytes));
+        flush();
+        requests.push({ items: [{ path, file: piece, filename: file.name }], bytes: piece.size, append: offset > 0 });
+      }
+      continue;
+    }
+    if (groupBytes + file.size > partBytes) flush();
+    group.push({ path, file, filename: file.name });
+    groupBytes += file.size;
+  }
+  flush();
+  let done = 0;
+  for (const request of requests) {
+    const form = new FormData();
+    for (const { path, file, filename } of request.items) {
+      form.append('p', path);
+      form.append('f', file, filename);
+    }
+    const url = `/api/uploads/${encodeURIComponent(id)}${request.append ? '?append=1' : ''}`;
+    const res = await postForm(url, form, (p) => onProgress?.((done + p * request.bytes) / total));
+    if (res.status !== 200) return { error: res };
+    done += request.bytes;
+  }
+  return { id };
+}
+
+// POSTs a form, reporting upload progress (0…1). Resolves with { status, data }.
+function postForm(url, form, onProgress) {
   return new Promise((resolve) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/sites');
+    xhr.open('POST', url);
     xhr.setRequestHeader('X-Requested-With', 'fetch');
     xhr.setRequestHeader('X-Lang', LANG);
     xhr.upload.addEventListener('progress', (e) => {

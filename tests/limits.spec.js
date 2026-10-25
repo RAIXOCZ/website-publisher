@@ -1,5 +1,5 @@
 // @ts-check
-// The :4320 test server runs with SITE_MAX_MB=1 and ACCOUNT_MAX_MB=2.
+// The :4320 test server runs with SITE_MAX_MB=1, ACCOUNT_MAX_MB=2 and MAX_UPLOAD_MB=2.
 const { test, expect } = require('./test');
 const { HEADERS, FIXTURES, unique, createAccount, signIn, signInAsAdmin } = require('./helpers');
 
@@ -109,4 +109,50 @@ test('preview-… names are reserved for previews: not for publishing nor renami
   await request.post('/api/sites', { headers: auth, multipart: { name, f: siteOf(1) } });
   const rename = await request.post(`/api/sites/${name}/rename`, { headers: auth, data: { name: 'preview-abc123' } });
   expect(rename.status()).toBe(400);
+});
+
+test('the admin account has no site limit; a big upload goes in parts', async ({ page, playwright }) => {
+  await signInAsAdmin(page, BASE);
+  const config = await (await page.request.get('/api/config')).json();
+  expect(config.unlimited).toBe(true);
+  expect(config.partBytes).toBeLessThan(2 * 1024 * KB);
+  expect((await (await page.request.get('/api/whoami')).json()).usage.siteLimit).toBeNull();
+
+  // 3.5 MB in one file (sent in pieces) and a few small files: more than the
+  // 1 MB site limit and the 2 MB a single request may carry.
+  const crypto = require('crypto');
+  const big = crypto.randomBytes(3584 * KB);
+  const files = [
+    { name: 'index.html', mimeType: 'text/html', buffer: Buffer.from('<h1>Big admin site</h1>') },
+    { name: 'big.bin', mimeType: 'application/octet-stream', buffer: big },
+    ...[1, 2, 3].map((i) => ({ name: `small-${i}.bin`, mimeType: 'application/octet-stream', buffer: crypto.randomBytes(700 * KB) })),
+  ];
+  const parts = [];
+  page.on('request', (r) => r.url().includes('/api/uploads') && parts.push(r.url()));
+  await page.goto('/');
+  await expect(page.locator('.dropzone .hint')).toHaveText('nebo soubory či .zip, bez limitu velikosti');
+  const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.locator('#pick-files').click()]);
+  await chooser.setFiles(files);
+  await expect(page.locator('#site-limit')).toHaveText('bez limitu velikosti');
+  const name = unique('admin-big');
+  await page.locator('#name').fill(name);
+  await page.locator('#publish').click();
+  await expect(page.locator('#result')).toBeVisible({ timeout: 20_000 });
+
+  expect(parts.filter((u) => u.includes('append=1')).length).toBeGreaterThanOrEqual(2);
+  const served = await (await page.request.get(`/${name}/big.bin`)).body();
+  expect(crypto.createHash('sha256').update(served).digest('hex')).toBe(crypto.createHash('sha256').update(big).digest('hex'));
+  expect((await page.request.get(`/${name}/small-3.bin`)).status()).toBe(200);
+
+  // Nobody else can start or use such an upload.
+  const ctx = await playwright.request.newContext({ baseURL: BASE });
+  await createAccount(ctx);
+  expect((await ctx.post('/api/uploads', { headers: HEADERS })).status()).toBe(404);
+  const { id } = await (await page.request.post('/api/uploads', { headers: HEADERS })).json();
+  const stolen = await ctx.post('/api/sites', { headers: HEADERS, multipart: { name: unique('x'), upload: id } });
+  expect(stolen.status()).toBe(404);
+  await ctx.dispose();
+  // A later piece needs the beginning of its file.
+  const orphan = await page.request.post(`/api/uploads/${id}?append=1`, { headers: HEADERS, multipart: { p: 'x.bin', f: { name: 'x.bin', mimeType: 'application/octet-stream', buffer: Buffer.from('x') } } });
+  expect(orphan.status()).toBe(400);
 });

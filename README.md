@@ -62,7 +62,7 @@ Sites that existed before accounts were introduced are moved to the `ADMIN_EMAIL
 | `PUBLISH_PER_HOUR` | `60` | Anonymous uploads allowed per IP address per hour (signed-in users and the admin are not limited). |
 | `EMAILS_PER_HOUR` | `10` | E-mails per IP address and per recipient per hour. |
 | `MAX_UPLOAD_MB` | `100` | Upload limit. Cloudflare Free/Pro rejects request bodies over 100 MB anyway. |
-| `SITE_MAX_MB` | `50` | Largest size of one site (after unpacking a `.zip` and together with kept files). |
+| `SITE_MAX_MB` | `50` | Largest size of one site (after unpacking a `.zip` and together with kept files). The admin account has no site limit; its uploads bigger than one request (`MAX_UPLOAD_MB`) are sent in parts (`POST /api/uploads`, then `POST /api/uploads/<id>` with files, `?append=1` for the next piece of a big file, then `POST /api/sites` with `upload=<id>`), which the web page does by itself. |
 | `ACCOUNT_MAX_MB` | `100` | All sites of one account together (deleted sites don't count; the admin account has no limit). |
 | `TOTAL_MAX_GB` | `20` | Everything the service stores, including deleted sites kept until purged. When full, uploads get HTTP 507. |
 | `PATH_SANDBOX` | `true` | Serve path-style sites with a CSP sandbox (see Security). |
