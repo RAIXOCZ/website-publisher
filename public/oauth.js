@@ -85,6 +85,7 @@ $('#oauth-form').addEventListener('submit', async (e) => {
     const { email } = await api(`/oauth/requests/${request.id}/email`, {
       method: 'POST',
       json: { email: form.email.value.trim(), firstName: form.firstName.value.trim(), lastName: form.lastName.value.trim() },
+      captcha: true,
     });
     form.hidden = true;
     $('#oauth-title').textContent = t('oauth.waitTitle');

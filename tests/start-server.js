@@ -13,4 +13,21 @@ for (const ip of (process.env.TEST_WHITELIST || '').split(',').filter(Boolean)) 
   require('../src/accounts').addWhitelist(ip, 'tests');
 }
 
+// The Turnstile test server checks tokens against this stand-in for
+// Cloudflare's siteverify: only "pass-token" with the right secret passes.
+if (process.env.TEST_TURNSTILE_PORT) {
+  const http = require('http');
+  http
+    .createServer((req, res) => {
+      let body = '';
+      req.on('data', (chunk) => (body += chunk));
+      req.on('end', () => {
+        const { secret, response } = JSON.parse(body || '{}');
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ success: secret === process.env.TURNSTILE_SECRET_KEY && response === 'pass-token' }));
+      });
+    })
+    .listen(Number(process.env.TEST_TURNSTILE_PORT));
+}
+
 require('../src/server.js');

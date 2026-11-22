@@ -262,7 +262,7 @@ $('.sent-back').addEventListener('click', (e) => {
 });
 
 setupEmailLogin($('#signin-form'), {
-  onSent: (email) => showSent(t('login.sent', { email }), () => api('/auth/login', { method: 'POST', json: { email } })),
+  onSent: (email) => showSent(t('login.sent', { email }), () => api('/auth/login', { method: 'POST', json: { email }, captcha: true })),
 });
 
 $('#register-form').addEventListener('submit', async (e) => {
@@ -274,9 +274,9 @@ $('#register-form').addEventListener('submit', async (e) => {
   button.disabled = true;
   try {
     const body = { email: form.email.value.trim(), firstName: form.firstName.value.trim(), lastName: form.lastName.value.trim() };
-    await api('/auth/register', { method: 'POST', json: body });
+    await api('/auth/register', { method: 'POST', json: body, captcha: true });
     form.reset();
-    showSent(t('register.sent', { email: body.email }), () => api('/auth/register', { method: 'POST', json: body }));
+    showSent(t('register.sent', { email: body.email }), () => api('/auth/register', { method: 'POST', json: body, captcha: true }));
   } catch (err) {
     alert.textContent = err.message;
     alert.hidden = false;

@@ -66,6 +66,7 @@ Sites that existed before accounts were introduced are moved to the `ADMIN_EMAIL
 | `ACCOUNT_MAX_MB` | `100` | All sites of one account together (deleted sites don't count; the admin account has no limit). |
 | `TOTAL_MAX_GB` | `20` | Everything the service stores, including deleted sites kept until purged. When full, uploads get HTTP 507. |
 | `ADMIN_NOTIFY` | `true` | E-mail `ADMIN_EMAIL` about every new site (owner, size, how it was published). Not sent for the admin's own sites. |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | – | Cloudflare Turnstile on the forms that e-mail anonymous visitors (sign-in, registration, publishing with e-mail confirmation, app sign-in). Off unless both are set. API keys and MCP are not affected. |
 | `UMAMI_URL`, `UMAMI_WEBSITE_ID` | – | Umami analytics (`script.js` and `recorder.js`) on the public pages of the publisher only: home, guide, terms, privacy. Off unless both are set. |
 | `PATH_SANDBOX` | `true` | Serve path-style sites with a CSP sandbox (see Security). |
 

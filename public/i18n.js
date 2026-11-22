@@ -111,6 +111,7 @@ const I18N = {
     'admin.deleted': 'Smazáno: {name}',
 
     'request.failed': 'Požadavek selhal ({status})',
+    'captcha.failed': 'Nepodařilo se ověřit, že nejste robot. Zkuste to prosím znovu.',
     'upload.tooLarge': 'Nahrávaná data jsou pro server příliš velká.',
     'upload.failedHttp': 'Nahrávání selhalo (HTTP {status}).',
     'upload.network': 'Nahrávání selhalo. Zkontrolujte připojení a zkuste to znovu.',
@@ -531,6 +532,7 @@ const I18N = {
     'admin.deleted': 'Deleted {name}',
 
     'request.failed': 'Request failed ({status})',
+    'captcha.failed': 'We could not verify that you are not a robot. Please try again.',
     'upload.tooLarge': 'The upload is too large for the server.',
     'upload.failedHttp': 'Upload failed (HTTP {status}).',
     'upload.network': 'Upload failed. Check your connection and try again.',

@@ -4,7 +4,7 @@ const { defineConfig, devices } = require('@playwright/test');
 // Three servers: path-style URLs (localhost:4317/<name>/) for the browser tests,
 // per-site subdomains (<name>.pub.test on :4318) for host-routing tests, and
 // one where this machine is on the IP whitelist (password sites, :4319), and
-// one with tiny storage limits (:4320).
+// one with tiny storage limits (:4320), and one with Cloudflare Turnstile (:4321).
 // E-mails are not sent; tests read them from /api/dev/outbox.
 const common = {
   PUBLISH_PER_HOUR: '100000',
@@ -51,6 +51,17 @@ module.exports = defineConfig({
       command: 'node --disable-warning=ExperimentalWarning tests/start-server.js',
       url: 'http://localhost:4320/api/config',
       env: { ...common, PORT: '4320', PUBLIC_URL: 'http://localhost:4320', SITE_MAX_MB: '1', ACCOUNT_MAX_MB: '2', MAX_UPLOAD_MB: '2' },
+      reuseExistingServer: false,
+    },
+    {
+      // Cloudflare Turnstile on, checked against a local stand-in (tests/start-server.js).
+      command: 'node --disable-warning=ExperimentalWarning tests/start-server.js',
+      url: 'http://localhost:4321/api/config',
+      env: {
+        ...common, PORT: '4321', PUBLIC_URL: 'http://localhost:4321',
+        TURNSTILE_SITE_KEY: 'test-site-key', TURNSTILE_SECRET_KEY: 'test-secret',
+        TEST_TURNSTILE_PORT: '4322', TURNSTILE_VERIFY_URL: 'http://localhost:4322/siteverify',
+      },
       reuseExistingServer: false,
     },
   ],

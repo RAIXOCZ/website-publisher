@@ -16,6 +16,7 @@ const layout = require('./layout');
 const mcp = require('./mcp');
 const agents = require('./agents');
 const oauth = require('./oauth');
+const turnstile = require('./turnstile');
 const assets = require('./assets');
 const compression = require('compression');
 const stats = require('./stats');
@@ -53,12 +54,13 @@ if (config.SITE_DOMAIN) {
 // 2. The publisher app itself.
 const analytics = config.UMAMI_URL && config.UMAMI_WEBSITE_ID ? config.UMAMI_URL : '';
 const analyticsOrigin = analytics ? ` ${new URL(analytics).origin}` : '';
+const turnstileOrigin = turnstile.enabled() ? ' https://challenges.cloudflare.com' : '';
 const securityHeaders = (req, res, next) => {
   res.set({
     'X-Frame-Options': 'DENY',
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'same-origin',
-    'Content-Security-Policy': `default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'${analyticsOrigin}; connect-src 'self'${analyticsOrigin}; frame-ancestors 'none'`,
+    'Content-Security-Policy': `default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'${analyticsOrigin}${turnstileOrigin}; connect-src 'self'${analyticsOrigin}${turnstileOrigin}${turnstileOrigin ? `; frame-src${turnstileOrigin}` : ''}; frame-ancestors 'none'`,
   });
   next();
 };
@@ -150,7 +152,8 @@ function appPage(name) {
       ? `<script type="application/json" id="fp-config">${JSON.stringify(clientConfig(req)).replace(/</g, '\\u003c')}</script>\n  `
       : '';
     const tracking = analyticsTags && ANALYTICS_PAGES.has(name) ? `${analyticsTags}\n  ` : '';
-    const head = `${fonts}\n  ${inline}${tracking}${mdPath ? `<link rel="alternate" type="text/markdown" href="${mdPath}?lang=${lang}">\n  <link rel="describedby" type="text/plain" href="/llms.txt">\n` : ''}</head>`;
+    const captcha = turnstile.enabled() ? `<meta name="turnstile-site-key" content="${config.TURNSTILE_SITE_KEY}">\n  ` : '';
+    const head = `${fonts}\n  ${inline}${captcha}${tracking}${mdPath ? `<link rel="alternate" type="text/markdown" href="${mdPath}?lang=${lang}">\n  <link rel="describedby" type="text/plain" href="/llms.txt">\n` : ''}</head>`;
     res.type('html').send(seo.render(name, html.replace('</head>', head), { lang, explicit: Boolean(explicit) }));
   };
 }
@@ -278,6 +281,7 @@ api.get('/config', (req, res) => res.json(clientConfig(req)));
 api.post('/auth/login', json, async (req, res) => {
   const email = accounts.normEmail(req.body?.email);
   if (!email) return fail(req, res, 400, 'emailInvalid');
+  if (!(await turnstile.verify(req, ipOf(req)))) return fail(req, res, 403, 'captchaFailed');
   if (!emailAllowed(`ip:${ipOf(req)}`, `to:${email}`)) return fail(req, res, 429, 'tooManyEmails');
   const user = accounts.activeUserByEmail(email);
   if (user) {
@@ -298,6 +302,7 @@ api.post('/auth/register', json, async (req, res) => {
   const firstName = accounts.cleanName(req.body?.firstName);
   const lastName = accounts.cleanName(req.body?.lastName);
   if (!firstName || !lastName) return fail(req, res, 400, 'nameRequired');
+  if (!(await turnstile.verify(req, ipOf(req)))) return fail(req, res, 403, 'captchaFailed');
   if (!emailAllowed(`ip:${ipOf(req)}`, `to:${email}`)) return fail(req, res, 429, 'tooManyEmails');
   const user = accounts.activeUserByEmail(email);
   if (user) {
@@ -556,6 +561,7 @@ api.post('/sites', async (req, res) => {
     const firstName = accounts.cleanName(f.firstName);
     const lastName = accounts.cleanName(f.lastName);
     if (!existing && (!firstName || !lastName)) throw new sites.UserError('nameRequired');
+    if (!(await turnstile.verify(req, ip))) throw new sites.UserError('captchaFailed', 403);
     if (!emailAllowed(`ip:${ip}`, `to:${email}`)) throw new sites.UserError('tooManyEmails', 429);
     const pendingId = await sites.savePending(dir, { ownerId: existing?.id });
     const token = accounts.createEmailToken({
@@ -788,6 +794,7 @@ api.post('/oauth/requests/:id/email', json, async (req, res) => {
   const firstName = accounts.cleanName(req.body?.firstName);
   const lastName = accounts.cleanName(req.body?.lastName);
   if (!user && (!firstName || !lastName)) return res.status(400).json({ error: t(langOf(req), 'oauth.needName'), needName: true });
+  if (!(await turnstile.verify(req, ipOf(req)))) return fail(req, res, 403, 'captchaFailed');
   if (!emailAllowed(`ip:${ipOf(req)}`, `to:${email}`)) return fail(req, res, 429, 'tooManyEmails');
   const client = oauth.clientById(request.client_id);
   const token = accounts.createEmailToken({

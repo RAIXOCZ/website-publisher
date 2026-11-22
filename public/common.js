@@ -2,8 +2,53 @@
 
 // Small helpers shared by the upload page and the admin panel.
 
+// Cloudflare Turnstile, when the server has it on (<meta name="turnstile-site-key">).
+// The widget stays invisible unless Cloudflare wants the visitor to click it.
+// Each token works once, so every request asks for a new one.
+let turnstileWidget = null;
+let turnstileWaiting = null;
+function loadTurnstile() {
+  return new Promise((resolve, reject) => {
+    if (window.turnstile) return resolve(window.turnstile);
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    script.async = true;
+    script.onload = () => resolve(window.turnstile);
+    script.onerror = () => reject(new Error(t('captcha.failed')));
+    document.head.append(script);
+  });
+}
+
+async function turnstileToken() {
+  const siteKey = document.querySelector('meta[name="turnstile-site-key"]')?.content;
+  if (!siteKey) return null;
+  const turnstile = await loadTurnstile();
+  return new Promise((resolve, reject) => {
+    turnstileWaiting = { resolve, reject };
+    if (turnstileWidget === null) {
+      const box = document.createElement('div');
+      box.className = 'turnstile-box';
+      document.body.append(box);
+      turnstileWidget = turnstile.render(box, {
+        sitekey: siteKey,
+        execution: 'execute',
+        appearance: 'interaction-only',
+        language: LANG,
+        callback: (token) => turnstileWaiting?.resolve(token),
+        'error-callback': () => turnstileWaiting?.reject(new Error(t('captcha.failed'))),
+        'expired-callback': () => turnstile.reset(turnstileWidget),
+      });
+    } else {
+      turnstile.reset(turnstileWidget);
+    }
+    turnstile.execute(turnstileWidget);
+  });
+}
+
 async function api(path, options = {}) {
-  const opts = { credentials: 'same-origin', ...options, headers: { 'X-Requested-With': 'fetch', 'X-Lang': LANG, ...(options.headers || {}) } };
+  const { captcha, ...rest } = options;
+  const token = captcha ? await turnstileToken() : null;
+  const opts = { credentials: 'same-origin', ...rest, headers: { 'X-Requested-With': 'fetch', 'X-Lang': LANG, ...(token ? { 'X-Turnstile-Token': token } : {}), ...(rest.headers || {}) } };
   if (opts.json !== undefined) {
     opts.body = JSON.stringify(opts.json);
     opts.headers['Content-Type'] = 'application/json';
@@ -320,6 +365,16 @@ async function uploadSite({ files, name, overwrite = false, password = '', previ
   if (exact) form.append('exact', '1');
   if (base) form.append('base', base);
   if (identity) for (const key of ['email', 'firstName', 'lastName']) form.append(key, identity[key] || '');
+  // Publishing with an e-mail confirmation needs a Turnstile token.
+  const captchaHeaders = async () => {
+    if (!identity || preview) return {};
+    try {
+      const token = await turnstileToken();
+      return token ? { 'X-Turnstile-Token': token } : {};
+    } catch {
+      return {}; // the server answers with its own message
+    }
+  };
   const keep = files.filter((f) => f.from).map(({ path, from }) => ({ path, from }));
   if (keep.length) form.append('keep', JSON.stringify(keep));
   const total = files.reduce((sum, f) => sum + (f.file ? f.file.size : 0), 0);
@@ -329,14 +384,14 @@ async function uploadSite({ files, name, overwrite = false, password = '', previ
     const sent = await uploadInParts(files.filter((f) => f.file), partBytes, (p) => onProgress?.(p));
     if (sent.error) return sent.error;
     form.append('upload', sent.id);
-    return postForm('/api/sites', form);
+    return postForm('/api/sites', form, null, await captchaHeaders());
   }
   for (const { path, file } of files) {
     if (!file) continue;
     form.append('p', path);
     form.append('f', file, file.name);
   }
-  return postForm('/api/sites', form, onProgress);
+  return postForm('/api/sites', form, onProgress, await captchaHeaders());
 }
 
 // Sends files in requests of at most `partBytes`; a bigger file goes in
@@ -386,12 +441,13 @@ async function uploadInParts(files, partBytes, onProgress) {
 }
 
 // POSTs a form, reporting upload progress (0…1). Resolves with { status, data }.
-function postForm(url, form, onProgress) {
+function postForm(url, form, onProgress, headers = {}) {
   return new Promise((resolve) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', url);
     xhr.setRequestHeader('X-Requested-With', 'fetch');
     xhr.setRequestHeader('X-Lang', LANG);
+    for (const [key, value] of Object.entries(headers)) xhr.setRequestHeader(key, value);
     xhr.upload.addEventListener('progress', (e) => {
       if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total);
     });
@@ -448,7 +504,7 @@ function setupEmailLogin(form, { onSent }) {
     button.disabled = true;
     try {
       const email = form.email.value.trim();
-      await api('/auth/login', { method: 'POST', json: { email } });
+      await api('/auth/login', { method: 'POST', json: { email }, captcha: true });
       onSent(email);
     } catch (err) {
       alert.textContent = err.message;

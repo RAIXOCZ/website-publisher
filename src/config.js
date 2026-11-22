@@ -68,6 +68,13 @@ module.exports = {
   EMAILS_PER_HOUR: int(process.env.EMAILS_PER_HOUR, 10),
 
 
+  // Cloudflare Turnstile on the forms that send e-mails to anonymous
+  // visitors (sign-in, registration, publishing with e-mail, app sign-in).
+  // Off unless both keys are set.
+  TURNSTILE_SITE_KEY: (process.env.TURNSTILE_SITE_KEY || '').trim(),
+  TURNSTILE_SECRET_KEY: (process.env.TURNSTILE_SECRET_KEY || '').trim(),
+  TURNSTILE_VERIFY_URL: process.env.TURNSTILE_VERIFY_URL || 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+
   // Umami analytics on the publisher's public pages (not on published sites).
   // Off unless both are set.
   UMAMI_URL: (process.env.UMAMI_URL || '').trim().replace(/\/+$/, ''),
