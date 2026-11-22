@@ -25,6 +25,20 @@ async function api(path, options = {}) {
   return data;
 }
 
+// The server puts the page's config inline (<script id="fp-config">), so the
+// page works without a request; /api/config is only the fallback.
+function loadConfig() {
+  const inline = document.getElementById('fp-config');
+  if (inline) {
+    try {
+      return Promise.resolve(JSON.parse(inline.textContent));
+    } catch {
+      /* fall back to the API */
+    }
+  }
+  return api('/config');
+}
+
 function $(selector, root = document) {
   return root.querySelector(selector);
 }

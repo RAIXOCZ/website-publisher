@@ -48,6 +48,30 @@ test('the home page describes the app with structured data', async ({ request })
   const json = JSON.parse(html.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)[1]);
   expect(json).toMatchObject({ '@type': 'WebApplication', name: 'freepages.dev', url: `${BASE}/`, offers: { price: '0' } });
   expect(html.match(/<h1/g)).toHaveLength(1);
+  const faq = [...html.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)].map((m) => JSON.parse(m[1])).find((d) => d['@type'] === 'FAQPage');
+  expect(faq.mainEntity.length).toBeGreaterThan(3);
+  expect(faq.mainEntity.map((q) => q.name)).toContain('Can an AI assistant publish my website?');
+});
+
+test('the home page explains the MCP server in the HTML itself', async ({ request }) => {
+  for (const lang of ['cs', 'en']) {
+    const { html } = await head(request, `/?lang=${lang}`);
+    expect(html, lang).toContain(`claude mcp add --transport http freepages.dev <span class="mcp-url">${BASE}/mcp</span>`);
+    expect(html, lang).toContain('publish_site');
+  }
+});
+
+// Crawlers that render pages may not fetch /api/ (robots.txt): the page must
+// still show its content instead of an error, or it looks like a soft 404.
+test('the home page and the guide render without the API', async ({ page }) => {
+  await page.route('**/api/**', (route) => route.abort());
+  await page.goto('/?lang=en');
+  await expect(page.locator('#dropzone')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Publish a website from your AI assistant' })).toBeVisible();
+  await expect(page.locator('#url-suffix')).toHaveText('/');
+  await expect(page.locator('#notice')).toBeHidden();
+  await page.goto('/docs?lang=en');
+  await expect(page.getByRole('heading', { name: 'MCP server for AI assistants' })).toBeVisible();
 });
 
 test('private pages and previews are kept out of search engines', async ({ request }) => {
@@ -63,7 +87,7 @@ test('private pages and previews are kept out of search engines', async ({ reque
 
 test('robots.txt and sitemap.xml', async ({ request }) => {
   const robots = await (await request.get('/robots.txt')).text();
-  for (const line of ['Disallow: /ucet', 'Disallow: /email/', 'Disallow: /api/', `Sitemap: ${BASE}/sitemap.xml`]) {
+  for (const line of ['Allow: /api/config', 'Disallow: /ucet', 'Disallow: /email/', 'Disallow: /api/', `Sitemap: ${BASE}/sitemap.xml`]) {
     expect(robots).toContain(line);
   }
   const res = await request.get('/sitemap.xml');

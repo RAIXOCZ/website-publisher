@@ -96,7 +96,7 @@ function pageMarkdown(name, lang) {
 function homeMarkdown(lang) {
   const example = sites.siteUrl(lang === 'en' ? 'my-site' : 'muj-web');
   if (lang === 'en') {
-    return `# freepages.dev: publish a website for free in one drop
+    return `# freepages.dev: free static website hosting in one drop
 
 freepages.dev publishes static websites. Drop a folder (or a .zip) with HTML, CSS, JavaScript and images, and seconds later it runs at its own address, such as ${example}, with HTTPS.
 
@@ -106,9 +106,17 @@ freepages.dev publishes static websites. Drop a folder (or a .zip) with HTML, CS
 - For agents: an MCP server at ${config.PUBLIC_URL}/mcp and an HTTP API at ${config.PUBLIC_URL}/api/sites (see ${config.PUBLIC_URL}/llms.txt)
 - Terms: ${config.PUBLIC_URL}/podminky.md?lang=en
 - Privacy: ${config.PUBLIC_URL}/soukromi.md?lang=en
+
+## Publish from an AI assistant (MCP)
+
+freepages.dev has a built-in MCP server at ${config.PUBLIC_URL}/mcp (Streamable HTTP, OAuth sign-in by e-mail link, or an API key as \`Authorization: Bearer …\`). Tools: publish_site, create_preview, list_sites, list_files, read_file, rename_site, delete_site, get_visits, get_account.
+
+\`\`\`
+claude mcp add --transport http freepages.dev ${config.PUBLIC_URL}/mcp
+\`\`\`
 `;
   }
-  return `# freepages.dev: zveřejněte web zdarma jedním přetažením
+  return `# freepages.dev: hosting statických webů zdarma
 
 freepages.dev zveřejňuje statické weby. Přetáhněte složku (nebo .zip) s HTML, CSS, JavaScriptem a obrázky a za pár sekund web běží na vlastní adrese, například ${example}, s HTTPS.
 
@@ -118,6 +126,14 @@ freepages.dev zveřejňuje statické weby. Přetáhněte složku (nebo .zip) s H
 - Pro agenty: MCP server na ${config.PUBLIC_URL}/mcp a HTTP API na ${config.PUBLIC_URL}/api/sites (viz ${config.PUBLIC_URL}/llms.txt)
 - Podmínky: ${config.PUBLIC_URL}/podminky.md
 - Soukromí: ${config.PUBLIC_URL}/soukromi.md
+
+## Zveřejnění z AI asistenta (MCP)
+
+freepages.dev má vestavěný MCP server na ${config.PUBLIC_URL}/mcp (Streamable HTTP, přihlášení přes OAuth odkazem v e-mailu, nebo API klíč jako \`Authorization: Bearer …\`). Nástroje: publish_site, create_preview, list_sites, list_files, read_file, rename_site, delete_site, get_visits, get_account.
+
+\`\`\`
+claude mcp add --transport http freepages.dev ${config.PUBLIC_URL}/mcp
+\`\`\`
 `;
 }
 

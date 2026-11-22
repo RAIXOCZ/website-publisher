@@ -15,14 +15,14 @@ const PAGES = {
   'index.html': {
     path: '/',
     cs: {
-      title: 'freepages.dev: zveřejněte web zdarma jedním přetažením',
+      title: 'freepages.dev: hosting statických webů zdarma',
       description: () =>
-        `Zveřejněte statický web zdarma: přetáhněte složku s webem a za pár sekund běží na vlastní adrese ${exampleHost('muj-web')} s HTTPS. Náhledy, úpravy v prohlížeči i nahrávání přes curl.`,
+        `Hosting statických webů zdarma: přetáhněte složku a web běží na ${exampleHost('muj-web')} s HTTPS. Náhledy, úpravy v prohlížeči, API a MCP server pro AI asistenty.`,
     },
     en: {
-      title: 'freepages.dev: publish a website for free in one drop',
+      title: 'freepages.dev: free static website hosting in one drop',
       description: () =>
-        `Publish a static website for free: drop the folder with your site and seconds later it runs at its own address ${exampleHost('my-site')} with HTTPS. Previews, in-browser editing and uploads via curl.`,
+        `Free static website hosting: drop a folder and your site runs at ${exampleHost('my-site')} with HTTPS. Previews, in-browser editing, an API and an MCP server for AI assistants.`,
     },
     structuredData: true,
   },
@@ -69,21 +69,56 @@ const ICONS = [
   '<meta name="theme-color" content="#0d9488">',
 ];
 
-function structuredData(lang, description) {
-  const data = {
-    '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    name: 'freepages.dev',
-    url: `${config.PUBLIC_URL}/`,
-    description,
-    inLanguage: LANGS,
-    applicationCategory: 'DeveloperApplication',
-    operatingSystem: 'Any (web browser)',
-    image: `${config.PUBLIC_URL}/og-${lang}.png`,
-    offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
-    creator: { '@type': 'Person', name: 'Martin Balcar', url: 'https://martin-balcar.cz' },
-  };
-  return `<script type="application/ld+json">${JSON.stringify(data).replace(/</g, '\\u003c')}</script>`;
+const FEATURES = {
+  cs: ['Zveřejnění statického webu přetažením složky', 'Vlastní subdoména s HTTPS', 'Náhled před zveřejněním', 'Úpravy souborů v prohlížeči', 'Nahrávání přes HTTP API a curl', 'MCP server pro AI asistenty'],
+  en: ['Publish a static website by dropping a folder', 'Own subdomain with HTTPS', 'Preview before publishing', 'Edit files in the browser', 'Uploads via HTTP API and curl', 'MCP server for AI assistants'],
+};
+
+const stripTags = (html) =>
+  html
+    .replace(/<[^>]+>/g, '')
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+// The questions and answers of the page's FAQ in `lang`, as shown on the page.
+function faq(html, lang) {
+  const start = html.indexOf(`id="faq-${lang}"`);
+  if (start < 0) return [];
+  const section = html.slice(start, html.indexOf('</section>', start));
+  return [...section.matchAll(/<summary>([\s\S]*?)<\/summary>([\s\S]*?)<\/details>/g)].map(([, q, a]) => ({ q: stripTags(q), a: stripTags(a) }));
+}
+
+function structuredData(lang, description, html) {
+  const data = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: 'freepages.dev',
+      url: `${config.PUBLIC_URL}/`,
+      description,
+      inLanguage: LANGS,
+      applicationCategory: 'DeveloperApplication',
+      operatingSystem: 'Any (web browser)',
+      image: `${config.PUBLIC_URL}/og-${lang}.png`,
+      featureList: FEATURES[lang],
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+      creator: { '@type': 'Person', name: 'Martin Balcar', url: 'https://martin-balcar.cz' },
+    },
+  ];
+  const questions = faq(html, lang);
+  if (questions.length) {
+    data.push({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      inLanguage: lang,
+      mainEntity: questions.map(({ q, a }) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+    });
+  }
+  return data.map((d) => `<script type="application/ld+json">${JSON.stringify(d).replace(/</g, '\\u003c')}</script>`).join('\n  ');
 }
 
 /**
@@ -119,7 +154,7 @@ function render(name, html, { lang, explicit }) {
       `<meta property="og:locale:alternate" content="${lang === 'cs' ? 'en_US' : 'cs_CZ'}">`,
       '<meta name="twitter:card" content="summary_large_image">',
     );
-    if (page.structuredData) tags.push(structuredData(lang, description));
+    if (page.structuredData) tags.push(structuredData(lang, description, html));
   }
   return html
     .replace(/<html lang="[^"]*">/, `<html lang="${lang}">`)
@@ -129,6 +164,8 @@ function render(name, html, { lang, explicit }) {
 function robots() {
   return [
     'User-agent: *',
+    // The pages read their settings from here; renderers must be able to fetch it.
+    'Allow: /api/config',
     'Disallow: /ucet',
     'Disallow: /account',
     'Disallow: /email/',

@@ -13,6 +13,7 @@
     <div class="wrap page">
       <section class="intro">
         <h1><span data-i18n="hero.title1">Web online</span> <span class="accent-text" data-i18n="hero.title2">jedním přetažením.</span></h1>
+        <p class="lead" data-i18n="hero.lead">Hosting statických webů zdarma. Zveřejněte web z prohlížeče, příkazové řádky nebo z AI asistenta přes MCP.</p>
       </section>
 
       <section class="studio">
@@ -167,6 +168,84 @@
         <div class="site-list" id="my-owned"></div>
         <div class="empty" id="my-empty" hidden data-i18n="my.empty">Zatím tu nemáte žádné weby.</div>
       </section>
+
+      <div class="home-info" data-lang="cs">
+        <section class="section" aria-labelledby="cs-features">
+          <h2 id="cs-features">Hosting statických webů zdarma</h2>
+          <div class="features">
+            <article class="feature glass"><h3>Zdarma a bez karty</h3><p>Až <b class="site-max">50 MB</b> na web a <b class="account-max">100 MB</b> na účet. Bez reklam vložených do vašeho webu.</p></article>
+            <article class="feature glass"><h3>Vlastní adresa s HTTPS</h3><p>Každý web běží na své subdoméně, například <code class="url-example">muj-web.freepages.dev</code>, se zabezpečeným spojením.</p></article>
+            <article class="feature glass"><h3>Náhled před zveřejněním</h3><p>Tlačítkem Náhled si web prohlédnete na dočasné adrese, ještě než ho uvidí ostatní.</p></article>
+            <article class="feature glass"><h3>Úpravy v prohlížeči</h3><p>Soubory přidáte, přesunete, přejmenujete nebo nahradíte přímo ve stromu a web znovu zveřejníte jedním kliknutím.</p></article>
+            <article class="feature glass"><h3>HTML i frameworky</h3><p>Čisté HTML, CSS a JavaScript, nebo výstup buildu z Reactu, Vue, Svelte, Astra, Next.js či Huga.</p></article>
+            <article class="feature glass"><h3>Příkazová řádka a API</h3><p>Nahrávejte přes <code>curl</code> s API klíčem a zveřejňujte weby automaticky, třeba z CI.</p></article>
+          </div>
+        </section>
+
+        <section class="prose glass mcp" id="mcp-cs" aria-labelledby="cs-mcp">
+          <p class="eyebrow">MCP server</p>
+          <h2 id="cs-mcp">Zveřejněte web z AI asistenta</h2>
+          <p>freepages.dev má vestavěný <b>MCP server</b> (Model Context Protocol). Připojte ho k Claude, Cursoru, VS Code nebo jinému MCP klientovi a napište třeba <i>„Zveřejni tuhle stránku na freepages.dev“</i>. Asistent soubory nahraje a vrátí vám odkaz na hotový web.</p>
+          <ol>
+            <li>V aplikaci přidejte MCP server s adresou <code class="mcp-url">https://freepages.dev/mcp</code>.</li>
+            <li>Aplikace otevře okno pro přihlášení: zadáte e-mail a přístup potvrdíte odkazem. Účet vznikne automaticky.</li>
+            <li>Požádejte asistenta, ať web zveřejní, aktualizuje, přejmenuje nebo smaže.</li>
+          </ol>
+          <pre><span class="muted"># Claude Code</span>
+claude mcp add --transport http freepages.dev <span class="mcp-url">https://freepages.dev/mcp</span></pre>
+          <pre><span class="muted"># Cursor, VS Code a další (JSON konfigurace)</span>
+{ "mcpServers": { "freepages.dev": { "type": "http", "url": "<span class="mcp-url">https://freepages.dev/mcp</span>" } } }</pre>
+          <p>Nástroje serveru: <code>publish_site</code>, <code>create_preview</code>, <code>list_sites</code>, <code>list_files</code>, <code>read_file</code>, <code>rename_site</code>, <code>delete_site</code>, <code>get_visits</code> a <code>get_account</code>. Aplikace bez přihlašování (OAuth) připojíte API klíčem, podrobnosti najdete v <a href="/docs">návodu</a>.</p>
+        </section>
+
+        <section class="section faq" id="faq-cs" aria-labelledby="cs-faq">
+          <h2 id="cs-faq">Časté otázky</h2>
+          <details class="faq-item glass"><summary>Je freepages.dev opravdu zdarma?</summary><div><p>Ano. Zveřejnění i provoz webu jsou zdarma, platí jen limity úložiště: <span class="site-max">50 MB</span> na web a <span class="account-max">100 MB</span> na účet.</p></div></details>
+          <details class="faq-item glass"><summary>Jaké weby můžu zveřejnit?</summary><div><p>Statické weby: HTML, CSS, JavaScript, obrázky a fonty. Serverový kód (PHP, Node.js) ani databáze nejsou k dispozici. Aplikace z Reactu, Vue, Astra a dalších nejdřív sestavte a nahrajte složku s výstupem buildu.</p></div></details>
+          <details class="faq-item glass"><summary>Potřebuji účet nebo heslo?</summary><div><p>Heslo ne. Při prvním zveřejnění zadáte e-mail a po potvrzení odkazu je web online a účet vytvořený. Příště se přihlásíte zase odkazem z e-mailu.</p></div></details>
+          <details class="faq-item glass"><summary>Může web zveřejnit AI asistent?</summary><div><p>Ano. Přes MCP server na adrese <span class="mcp-url">https://freepages.dev/mcp</span> umí Claude, Cursor, VS Code a další asistenti weby zveřejnit, aktualizovat i smazat, vždy jen ve vašem účtu.</p></div></details>
+          <details class="faq-item glass"><summary>Jak web aktualizuji nebo smažu?</summary><div><p>V přehledu Moje weby klikněte na Upravit, změňte soubory a zveřejněte znovu. Adresa zůstane stejná. Mazat a přejmenovávat můžete tamtéž, přes API nebo z AI asistenta.</p></div></details>
+        </section>
+      </div>
+
+      <div class="home-info" data-lang="en" hidden>
+        <section class="section" aria-labelledby="en-features">
+          <h2 id="en-features">Free static website hosting</h2>
+          <div class="features">
+            <article class="feature glass"><h3>Free, no card needed</h3><p>Up to <b class="site-max">50 MB</b> per site and <b class="account-max">100 MB</b> per account. No ads injected into your site.</p></article>
+            <article class="feature glass"><h3>Your own address with HTTPS</h3><p>Every site runs on its own subdomain, such as <code class="url-example">my-site.freepages.dev</code>, over a secure connection.</p></article>
+            <article class="feature glass"><h3>Preview before publishing</h3><p>The Preview button shows your site at a temporary address before anyone else sees it.</p></article>
+            <article class="feature glass"><h3>Edit in the browser</h3><p>Add, move, rename or replace files right in the file tree and publish again with one click.</p></article>
+            <article class="feature glass"><h3>Plain HTML or any framework</h3><p>Hand-written HTML, CSS and JavaScript, or the build output of React, Vue, Svelte, Astro, Next.js or Hugo.</p></article>
+            <article class="feature glass"><h3>Command line and API</h3><p>Upload with <code>curl</code> and an API key to publish sites automatically, for example from CI.</p></article>
+          </div>
+        </section>
+
+        <section class="prose glass mcp" id="mcp-en" aria-labelledby="en-mcp">
+          <p class="eyebrow">MCP server</p>
+          <h2 id="en-mcp">Publish a website from your AI assistant</h2>
+          <p>freepages.dev has a built-in <b>MCP server</b> (Model Context Protocol). Connect it to Claude, Cursor, VS Code or any other MCP client and say something like <i>“Publish this page on freepages.dev”</i>. The assistant uploads the files and hands you the link to the live site.</p>
+          <ol>
+            <li>Add an MCP server with the address <code class="mcp-url">https://freepages.dev/mcp</code> in your app.</li>
+            <li>The app opens a sign-in window: enter your e-mail and confirm access with the link. Your account is created automatically.</li>
+            <li>Ask the assistant to publish, update, rename or delete a site.</li>
+          </ol>
+          <pre><span class="muted"># Claude Code</span>
+claude mcp add --transport http freepages.dev <span class="mcp-url">https://freepages.dev/mcp</span></pre>
+          <pre><span class="muted"># Cursor, VS Code and others (JSON config)</span>
+{ "mcpServers": { "freepages.dev": { "type": "http", "url": "<span class="mcp-url">https://freepages.dev/mcp</span>" } } }</pre>
+          <p>Server tools: <code>publish_site</code>, <code>create_preview</code>, <code>list_sites</code>, <code>list_files</code>, <code>read_file</code>, <code>rename_site</code>, <code>delete_site</code>, <code>get_visits</code> and <code>get_account</code>. Apps without sign-in (OAuth) connect with an API key; see the <a href="/docs">guide</a> for details.</p>
+        </section>
+
+        <section class="section faq" id="faq-en" aria-labelledby="en-faq">
+          <h2 id="en-faq">Frequently asked questions</h2>
+          <details class="faq-item glass"><summary>Is freepages.dev really free?</summary><div><p>Yes. Publishing and hosting are free; only storage limits apply: <span class="site-max">50 MB</span> per site and <span class="account-max">100 MB</span> per account.</p></div></details>
+          <details class="faq-item glass"><summary>What kind of websites can I publish?</summary><div><p>Static websites: HTML, CSS, JavaScript, images and fonts. There is no server-side code (PHP, Node.js) or database. Build apps made with React, Vue, Astro and others first, then upload the build output folder.</p></div></details>
+          <details class="faq-item glass"><summary>Do I need an account or a password?</summary><div><p>No password. The first time you publish, you enter your e-mail; once you confirm the link, the site is live and your account exists. Next time you sign in with an e-mail link again.</p></div></details>
+          <details class="faq-item glass"><summary>Can an AI assistant publish my website?</summary><div><p>Yes. Through the MCP server at <span class="mcp-url">https://freepages.dev/mcp</span>, Claude, Cursor, VS Code and other assistants can publish, update and delete sites, always only in your account.</p></div></details>
+          <details class="faq-item glass"><summary>How do I update or delete a site?</summary><div><p>Under My sites, click Edit, change the files and publish again. The address stays the same. You can delete and rename sites there too, through the API or from your AI assistant.</p></div></details>
+        </section>
+      </div>
 
     </div>
   </main>

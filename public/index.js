@@ -31,7 +31,7 @@ const passwordMode = () => !signedIn() && state.config.whitelisted;
 const needsIdentity = () => !signedIn() && !state.config.whitelisted;
 
 async function init() {
-  state.config = await api('/config');
+  state.config = await loadConfig();
   updateAddress();
   $('.dropzone .hint').innerHTML = state.config.unlimited ? t('drop.hintUnlimited') : t('drop.hint', { limit: `${state.config.siteMaxMb} MB` });
   restoreIdentity();
@@ -1136,6 +1136,9 @@ $('#add-form').addEventListener('submit', async (e) => {
 });
 
 
+// A failure here must not take the page down with it: the content stays
+// readable (for visitors and search engines) and the problem is shown above it.
 init().catch((err) => {
-  document.querySelector('main').textContent = t('err.load', { message: err.message });
+  showNotice(t('err.load', { message: err.message }));
+  $('#notice').classList.add('warn');
 });

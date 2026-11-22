@@ -75,6 +75,30 @@ const assetVersion = (() => {
   return hash.digest('hex').slice(0, 12);
 })();
 
+// What the pages' scripts need to know about this server and the visitor.
+// The home page and the guide also get it inline (see appPage), so they
+// render fully even when /api/ can't be fetched, as for search engines.
+function clientConfig(req) {
+  const user = accounts.currentUser(req);
+  return {
+    admin: accounts.isAdmin(req),
+    user: accounts.publicUser(user),
+    whitelisted: accounts.isWhitelisted(ipOf(req)),
+    maxUploadMb: config.MAX_UPLOAD_MB,
+    siteMaxMb: config.SITE_MAX_MB,
+    // The admin account: no site limit, big uploads go in parts of this size.
+    unlimited: Boolean(user?.is_admin),
+    partBytes: user?.is_admin ? sites.partBytes() : null,
+    accountMaxMb: config.ACCOUNT_MAX_MB,
+    urlTemplate: sites.siteUrl('{name}'),
+    previewMinutes: config.PREVIEW_MINUTES,
+    retentionDays: config.RETENTION_DAYS,
+    contact: config.ABUSE_EMAIL,
+  };
+}
+
+const INLINE_CONFIG = new Set(['index.html', 'docs.html']);
+
 const pages = {};
 function appPage(name) {
   pages[name] ??= fs.readFileSync(path.join(publicDir, name), 'utf8');
@@ -111,7 +135,10 @@ function appPage(name) {
     const fonts = ['latin', ...(lang === 'cs' ? ['latin-ext'] : [])]
       .map((part) => `<link rel="preload" href="/_app/font/bricolage-grotesque-${part}-wght-normal.woff2?v=${assetVersion}" as="font" type="font/woff2" crossorigin>`)
       .join('\n  ');
-    const head = `${fonts}\n  ${mdPath ? `<link rel="alternate" type="text/markdown" href="${mdPath}?lang=${lang}">\n  <link rel="describedby" type="text/plain" href="/llms.txt">\n` : ''}</head>`;
+    const inline = INLINE_CONFIG.has(name)
+      ? `<script type="application/json" id="fp-config">${JSON.stringify(clientConfig(req)).replace(/</g, '\\u003c')}</script>\n  `
+      : '';
+    const head = `${fonts}\n  ${inline}${mdPath ? `<link rel="alternate" type="text/markdown" href="${mdPath}?lang=${lang}">\n  <link rel="describedby" type="text/plain" href="/llms.txt">\n` : ''}</head>`;
     res.type('html').send(seo.render(name, html.replace('</head>', head), { lang, explicit: Boolean(explicit) }));
   };
 }
@@ -232,24 +259,7 @@ function requireUser(req, res, next) {
   fail(req, res, 401, 'loginRequired');
 }
 
-api.get('/config', (req, res) => {
-  const user = accounts.currentUser(req);
-  res.json({
-    admin: accounts.isAdmin(req),
-    user: accounts.publicUser(user),
-    whitelisted: accounts.isWhitelisted(ipOf(req)),
-    maxUploadMb: config.MAX_UPLOAD_MB,
-    siteMaxMb: config.SITE_MAX_MB,
-    // The admin account: no site limit, big uploads go in parts of this size.
-    unlimited: Boolean(user?.is_admin),
-    partBytes: user?.is_admin ? sites.partBytes() : null,
-    accountMaxMb: config.ACCOUNT_MAX_MB,
-    urlTemplate: sites.siteUrl('{name}'),
-    previewMinutes: config.PREVIEW_MINUTES,
-    retentionDays: config.RETENTION_DAYS,
-    contact: config.ABUSE_EMAIL,
-  });
-});
+api.get('/config', (req, res) => res.json(clientConfig(req)));
 
 /* ---------- user sign-in by e-mail link ---------- */
 
