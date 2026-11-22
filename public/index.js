@@ -39,6 +39,8 @@ async function init() {
     showNotice(t('account.blocked'));
     $('#notice').classList.add('warn');
   }
+  // Visitors who will confirm by e-mail: the anti-bot check starts now.
+  if (needsIdentity()) prepareTurnstile().catch(() => {});
   renderStaged();
   await renderMySites();
   await handleQuery();

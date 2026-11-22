@@ -6,6 +6,7 @@ async function init() {
   config = await api('/config');
   $('#signin').hidden = Boolean(config.user);
   $('#account').hidden = !config.user;
+  if (!config.user) prepareTurnstile().catch(() => {});
   if (config.user) await load();
   if (new URLSearchParams(location.search).has('welcome')) {
     history.replaceState(null, '', location.pathname);

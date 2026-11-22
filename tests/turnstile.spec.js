@@ -9,11 +9,16 @@ test.use({ baseURL: BASE });
 
 const htmlFile = { name: 'index.html', mimeType: 'text/html', buffer: Buffer.from('<h1>t</h1>') };
 
-// A stand-in for Cloudflare's widget script: hands out "pass-token" at once.
+// A stand-in for Cloudflare's widget script: runs the check on render and
+// on every reset, handing out "pass-token".
 const fakeWidget = `window.turnstile = {
-  render(el, opts) { this.opts = opts; window.__turnstileRenders = (window.__turnstileRenders || 0) + 1; return 1; },
-  execute() { setTimeout(() => this.opts.callback('pass-token')); },
-  reset() {},
+  render(el, opts) {
+    this.opts = opts;
+    window.__turnstileRenders = (window.__turnstileRenders || 0) + 1;
+    setTimeout(() => opts.callback('pass-token'));
+    return 1;
+  },
+  reset() { setTimeout(() => this.opts.callback('pass-token')); },
 };`;
 
 test('e-mail forms need a valid Turnstile token', async ({ request }) => {
@@ -58,11 +63,14 @@ test('the sign-in and publish forms get a token from the widget', async ({ page 
   await page.route('https://challenges.cloudflare.com/**', (route) => route.fulfill({ contentType: 'text/javascript', body: fakeWidget }));
 
   await page.goto('/ucet');
+  // The check starts as the page loads, before anything is sent.
+  await expect.poll(() => page.evaluate(() => window.__turnstileRenders)).toBe(1);
   await page.locator('#signin-form [name=email]').fill(uniqueEmail('tsui'));
   await page.locator('#signin-form button[type=submit]').click();
   await expect(page.locator('#signin-sent')).toBeVisible();
 
   await page.goto('/');
+  await expect.poll(() => page.evaluate(() => window.__turnstileRenders)).toBe(1);
   await pick(page, page.locator('#pick-folder'), FIXTURES.site);
   await page.locator('#name').fill(unique('tsui'));
   await page.locator('#id-first').fill('Tea');

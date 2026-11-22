@@ -62,11 +62,13 @@ async function init() {
       $('#oauth-signed').hidden = true;
       $('#oauth-form').hidden = false;
       $('#oauth-form input[name=email]').focus();
+      prepareTurnstile().catch(() => {});
     });
     line.replaceChildren(before, Object.assign(document.createElement('b'), { textContent: request.user.email }), after, ' ', other, t('oauth.otherAccountTail'));
     $('#oauth-signed').hidden = false;
   } else {
     $('#oauth-form').hidden = false;
+    prepareTurnstile().catch(() => {});
   }
 }
 

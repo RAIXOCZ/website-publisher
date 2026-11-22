@@ -3,10 +3,14 @@
 // Small helpers shared by the upload page and the admin panel.
 
 // Cloudflare Turnstile, when the server has it on (<meta name="turnstile-site-key">).
-// The widget stays invisible unless Cloudflare wants the visitor to click it.
-// Each token works once, so every request asks for a new one.
-let turnstileWidget = null;
-let turnstileWaiting = null;
+// Pages with a form that needs it call prepareTurnstile() as they load, so
+// the check runs while the visitor fills in the form and a token is usually
+// ready by the time they send it. The widget stays invisible unless
+// Cloudflare wants a click. A token works once and expires after 5 minutes,
+// so after each use (or expiry) the widget fetches the next one.
+const turnstileState = { loading: null, widget: null, token: null, waiters: [] };
+const turnstileSiteKey = () => document.querySelector('meta[name="turnstile-site-key"]')?.content || '';
+
 function loadTurnstile() {
   return new Promise((resolve, reject) => {
     if (window.turnstile) return resolve(window.turnstile);
@@ -19,30 +23,55 @@ function loadTurnstile() {
   });
 }
 
-async function turnstileToken() {
-  const siteKey = document.querySelector('meta[name="turnstile-site-key"]')?.content;
-  if (!siteKey) return null;
-  const turnstile = await loadTurnstile();
-  return new Promise((resolve, reject) => {
-    turnstileWaiting = { resolve, reject };
-    if (turnstileWidget === null) {
+function prepareTurnstile() {
+  const siteKey = turnstileSiteKey();
+  if (!siteKey) return Promise.resolve(null);
+  turnstileState.loading ??= loadTurnstile()
+    .then((turnstile) => {
       const box = document.createElement('div');
       box.className = 'turnstile-box';
       document.body.append(box);
-      turnstileWidget = turnstile.render(box, {
+      const failAll = () => {
+        for (const w of turnstileState.waiters.splice(0)) w.reject(new Error(t('captcha.failed')));
+      };
+      turnstileState.widget = turnstile.render(box, {
         sitekey: siteKey,
-        execution: 'execute',
         appearance: 'interaction-only',
         language: LANG,
-        callback: (token) => turnstileWaiting?.resolve(token),
-        'error-callback': () => turnstileWaiting?.reject(new Error(t('captcha.failed'))),
-        'expired-callback': () => turnstile.reset(turnstileWidget),
+        callback: (token) => {
+          const waiter = turnstileState.waiters.shift();
+          if (waiter) {
+            waiter.resolve(token);
+            turnstile.reset(turnstileState.widget); // the next token, for a second send
+          } else {
+            turnstileState.token = token;
+          }
+        },
+        'error-callback': failAll,
+        'expired-callback': () => {
+          turnstileState.token = null;
+          turnstile.reset(turnstileState.widget);
+        },
       });
-    } else {
-      turnstile.reset(turnstileWidget);
-    }
-    turnstile.execute(turnstileWidget);
-  });
+      return turnstile;
+    })
+    .catch((err) => {
+      turnstileState.loading = null; // try again on the next send
+      throw err;
+    });
+  return turnstileState.loading;
+}
+
+async function turnstileToken() {
+  if (!turnstileSiteKey()) return null;
+  const turnstile = await prepareTurnstile();
+  if (turnstileState.token) {
+    const token = turnstileState.token;
+    turnstileState.token = null;
+    turnstile.reset(turnstileState.widget);
+    return token;
+  }
+  return new Promise((resolve, reject) => turnstileState.waiters.push({ resolve, reject }));
 }
 
 async function api(path, options = {}) {
