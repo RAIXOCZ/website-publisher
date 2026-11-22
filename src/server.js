@@ -51,15 +51,26 @@ if (config.SITE_DOMAIN) {
 }
 
 // 2. The publisher app itself.
+const analytics = config.UMAMI_URL && config.UMAMI_WEBSITE_ID ? config.UMAMI_URL : '';
+const analyticsOrigin = analytics ? ` ${new URL(analytics).origin}` : '';
 const securityHeaders = (req, res, next) => {
   res.set({
     'X-Frame-Options': 'DENY',
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'same-origin',
-    'Content-Security-Policy': "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; frame-ancestors 'none'",
+    'Content-Security-Policy': `default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'${analyticsOrigin}; connect-src 'self'${analyticsOrigin}; frame-ancestors 'none'`,
   });
   next();
 };
+
+// Umami runs only on the public pages: never where the address carries a
+// token (e-mail links, OAuth) or the page shows account details.
+const ANALYTICS_PAGES = new Set(['index.html', 'docs.html', 'terms.html', 'privacy.html']);
+const analyticsTags = analytics
+  ? ['script.js', 'recorder.js']
+      .map((file) => `<script defer src="${analytics}/${file}" data-website-id="${config.UMAMI_WEBSITE_ID}" data-exclude-search="true" data-do-not-track="true"></script>`)
+      .join('\n  ')
+  : '';
 
 const publicDir = path.join(__dirname, '..', 'public');
 
@@ -138,7 +149,8 @@ function appPage(name) {
     const inline = INLINE_CONFIG.has(name)
       ? `<script type="application/json" id="fp-config">${JSON.stringify(clientConfig(req)).replace(/</g, '\\u003c')}</script>\n  `
       : '';
-    const head = `${fonts}\n  ${inline}${mdPath ? `<link rel="alternate" type="text/markdown" href="${mdPath}?lang=${lang}">\n  <link rel="describedby" type="text/plain" href="/llms.txt">\n` : ''}</head>`;
+    const tracking = analyticsTags && ANALYTICS_PAGES.has(name) ? `${analyticsTags}\n  ` : '';
+    const head = `${fonts}\n  ${inline}${tracking}${mdPath ? `<link rel="alternate" type="text/markdown" href="${mdPath}?lang=${lang}">\n  <link rel="describedby" type="text/plain" href="/llms.txt">\n` : ''}</head>`;
     res.type('html').send(seo.render(name, html.replace('</head>', head), { lang, explicit: Boolean(explicit) }));
   };
 }

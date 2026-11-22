@@ -26,6 +26,8 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       MAIL_FROM: ${MAIL_FROM:-}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-martin@balcar.me}
+      UMAMI_URL: ${UMAMI_URL:-https://analytics.martin-balcar.cz}
+      UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-31c09086-3589-4740-957a-13d266f49e3a}
     volumes:
       - publisher-data:/data
     networks:

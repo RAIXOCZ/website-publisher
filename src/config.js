@@ -66,6 +66,11 @@ module.exports = {
   EMAILS_PER_HOUR: int(process.env.EMAILS_PER_HOUR, 10),
 
 
+  // Umami analytics on the publisher's public pages (not on published sites).
+  // Off unless both are set.
+  UMAMI_URL: (process.env.UMAMI_URL || '').trim().replace(/\/+$/, ''),
+  UMAMI_WEBSITE_ID: (process.env.UMAMI_WEBSITE_ID || '').trim(),
+
   PREVIEW_MINUTES: int(process.env.PREVIEW_MINUTES, 5),
   // Uploads waiting for e-mail confirmation are dropped after this.
   PENDING_HOURS: int(process.env.PENDING_HOURS, 24),
