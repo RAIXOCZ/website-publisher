@@ -56,6 +56,8 @@ module.exports = {
   ADMIN_EMAIL: (process.env.ADMIN_EMAIL || 'martin@balcar.me').trim().toLowerCase(),
   ADMIN_FIRST_NAME: process.env.ADMIN_FIRST_NAME || 'Martin',
   ADMIN_LAST_NAME: process.env.ADMIN_LAST_NAME || 'Balcar',
+  // E-mail the admin about every new site.
+  ADMIN_NOTIFY: bool(process.env.ADMIN_NOTIFY, true),
 
   // E-mail: Resend (https://resend.com) when RESEND_API_KEY is set, otherwise
   // messages are only written to the log (and, with MAIL_DEV_OUTBOX, exposed

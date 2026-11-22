@@ -361,7 +361,7 @@ api.post('/auth/consume', json, async (req, res) => {
     let user = accounts.activeUserByEmail(row.email);
     if (!user) user = accounts.createUser({ email: row.email, firstName: row.payload.firstName, lastName: row.payload.lastName, ip });
     accounts.audit('email.verified', { userId: user.id, ip, detail: { email: row.email, uploadIp: row.ip } });
-    const site = await sites.createSite({ requested: row.payload.name, dir, userId: user.id, ip });
+    const site = await sites.createSite({ requested: row.payload.name, dir, userId: user.id, ip, via: 'web (potvrzení e-mailem)' });
     accounts.startSession(res, user.id);
     return res.json({ redirect: `/?published=${encodeURIComponent(site.name)}`, site });
   }
@@ -538,12 +538,12 @@ api.post('/sites', async (req, res) => {
     if (invalid) throw new sites.UserError(invalid, 400, {}, { name: requested });
 
     if (user) {
-      const result = await sites.createSite({ requested, dir, userId: user.id, ip });
+      const result = await sites.createSite({ requested, dir, userId: user.id, ip, via: req._via === 'token' ? 'API klíč' : 'web' });
       console.log(`published ${result.name} (${result.files} files)`);
       return res.json(result);
     }
     if (isAdmin || accounts.isWhitelisted(ip)) {
-      const result = await sites.createSite({ requested, dir, withPassword: true, ip });
+      const result = await sites.createSite({ requested, dir, withPassword: true, ip, via: 'web (heslo k webu)' });
       console.log(`published ${result.name} (${result.files} files, password)`);
       return res.json(result);
     }

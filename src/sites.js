@@ -11,6 +11,7 @@ const yauzl = require('yauzl');
 const config = require('./config');
 const { one, all, run, now, inMinutes, inDays, encodeCursor, decodeCursor, likeContains, pageSize } = require('./db');
 const accounts = require('./accounts');
+const mail = require('./mail');
 
 const NAME_RE = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 const RESERVED = new Set([
@@ -566,7 +567,32 @@ async function assertQuota(dir, { ownerId = null, replacing = null } = {}) {
   return bytes;
 }
 
-async function createSite({ requested, dir, userId = null, withPassword = false, ip }) {
+// Tells the admin by e-mail about every new site (not about their own).
+// Sent in the background: a failed e-mail never fails the publish.
+function notifyAdmin(site, via) {
+  if (!config.ADMIN_NOTIFY) return;
+  const owner = site.user_id ? accounts.userById(site.user_id) : null;
+  if (owner?.is_admin) return;
+  const mb = site.bytes / (1024 * 1024);
+  mail
+    .send({
+      to: config.ADMIN_EMAIL,
+      kind: 'adminNewSite',
+      params: {
+        name: site.name,
+        url: siteUrl(site.name),
+        link: siteUrl(site.name),
+        owner: owner ? `${owner.first_name} ${owner.last_name} <${owner.email}>`.trim() : 'bez účtu (web s heslem)',
+        files: site.files,
+        size: mb >= 1 ? `${mb.toFixed(1)} MB` : `${Math.max(1, Math.round(site.bytes / 1024))} kB`,
+        via: via || '–',
+        admin: `${config.PUBLIC_URL}/admin`,
+      },
+    })
+    .catch((err) => console.error('admin notification failed:', err.message));
+}
+
+async function createSite({ requested, dir, userId = null, withPassword = false, ip, via = '' }) {
   const invalid = validateName(requested);
   if (invalid) throw new UserError(invalid, 400, {}, { name: requested });
   await assertQuota(dir, { ownerId: userId });
@@ -593,6 +619,7 @@ async function createSite({ requested, dir, userId = null, withPassword = false,
     const result = { ...publicSite(site), replaced: false, hasIndex: fs.existsSync(path.join(siteDir(name), 'index.html')) };
     if (password) result.password = password;
     if (name !== requested) result.requestedName = requested;
+    notifyAdmin(site, via);
     return result;
   } finally {
     busy.delete(name);

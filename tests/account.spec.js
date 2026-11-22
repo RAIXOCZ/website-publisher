@@ -268,7 +268,10 @@ test('a site has the same actions on the home page as on the account page', asyn
   const actions = (card) => card.locator('[data-action]:not([hidden])').evaluateAll((els) => els.map((el) => el.dataset.action));
 
   await page.goto('/ucet');
-  const onAccount = await actions(page.locator(`#sites .site-card[data-name="${site}"]`));
+  const accountCard = page.locator(`#sites .site-card[data-name="${site}"]`);
+  await expect(accountCard).toBeVisible();
+  const onAccount = await actions(accountCard);
+  expect(onAccount.length).toBeGreaterThan(0);
   await page.goto('/');
   const card = page.locator(`#my-list .site-card[data-name="${site}"]`);
   await expect(card).toBeVisible();

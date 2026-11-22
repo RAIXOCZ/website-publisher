@@ -67,6 +67,13 @@ const TEMPLATES = {
       button: 'Vytvořit účet a povolit přístup',
       after: ['Odkaz platí {minutes} minut. Potvrzením přijímáte podmínky použití: {terms}', 'Pokud jste o to nežádali, e-mail ignorujte. Účet bez potvrzení nevznikne.'],
     },
+    adminNewSite: {
+      subject: 'Nový web: {name}',
+      title: 'Nový web {name}',
+      body: ['Na freepages.dev právě vznikl nový web {url}', 'Vlastník: {owner}\nSoubory: {files}, velikost: {size}\nZveřejněno přes: {via}'],
+      button: 'Otevřít web',
+      after: ['Weby spravujete v administraci: {admin}'],
+    },
     measure: {
       subject: 'Opatření k vašemu účtu freepages.dev',
       title: 'Opatření k vašemu účtu',
@@ -128,6 +135,13 @@ const TEMPLATES = {
       body: ['The app {client} wants to create a freepages.dev account for you and publish, edit and delete sites in it.'],
       button: 'Create account and allow access',
       after: ['The link is valid for {minutes} minutes. Confirming accepts the terms of use: {terms}', 'If you did not ask for this, ignore this e-mail. No account is created without your confirmation.'],
+    },
+    adminNewSite: {
+      subject: 'New site: {name}',
+      title: 'New site {name}',
+      body: ['A new site was just published on freepages.dev: {url}', 'Owner: {owner}\nFiles: {files}, size: {size}\nPublished via: {via}'],
+      button: 'Open the site',
+      after: ['Manage sites in the admin panel: {admin}'],
     },
     measure: {
       subject: 'A measure concerning your freepages.dev account',

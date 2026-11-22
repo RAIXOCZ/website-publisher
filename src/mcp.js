@@ -182,7 +182,7 @@ async function publish(user, args, ip) {
       if (existing.user_id !== user.id) throw new ToolError(`The name "${name}" belongs to someone else. Choose another name.`);
       return await sites.replaceSite(existing, dir, { userId: user.id, ip });
     }
-    return await sites.createSite({ requested, dir, userId: user.id, ip }); // await: the cleanup below must wait
+    return await sites.createSite({ requested, dir, userId: user.id, ip, via: 'MCP' }); // await: the cleanup below must wait
   } finally {
     await upload.cleanup();
   }
